@@ -1,0 +1,15 @@
+# Déploiement Netlify — frontend React (PWA)
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Variable d'environnement à définir aussi dans l'UI Netlify (Site settings → Environment) :
+#   VITE_API_URL = https://geocollect-backend.onrender.com/api/v1
+[build.environment]
+  NODE_VERSION = "22"
+
+# SPA : toutes les routes renvoient vers index.html (React Router)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
