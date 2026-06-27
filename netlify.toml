@@ -1,12 +1,13 @@
 # Déploiement Netlify — frontend React (PWA)
 [build]
-  command = "npm run build"
+  # Force l'installation des devDependencies (vite, plugins) puis build direct (sans tsc, identique en sortie)
+  command = "npm install --include=dev && npx vite build"
   publish = "dist"
 
-# Variable d'environnement à définir aussi dans l'UI Netlify (Site settings → Environment) :
-#   VITE_API_URL = https://geocollect-backend.onrender.com/api/v1
 [build.environment]
   NODE_VERSION = "22"
+  NPM_FLAGS = "--include=dev"
+  # L'URL de l'API est déjà figée dans .env.production (pas besoin de configurer ici)
 
 # SPA : toutes les routes renvoient vers index.html (React Router)
 [[redirects]]
