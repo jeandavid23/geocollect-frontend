@@ -14,10 +14,11 @@ import { fr } from 'date-fns/locale'
 export default function AgentDashboardPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const { parcels, producers, isOnline, isSyncing, syncAll } = useAppStore()
+  const { parcels, producers, isOnline, isSyncing, syncAll, currentAgentId } = useAppStore()
 
-  const myParcels = parcels.filter((p) => p.agentId === 'agent-001')
-  const myProducers = producers.filter((p) => p.assignedAgentId === 'agent-001')
+  const agentId = currentAgentId ?? 'agent-001'
+  const myParcels = parcels.filter((p) => p.agentId === agentId)
+  const myProducers = producers.filter((p) => p.assignedAgentId === agentId)
 
   const todayStr = new Date().toDateString()
   const todayParcels = myParcels.filter((p) => new Date(p.createdAt).toDateString() === todayStr)

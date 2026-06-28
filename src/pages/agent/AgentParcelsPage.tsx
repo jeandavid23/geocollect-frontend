@@ -23,8 +23,8 @@ function MapAutoCenter({ lat, lng }: { lat: number; lng: number }) {
 
 export default function AgentParcelsPage() {
   const navigate = useNavigate()
-  const { parcels, producers } = useAppStore()
-  const myParcels = parcels.filter((p) => p.agentId === 'agent-001')
+  const { parcels, producers, currentAgentId } = useAppStore()
+  const myParcels = parcels.filter((p) => p.agentId === (currentAgentId ?? 'agent-001'))
 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')

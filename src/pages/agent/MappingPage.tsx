@@ -18,6 +18,8 @@ import { validateEUDR } from '../../utils/eudrValidator'
 import {
   generateParcelFieldId, getNextParcelIndex,
 } from '../../utils/fieldId'
+import { parcelsApi } from '../../api/parcels'
+import { mapParcel } from '../../api/mappers'
 
 // Fix leaflet default marker icon
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl: unknown })._getIconUrl
@@ -60,7 +62,8 @@ function MapClickHandler({ onAdd }: { onAdd: (lat: number, lng: number) => void 
 
 export default function MappingPage() {
   const navigate = useNavigate()
-  const { producers, parcels, addParcel, addNotification } = useAppStore()
+  const { producers, parcels, addParcel, addNotification, currentAgentId, isLive } = useAppStore()
+  const agentId = currentAgentId ?? 'agent-001'
 
   const [step, setStep] = useState<Step>('select_producer')
   const [selectedProducerId, setSelectedProducerId] = useState('')
@@ -85,7 +88,8 @@ export default function MappingPage() {
   const simRef = useRef<[number, number]>(BEOUMI_CENTER)
   const retriedRef = useRef(false)
 
-  const myProducers = producers.filter((p) => p.assignedAgentId === 'agent-001')
+  // En mode live, l'agent voit ses producteurs assignés ; sinon (démo) tous ceux du mock
+  const myProducers = producers.filter((p) => !isLive || p.assignedAgentId === agentId)
   const selectedProducer = producers.find((p) => p.id === selectedProducerId)
 
   // Keep refs in sync so the geolocation callback always reads the latest values
@@ -284,8 +288,10 @@ export default function MappingPage() {
     setStep('result')
   }
 
-  const handleSave = () => {
-    if (!selectedProducer || !validationResult) return
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (!selectedProducer || !validationResult || saving) return
     const cleaned = autoTrack ? filterAberrantPoints(points) : points
     const geomCoords = pointsToGeoJSONCoords(cleaned)
 
@@ -303,15 +309,50 @@ export default function MappingPage() {
     const geometry: GeoJSONPolygon = { type: 'Polygon', coordinates: geomCoords }
     const areaM2 = computePolygonArea(cleaned)
     const perim = computePerimeter(cleaned)
+    setSaving(true)
+
+    // ─── Mode live (connecté) : enregistre dans la BASE DE DONNÉES ───────────
+    if (isLive) {
+      try {
+        const { data } = await parcelsApi.create({
+          producer: selectedProducer.id,
+          name: parcelName,
+          culture,
+          geometry,
+          area_hectares: Math.round((areaM2 / 10000) * 100) / 100,
+          perimeter_meters: Math.round(perim),
+          vertex_count: cleaned.length,
+          is_synced: true,
+        } as never)
+        const raw = data as unknown as Record<string, unknown>
+        addParcel(mapParcel(raw))
+        addNotification({
+          type: 'success',
+          title: 'Parcelle enregistrée en base ✓',
+          message: `${String(raw.field_id ?? '')} — stockée et partagée avec la coopérative.`,
+        })
+        setSaving(false)
+        navigate('/agent')
+        return
+      } catch {
+        addNotification({
+          type: 'error',
+          title: 'Échec de l\'enregistrement en base',
+          message: 'Vérifiez votre connexion. La parcelle est conservée localement.',
+        })
+        // continue → sauvegarde locale de secours
+      }
+    }
+
+    // ─── Mode démo / secours : sauvegarde locale ─────────────────────────────
     const idx = getNextParcelIndex(parcels, selectedProducer.id)
     const fieldId = generateParcelFieldId(selectedProducer.fieldIdBase, idx)
-
     addParcel({
       id: crypto.randomUUID(),
       fieldId,
       producerId: selectedProducer.id,
       cooperativeId: selectedProducer.cooperativeId,
-      agentId: 'agent-001',
+      agentId,
       name: parcelName,
       geometry,
       areaHectares: Math.round((areaM2 / 10000) * 100) / 100,
@@ -326,17 +367,16 @@ export default function MappingPage() {
       eudrScore: validationResult.eudrScore,
       eudrStatus: validationResult.eudrScore >= 80 ? 'compliant' : validationResult.eudrScore >= 60 ? 'pending' : 'non_compliant',
       validationResult,
-      isSynced: navigator.onLine,
+      isSynced: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     })
-
     addNotification({
       type: validationResult.isValid ? 'success' : 'error',
-      title: 'Parcelle enregistrée',
+      title: 'Parcelle enregistrée (local)',
       message: `${fieldId} — Score EUDR: ${validationResult.eudrScore}%`,
     })
-
+    setSaving(false)
     navigate('/agent')
   }
 

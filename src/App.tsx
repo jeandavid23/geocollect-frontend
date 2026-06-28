@@ -43,6 +43,8 @@ function RootRedirect() {
 
 export default function App() {
   const setIsOnline = useAppStore((s) => s.setIsOnline)
+  const loadFromApi = useAppStore((s) => s.loadFromApi)
+  const { isAuthenticated, token, user } = useAuthStore()
 
   useEffect(() => {
     const onOnline = () => setIsOnline(true)
@@ -54,6 +56,13 @@ export default function App() {
       window.removeEventListener('offline', onOffline)
     }
   }, [setIsOnline])
+
+  // Charge les données réelles depuis la base dès qu'on est connecté avec un vrai compte (token JWT, pas mock)
+  useEffect(() => {
+    if (isAuthenticated && token && !token.startsWith('mock')) {
+      loadFromApi(user?.id)
+    }
+  }, [isAuthenticated, token, user?.id, loadFromApi])
 
   return (
     <BrowserRouter>

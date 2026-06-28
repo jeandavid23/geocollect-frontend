@@ -7,6 +7,8 @@ import type { Producer } from '../../types'
 import { generateFieldIdBase, getNextProducerIndex } from '../../utils/fieldId'
 import { parseProducersFile, buildProducerTemplate, type ImportedProducerRow } from '../../utils/excelImport'
 import { downloadBlob } from '../../utils/geoExport'
+import { producersApi } from '../../api/producers'
+import { mapProducer } from '../../api/mappers'
 
 const EMPTY_FORM = {
   firstName: '',
@@ -22,7 +24,7 @@ const EMPTY_FORM = {
 
 export default function ProducersPage() {
   const user = useAuthStore((s) => s.user)
-  const { producers, parcels, addProducer, addNotification } = useAppStore()
+  const { producers, parcels, addProducer, addNotification, isLive } = useAppStore()
   const coopId = user?.cooperativeId ?? 'coop-001'
   const coopProducers = producers.filter((p) => p.cooperativeId === coopId)
 
@@ -55,16 +57,39 @@ export default function ProducersPage() {
     ? generateFieldIdBase(form.section, getNextProducerIndex(producers, form.section))
     : '—'
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.firstName.trim() || !form.lastName.trim() || !form.section.trim()) return
 
-    const fieldIdBase = generateFieldIdBase(
-      form.section,
-      getNextProducerIndex(producers, form.section)
-    )
+    // ─── Mode live : enregistre dans la BASE DE DONNÉES ──────────────────────
+    if (isLive) {
+      try {
+        const { data } = await producersApi.create({
+          first_name: form.firstName.trim(),
+          last_name: form.lastName.trim(),
+          phone: form.phone.trim(),
+          national_id: form.nationalId.trim(),
+          gender: form.gender,
+          birth_year: form.birthYear ? Number(form.birthYear) : undefined,
+          village: form.village.trim(),
+          section: form.section.trim().toUpperCase(),
+          region: form.region.trim(),
+        })
+        const created = mapProducer(data as Record<string, unknown>)
+        addProducer(created)
+        addNotification({ type: 'success', title: 'Producteur enregistré en base ✓', message: `${created.fullName} — ${created.fieldIdBase}` })
+        setForm(EMPTY_FORM)
+        setShowForm(false)
+        return
+      } catch {
+        addNotification({ type: 'error', title: 'Échec', message: 'Enregistrement en base impossible. Vérifiez la connexion.' })
+        return
+      }
+    }
 
-    const newProducer: Producer = {
+    // ─── Mode démo : local ───────────────────────────────────────────────────
+    const fieldIdBase = generateFieldIdBase(form.section, getNextProducerIndex(producers, form.section))
+    addProducer({
       id: crypto.randomUUID(),
       cooperativeId: coopId,
       fieldIdBase,
@@ -84,14 +109,8 @@ export default function ProducersPage() {
       assignedAgentId: 'agent-001',
       parcelCount: 0,
       totalHectares: 0,
-    }
-
-    addProducer(newProducer)
-    addNotification({
-      type: 'success',
-      title: 'Producteur enregistré',
-      message: `${newProducer.fullName} — ${fieldIdBase}`,
     })
+    addNotification({ type: 'success', title: 'Producteur enregistré', message: `${form.lastName.toUpperCase()} ${form.firstName} — ${fieldIdBase}` })
     setForm(EMPTY_FORM)
     setShowForm(false)
   }
@@ -112,9 +131,35 @@ export default function ProducersPage() {
 
   const validRows = importRows.filter((r) => r._errors.length === 0)
 
-  const handleConfirmImport = () => {
+  const handleConfirmImport = async () => {
     setImporting(true)
-    // Track per-section index so multiple new producers get unique FIELD IDs
+
+    // ─── Mode live : enregistre chaque producteur dans la BASE DE DONNÉES ────
+    if (isLive) {
+      let ok = 0
+      for (const r of validRows) {
+        try {
+          const { data } = await producersApi.create({
+            first_name: r.firstName, last_name: r.lastName,
+            phone: r.phone, national_id: r.nationalId,
+            gender: r.gender, birth_year: r.birthYear,
+            village: r.village, section: r.section.trim().toUpperCase(),
+            region: r.region || 'Bélier',
+          })
+          addProducer(mapProducer(data as Record<string, unknown>))
+          ok++
+        } catch { /* ligne ignorée */ }
+      }
+      addNotification({
+        type: ok > 0 ? 'success' : 'error',
+        title: 'Import terminé',
+        message: `${ok}/${validRows.length} producteur(s) enregistré(s) en base.`,
+      })
+      setImporting(false); setImportRows([]); setImportFileName(''); setShowImport(false)
+      return
+    }
+
+    // ─── Mode démo : local ───────────────────────────────────────────────────
     const sectionCounters: Record<string, number> = {}
     const newOnes: Producer[] = validRows.map((r) => {
       const section = r.section.trim().toUpperCase()

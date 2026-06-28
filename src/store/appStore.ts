@@ -10,6 +10,11 @@ import type {
   DashboardStats,
 } from '../types'
 import { MOCK_COOPERATIVES, MOCK_PRODUCERS, MOCK_PARCELS, MOCK_AGENTS } from '../utils/mockData'
+import { cooperativesApi } from '../api/cooperatives'
+import { agentsApi } from '../api/agents'
+import { producersApi } from '../api/producers'
+import { parcelsApi } from '../api/parcels'
+import { mapCooperative, mapAgent, mapProducer, mapParcel, unwrap } from '../api/mappers'
 
 interface AppStore {
   // Data
@@ -17,6 +22,11 @@ interface AppStore {
   producers: Producer[]
   parcels: Parcel[]
   agents: Agent[]
+
+  // Live (backend) data state
+  isLive: boolean
+  currentAgentId: string | null
+  loadFromApi: (userId?: string) => Promise<void>
 
   // Mapping session
   mappingSession: MappingSession | null
@@ -57,6 +67,42 @@ export const useAppStore = create<AppStore>((set, get) => ({
   producers: MOCK_PRODUCERS,
   parcels: MOCK_PARCELS,
   agents: MOCK_AGENTS,
+
+  isLive: false,
+  currentAgentId: null,
+
+  // Charge toutes les données depuis la base (API Django) selon le rôle de l'utilisateur
+  loadFromApi: async (userId) => {
+    try {
+      const [coopsRes, agentsRes, prodsRes, parcelsRes] = await Promise.allSettled([
+        cooperativesApi.list(),
+        agentsApi.list(),
+        producersApi.list(),
+        parcelsApi.list(),
+      ])
+
+      const next: Partial<AppStore> = { isLive: true }
+
+      if (coopsRes.status === 'fulfilled')
+        next.cooperatives = unwrap(coopsRes.value.data).map(mapCooperative)
+      if (prodsRes.status === 'fulfilled')
+        next.producers = unwrap(prodsRes.value.data).map(mapProducer)
+      if (parcelsRes.status === 'fulfilled')
+        next.parcels = unwrap(parcelsRes.value.data).map(mapParcel)
+      if (agentsRes.status === 'fulfilled') {
+        const agents = unwrap(agentsRes.value.data).map(mapAgent)
+        next.agents = agents
+        // Identifie l'agent connecté (pour le mapping)
+        const me = userId ? agents.find((a) => a.userId === userId) : agents[0]
+        if (me) next.currentAgentId = me.id
+      }
+
+      set(next)
+    } catch {
+      // Échec → on garde les données mock (mode démo)
+      set({ isLive: false })
+    }
+  },
 
   mappingSession: null,
   setMappingSession: (session) => set({ mappingSession: session }),
