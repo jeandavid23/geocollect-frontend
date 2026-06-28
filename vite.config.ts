@@ -31,6 +31,10 @@ export default defineConfig({
       workbox: {
         // Cache map tiles & app shell for offline field use
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        cleanupOutdatedCaches: true,   // supprime les anciens caches à chaque mise à jour
+        clientsClaim: true,            // le nouveau SW prend le contrôle immédiatement
+        skipWaiting: true,             // pas d'attente : la nouvelle version s'active tout de suite
+        navigateFallback: '/index.html',
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/mt1\.google\.com\/.*/i,
@@ -55,5 +59,15 @@ export default defineConfig({
   server: {
     host: true,   // expose on the local network (0.0.0.0) → accessible from your phone
     port: 5173,
+  },
+  build: {
+    // Noms de fichiers uniques par build (évite les collisions de cache CDN entre déploiements)
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        assetFileNames: `assets/[name]-[hash]-${Date.now()}[extname]`,
+      },
+    },
   },
 })
