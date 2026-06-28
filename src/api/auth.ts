@@ -14,7 +14,12 @@ export const authApi = {
   logout: (refresh: string) =>
     api.post('/auth/logout/', { refresh }),
 
-  me: () => api.get<User>('/auth/me/'),
+  me: () => api.get('/auth/me/'),
+
+  updateProfile: (data: {
+    full_name?: string; email?: string; phone?: string;
+    national_id?: string; photo_data?: string;
+  }) => api.patch('/auth/me/', data),
 
   refreshToken: (refresh: string) =>
     api.post<{ access: string }>('/auth/token/refresh/', { refresh }),

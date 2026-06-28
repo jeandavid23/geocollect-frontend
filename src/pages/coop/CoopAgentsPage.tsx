@@ -40,9 +40,15 @@ export default function CoopAgentsPage() {
     return `${prefix}-${String(n).padStart(3, '0')}`
   }
 
+  const MAX_AGENTS = 10
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.fullName.trim()) return
+    if (coopAgents.length >= MAX_AGENTS) {
+      addNotification({ type: 'warning', title: 'Limite atteinte', message: `Maximum ${MAX_AGENTS} agents par coopérative.` })
+      return
+    }
     setSaving(true)
 
     const code = nextCode()
@@ -70,7 +76,7 @@ export default function CoopAgentsPage() {
         code,
         zone: form.zone.trim() || 'Non assignée',
       })
-      addAgent({ ...baseAgent, id: data.id })
+      addAgent({ ...baseAgent, id: data.id, code: data.code || code })
       setForm(EMPTY_FORM)
       setShowForm(false)
       setCredentials({ name: baseAgent.fullName, username: data.account_username, password: data.account_password })

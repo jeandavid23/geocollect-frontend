@@ -1,12 +1,13 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
-  FileBarChart, Leaf, LogOut, Bell, ChevronLeft, ChevronRight,
+  FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
   Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
+import NotificationsBell from './NotificationsBell'
 import type { UserRole } from '../../types'
 
 interface NavItem {
@@ -43,12 +44,11 @@ const NAV_ITEMS: NavItem[] = [
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const { user, logout } = useAuthStore()
-  const { isOnline, notifications } = useAppStore()
+  const { isOnline } = useAppStore()
   const navigate = useNavigate()
 
   const role = user?.role ?? 'agent'
   const filtered = NAV_ITEMS.filter((item) => item.roles.includes(role))
-  const unread = notifications.filter((n) => !n.read).length
 
   const handleLogout = () => {
     logout()
@@ -107,16 +107,8 @@ export default function Sidebar() {
           {!collapsed && (isOnline ? 'En ligne' : 'Hors ligne')}
         </div>
 
-        {/* Notifications */}
-        <button className="relative flex items-center gap-3 w-full px-3 py-2 rounded-xl text-primary-200 hover:bg-primary-800 hover:text-white text-sm transition">
-          <Bell className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && 'Notifications'}
-          {unread > 0 && (
-            <span className="absolute top-1 left-6 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-              {unread}
-            </span>
-          )}
-        </button>
+        {/* Notifications (connectées au backend) */}
+        <NotificationsBell collapsed={collapsed} />
 
         {/* User info */}
         {!collapsed && (
