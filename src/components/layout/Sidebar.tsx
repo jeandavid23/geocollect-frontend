@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, Bell, ChevronLeft, ChevronRight,
-  Activity, Wifi, WifiOff, Satellite,
+  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
@@ -21,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Tableau de bord', to: '/admin', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['super_admin'] },
   { label: 'Coopératives', to: '/admin/cooperatives', icon: <Building2 className="w-5 h-5" />, roles: ['super_admin'] },
   { label: 'Agents Mappeurs', to: '/admin/agents', icon: <UserCog className="w-5 h-5" />, roles: ['super_admin'] },
+  { label: 'Comptes & Accès', to: '/admin/accounts', icon: <KeyRound className="w-5 h-5" />, roles: ['super_admin'] },
   { label: 'Journaux', to: '/admin/logs', icon: <Activity className="w-5 h-5" />, roles: ['super_admin'] },
   // Cooperative
   { label: 'Tableau de bord', to: '/coop', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['cooperative'] },
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Mes Parcelles', to: '/agent/parcels', icon: <MapPin className="w-5 h-5" />, roles: ['agent'] },
   // Shared
   { label: 'Carte Interactive', to: '/map', icon: <Map className="w-5 h-5" />, roles: ['super_admin', 'cooperative', 'agent'] },
+  { label: 'Mon compte', to: '/account', icon: <UserCircle className="w-5 h-5" />, roles: ['super_admin', 'cooperative', 'agent'] },
 ]
 
 export default function Sidebar() {

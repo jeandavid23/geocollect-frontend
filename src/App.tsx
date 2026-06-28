@@ -12,7 +12,11 @@ import LoginPage from './pages/auth/LoginPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import CooperativesPage from './pages/admin/CooperativesPage'
 import AdminAgentsPage from './pages/admin/AdminAgentsPage'
+import AccountsPage from './pages/admin/AccountsPage'
 import LogsPage from './pages/admin/LogsPage'
+
+// Shared account
+import AccountPage from './pages/account/AccountPage'
 
 // Cooperative
 import CoopDashboardPage from './pages/coop/CoopDashboardPage'
@@ -69,7 +73,9 @@ export default function App() {
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/cooperatives" element={<CooperativesPage />} />
           <Route path="/admin/agents" element={<AdminAgentsPage />} />
+          <Route path="/admin/accounts" element={<AccountsPage />} />
           <Route path="/admin/logs" element={<LogsPage />} />
+          <Route path="/account" element={<AccountPage />} />
           <Route path="/map" element={<MapPage />} />
         </Route>
 
@@ -86,6 +92,7 @@ export default function App() {
           <Route path="/coop/parcels" element={<CoopParcelsPage />} />
           <Route path="/coop/agents" element={<CoopAgentsPage />} />
           <Route path="/coop/reports" element={<ReportsPage />} />
+          <Route path="/account" element={<AccountPage />} />
           <Route path="/map" element={<MapPage />} />
         </Route>
 
@@ -100,6 +107,7 @@ export default function App() {
           <Route path="/agent" element={<AgentDashboardPage />} />
           <Route path="/agent/mapping" element={<MappingPage />} />
           <Route path="/agent/parcels" element={<AgentParcelsPage />} />
+          <Route path="/account" element={<AccountPage />} />
           <Route path="/map" element={<MapPage />} />
         </Route>
 
