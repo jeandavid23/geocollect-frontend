@@ -29,6 +29,7 @@ import ReportsPage from './pages/coop/ReportsPage'
 import AgentDashboardPage from './pages/agent/AgentDashboardPage'
 import MappingPage from './pages/agent/MappingPage'
 import AgentParcelsPage from './pages/agent/AgentParcelsPage'
+import AgentProducersPage from './pages/agent/AgentProducersPage'
 
 // Shared
 import MapPage from './pages/MapPage'
@@ -116,8 +117,8 @@ export default function App() {
           <Route path="/agent" element={<AgentDashboardPage />} />
           <Route path="/agent/mapping" element={<MappingPage />} />
           <Route path="/agent/parcels" element={<AgentParcelsPage />} />
+          <Route path="/agent/producers" element={<AgentProducersPage />} />
           <Route path="/account" element={<AccountPage />} />
-          <Route path="/map" element={<MapPage />} />
         </Route>
 
         {/* Fallback */}

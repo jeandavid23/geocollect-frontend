@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../../store/appStore'
+import { useAuthStore } from '../../store/authStore'
 import type { GPSPoint, MappingStatus, GeoJSONPolygon } from '../../types'
 import {
   computePolygonArea, computePerimeter, formatArea,
@@ -63,7 +64,9 @@ function MapClickHandler({ onAdd }: { onAdd: (lat: number, lng: number) => void 
 export default function MappingPage() {
   const navigate = useNavigate()
   const { producers, parcels, addParcel, addNotification, currentAgentId, isLive } = useAppStore()
+  const authUser = useAuthStore((s) => s.user)
   const agentId = currentAgentId ?? 'agent-001'
+  const coopId = authUser?.cooperativeId ?? 'coop-001'
 
   const [step, setStep] = useState<Step>('select_producer')
   const [selectedProducerId, setSelectedProducerId] = useState('')
@@ -88,8 +91,8 @@ export default function MappingPage() {
   const simRef = useRef<[number, number]>(BEOUMI_CENTER)
   const retriedRef = useRef(false)
 
-  // En mode live, l'agent voit ses producteurs assignés ; sinon (démo) tous ceux du mock
-  const myProducers = producers.filter((p) => !isLive || p.assignedAgentId === agentId)
+  // L'agent voit TOUS les producteurs de sa coopérative à mapper
+  const myProducers = producers.filter((p) => p.cooperativeId === coopId)
   const selectedProducer = producers.find((p) => p.id === selectedProducerId)
 
   // Keep refs in sync so the geolocation callback always reads the latest values

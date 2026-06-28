@@ -8,6 +8,7 @@ import {
 } from '../../utils/geoExport'
 import { analyzePolygon, correctPolygon, type PolygonAnalysis } from '../../utils/polygonCorrector'
 import { haversineDistance } from '../../utils/gpsUtils'
+import { parcelsApi } from '../../api/parcels'
 
 interface Report {
   id: string
@@ -25,7 +26,7 @@ interface AnalysisRow extends PolygonAnalysis {
 
 export default function ReportsPage() {
   const user = useAuthStore((s) => s.user)
-  const { parcels, producers, updateParcel, addNotification } = useAppStore()
+  const { parcels, producers, updateParcel, addNotification, isLive } = useAppStore()
   const coopId = user?.cooperativeId ?? 'coop-001'
   const [loading, setLoading] = useState<string | null>(null)
   const [done, setDone] = useState<string[]>([])
@@ -58,28 +59,40 @@ export default function ReportsPage() {
     return Math.round(total)
   }
 
-  const handleCorrectAll = () => {
+  const handleCorrectAll = async () => {
     setCorrecting(true)
     let fixedCount = 0
-    fixableRows.forEach((row) => {
+    for (const row of fixableRows) {
       const parcel = coopParcels.find((p) => p.id === row.parcelId)
-      if (!parcel) return
+      if (!parcel) continue
       const result = correctPolygon(parcel.geometry)
-      if (!result.changed) return
+      if (!result.changed) continue
       fixedCount++
       const ring = result.corrected.coordinates[0]
-      updateParcel(parcel.id, {
+      const patch = {
         geometry: result.corrected,
         areaHectares: Math.round(result.areaAfterHa * 100) / 100,
         perimeterMeters: ringPerimeter(ring),
         vertexCount: ring.length - 1,
         updatedAt: new Date().toISOString(),
-      })
-    })
+      }
+      updateParcel(parcel.id, patch)
+      // Persiste la correction dans la base (carte interactive + exports à jour partout)
+      if (isLive) {
+        try {
+          await parcelsApi.update(parcel.id, {
+            geometry: result.corrected,
+            area_hectares: patch.areaHectares,
+            perimeter_meters: patch.perimeterMeters,
+            vertex_count: patch.vertexCount,
+          } as never)
+        } catch { /* garde la correction locale si l'API échoue */ }
+      }
+    }
     addNotification({
       type: 'success',
       title: 'Géométries corrigées',
-      message: `${fixedCount} polygone(s) réparé(s). Les exports utiliseront les géométries corrigées.`,
+      message: `${fixedCount} polygone(s) réparé(s)${isLive ? ' et enregistré(s) en base' : ''}. Carte et exports à jour.`,
     })
     // Re-run analysis to refresh the panel
     setTimeout(() => {

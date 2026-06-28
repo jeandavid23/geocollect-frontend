@@ -31,10 +31,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Rapports', to: '/coop/reports', icon: <FileBarChart className="w-5 h-5" />, roles: ['cooperative'] },
   // Agent
   { label: 'Tableau de bord', to: '/agent', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['agent'] },
+  { label: 'Producteurs à mapper', to: '/agent/producers', icon: <Users className="w-5 h-5" />, roles: ['agent'] },
   { label: 'Nouveau Mapping', to: '/agent/mapping', icon: <Satellite className="w-5 h-5" />, roles: ['agent'] },
   { label: 'Mes Parcelles', to: '/agent/parcels', icon: <MapPin className="w-5 h-5" />, roles: ['agent'] },
-  // Shared
-  { label: 'Carte Interactive', to: '/map', icon: <Map className="w-5 h-5" />, roles: ['super_admin', 'cooperative', 'agent'] },
+  // Carte interactive : admin + coopérative uniquement
+  { label: 'Carte Interactive', to: '/map', icon: <Map className="w-5 h-5" />, roles: ['super_admin', 'cooperative'] },
+  // Mon compte : tous les rôles
   { label: 'Mon compte', to: '/account', icon: <UserCircle className="w-5 h-5" />, roles: ['super_admin', 'cooperative', 'agent'] },
 ]
 
