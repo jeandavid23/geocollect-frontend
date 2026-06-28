@@ -9,6 +9,10 @@
   NPM_FLAGS = "--include=dev"
   # L'URL de l'API est déjà figée dans .env.production (pas besoin de configurer ici)
 
+# Désactive le post-traitement Netlify (sert nos fichiers buildés tels quels)
+[build.processing]
+  skip_processing = true
+
 # SPA : toutes les routes renvoient vers index.html (React Router)
 [[redirects]]
   from = "/*"
