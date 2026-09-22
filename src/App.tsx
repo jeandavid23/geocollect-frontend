@@ -24,6 +24,7 @@ import ProducersPage from './pages/coop/ProducersPage'
 import CoopParcelsPage from './pages/coop/CoopParcelsPage'
 import CoopAgentsPage from './pages/coop/CoopAgentsPage'
 import ReportsPage from './pages/coop/ReportsPage'
+import DeforestationPage from './pages/coop/DeforestationPage'
 
 // Agent
 import AgentDashboardPage from './pages/agent/AgentDashboardPage'
@@ -102,6 +103,7 @@ export default function App() {
           <Route path="/coop/parcels" element={<CoopParcelsPage />} />
           <Route path="/coop/agents" element={<CoopAgentsPage />} />
           <Route path="/coop/reports" element={<ReportsPage />} />
+          <Route path="/coop/deforestation" element={<DeforestationPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/map" element={<MapPage />} />
         </Route>

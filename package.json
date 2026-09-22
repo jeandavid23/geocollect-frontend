@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@mapbox/shp-write": "^0.4.3",
+    "@tmcw/togeojson": "^7.1.2",
     "@turf/area": "^7.3.5",
     "@turf/boolean-clockwise": "^7.3.5",
     "@turf/helpers": "^7.3.5",
@@ -27,6 +28,7 @@
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.0",
     "recharts": "^3.9.0",
+    "shpjs": "^6.2.0",
     "xlsx": "^0.18.5",
     "zustand": "^5.0.14"
   },
@@ -35,6 +37,7 @@
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/shpjs": "^3.4.7",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.2",
