@@ -19,10 +19,18 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      // Try real API first
       await loginWithApi(username, password)
-    } catch {
-      // Fallback to mock data (offline / demo mode)
+    } catch (err) {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      // En production : jamais de connexion « démo » de secours (elle masquait les vraies erreurs)
+      if (!import.meta.env.DEV) {
+        setError(status === 429 ? 'Trop de tentatives. Patientez une minute avant de réessayer.'
+          : status ? 'Identifiant ou mot de passe incorrect.'
+          : 'Serveur injoignable. Vérifiez votre connexion Internet et réessayez.')
+        setLoading(false)
+        return
+      }
+      // Développement local uniquement : données de démonstration
       const found = MOCK_USERS[username]
       if (!found || found.password !== password) {
         setError('Identifiant ou mot de passe incorrect.')
@@ -128,8 +136,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 pt-6 border-t border-gray-100">
+          {/* Comptes de démonstration : développement local uniquement (jamais affichés en ligne) */}
+          {import.meta.env.DEV && <div className="mt-6 pt-6 border-t border-gray-100">
             <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">
               Comptes de démonstration
             </p>
@@ -149,7 +157,7 @@ export default function LoginPage() {
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
         </div>
 
         {/* Footer */}
