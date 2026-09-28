@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { useAppStore } from './store/appStore'
 import { useAuthStore } from './store/authStore'
 import ProtectedRoute from './components/auth/ProtectedRoute'
@@ -25,6 +25,8 @@ import CoopParcelsPage from './pages/coop/CoopParcelsPage'
 import CoopAgentsPage from './pages/coop/CoopAgentsPage'
 import ReportsPage from './pages/coop/ReportsPage'
 import DeforestationPage from './pages/coop/DeforestationPage'
+// Le registre embarque le moteur de formules : chargé seulement à l'ouverture de la page
+const RegistryPage = lazy(() => import('./pages/coop/RegistryPage'))
 
 // Agent
 import AgentDashboardPage from './pages/agent/AgentDashboardPage'
@@ -86,8 +88,6 @@ export default function App() {
           <Route path="/admin/agents" element={<AdminAgentsPage />} />
           <Route path="/admin/accounts" element={<AccountsPage />} />
           <Route path="/admin/logs" element={<LogsPage />} />
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/map" element={<MapPage />} />
         </Route>
 
         {/* Cooperative */}
@@ -104,8 +104,7 @@ export default function App() {
           <Route path="/coop/agents" element={<CoopAgentsPage />} />
           <Route path="/coop/reports" element={<ReportsPage />} />
           <Route path="/coop/deforestation" element={<DeforestationPage />} />
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/map" element={<MapPage />} />
+          <Route path="/coop/registry" element={<Suspense fallback={<p className="p-6 text-gray-500">Chargement du registre…</p>}><RegistryPage /></Suspense>} />
         </Route>
 
         {/* Agent */}
@@ -120,7 +119,19 @@ export default function App() {
           <Route path="/agent/mapping" element={<MappingPage />} />
           <Route path="/agent/parcels" element={<AgentParcelsPage />} />
           <Route path="/agent/producers" element={<AgentProducersPage />} />
+        </Route>
+
+        {/* Pages communes à tous les rôles (déclarées une seule fois : sinon la première
+            déclaration, réservée à l'admin, renvoyait coopérative et agent vers leur accueil) */}
+        <Route
+          element={
+            <ProtectedRoute roles={['super_admin', 'cooperative', 'agent']}>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/map" element={<MapPage />} />
         </Route>
 
         {/* Fallback */}

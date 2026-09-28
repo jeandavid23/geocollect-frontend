@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../../store/appStore'
+import LegacyParcelsLayer, { LEGACY_COLOR } from '../../components/map/LegacyParcelsLayer'
 import { useAuthStore } from '../../store/authStore'
 import type { GPSPoint, MappingStatus, GeoJSONPolygon } from '../../types'
 import {
@@ -63,7 +64,8 @@ function MapClickHandler({ onAdd }: { onAdd: (lat: number, lng: number) => void 
 
 export default function MappingPage() {
   const navigate = useNavigate()
-  const { producers, parcels, addParcel, addNotification, currentAgentId, isLive } = useAppStore()
+  const { producers, parcels, legacyParcels, addParcel, addNotification, currentAgentId, isLive } = useAppStore()
+  const [showLegacy, setShowLegacy] = useState(true)
   const authUser = useAuthStore((s) => s.user)
   const agentId = currentAgentId ?? 'agent-001'
   const coopId = authUser?.cooperativeId ?? 'coop-001'
@@ -622,6 +624,9 @@ export default function MappingPage() {
             <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" attribution="&copy; Google" />
             <MapClickHandler onAdd={handleMapClick} />
 
+            {/* Anciens polygones de la coopérative (violet) — non cliquables pour pouvoir tracer par-dessus */}
+            {showLegacy && <LegacyParcelsLayer parcels={legacyParcels} interactive={false} />}
+
             {/* Existing parcels (to avoid overlap) — shown in orange/red */}
             {existingParcels.map((parcel) => {
               const coords = parcel.geometry.coordinates[0].map(([lng, lat]) => [lat, lng] as [number, number])
@@ -682,6 +687,15 @@ export default function MappingPage() {
               </>
             )}
           </MapContainer>
+          {legacyParcels.length > 0 && (
+            <button
+              onClick={() => setShowLegacy((v) => !v)}
+              className="absolute top-3 right-3 z-[500] bg-white/95 shadow rounded-xl px-3 py-1.5 text-xs font-medium border border-gray-100"
+              style={{ color: LEGACY_COLOR }}
+            >
+              {showLegacy ? 'Masquer' : 'Afficher'} les anciens polygones ({legacyParcels.length})
+            </button>
+          )}
 
           {/* Recenter button */}
           <button

@@ -52,3 +52,15 @@ api.interceptors.response.use(
 )
 
 export default api
+
+// Charge TOUTES les pages d'une liste paginée DRF (sinon seules les 50 premières lignes arrivent).
+// On suit les numéros de page plutôt que l'URL `next`, qui peut revenir en http:// derrière le proxy Render.
+export async function fetchAll<T = unknown>(url: string, params: Record<string, string> = {}): Promise<{ data: T[] }> {
+  const out: T[] = []
+  for (let page = 1; ; page++) {
+    const { data } = await api.get(url, { params: { page_size: '1000', ...params, page: String(page) } })
+    if (Array.isArray(data)) return { data: data as T[] }
+    out.push(...((data?.results ?? []) as T[]))
+    if (!data?.next) return { data: out }
+  }
+}

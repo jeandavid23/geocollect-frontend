@@ -1,4 +1,4 @@
-import api from './client'
+import api, { fetchAll } from './client'
 
 export interface CreateCooperativePayload {
   name: string
@@ -25,7 +25,7 @@ export interface CreatedAccount {
 }
 
 export const cooperativesApi = {
-  list: () => api.get('/cooperatives/'),
+  list: () => fetchAll('/cooperatives/'),
   create: (data: CreateCooperativePayload) =>
     api.post<CreatedAccount>('/cooperatives/', data),
 }

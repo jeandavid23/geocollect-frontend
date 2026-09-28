@@ -1,12 +1,11 @@
-import { useState, useRef } from 'react'
-import { Search, Plus, MapPin, X, Save, FileSpreadsheet, Upload, Download, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { useState } from 'react'
+import { Search, Plus, MapPin, X, Save, FileSpreadsheet } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 import type { Producer } from '../../types'
 import { generateFieldIdBase, getNextProducerIndex } from '../../utils/fieldId'
-import { parseProducersFile, buildProducerTemplate, type ImportedProducerRow } from '../../utils/excelImport'
-import { downloadBlob } from '../../utils/geoExport'
+import ProducerImportModal from '../../components/producers/ProducerImportModal'
 import { producersApi } from '../../api/producers'
 import { mapProducer } from '../../api/mappers'
 
@@ -34,10 +33,6 @@ export default function ProducersPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [showImport, setShowImport] = useState(false)
-  const [importRows, setImportRows] = useState<ImportedProducerRow[]>([])
-  const [importFileName, setImportFileName] = useState('')
-  const [importing, setImporting] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const sections = [...new Set(coopProducers.map((p) => p.section))]
   const filtered = coopProducers.filter((p) => {
@@ -115,94 +110,6 @@ export default function ProducersPage() {
     setShowForm(false)
   }
 
-  // ─── Excel bulk import ──────────────────────────────────────────────────
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setImportFileName(file.name)
-    try {
-      const rows = await parseProducersFile(file)
-      setImportRows(rows)
-    } catch {
-      addNotification({ type: 'error', title: 'Erreur de lecture', message: 'Impossible de lire ce fichier Excel.' })
-    }
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
-  const validRows = importRows.filter((r) => r._errors.length === 0)
-
-  const handleConfirmImport = async () => {
-    setImporting(true)
-
-    // ─── Mode live : enregistre chaque producteur dans la BASE DE DONNÉES ────
-    if (isLive) {
-      let ok = 0
-      for (const r of validRows) {
-        try {
-          const { data } = await producersApi.create({
-            first_name: r.firstName, last_name: r.lastName,
-            phone: r.phone, national_id: r.nationalId,
-            gender: r.gender, birth_year: r.birthYear,
-            village: r.village, section: r.section.trim().toUpperCase(),
-            region: r.region || 'Bélier',
-          })
-          addProducer(mapProducer(data as Record<string, unknown>))
-          ok++
-        } catch { /* ligne ignorée */ }
-      }
-      addNotification({
-        type: ok > 0 ? 'success' : 'error',
-        title: 'Import terminé',
-        message: `${ok}/${validRows.length} producteur(s) enregistré(s) en base.`,
-      })
-      setImporting(false); setImportRows([]); setImportFileName(''); setShowImport(false)
-      return
-    }
-
-    // ─── Mode démo : local ───────────────────────────────────────────────────
-    const sectionCounters: Record<string, number> = {}
-    const newOnes: Producer[] = validRows.map((r) => {
-      const section = r.section.trim().toUpperCase()
-      if (sectionCounters[section] === undefined) {
-        sectionCounters[section] = getNextProducerIndex(producers, section)
-      } else {
-        sectionCounters[section] += 1
-      }
-      const fieldIdBase = generateFieldIdBase(section, sectionCounters[section])
-      return {
-        id: crypto.randomUUID(),
-        cooperativeId: coopId,
-        fieldIdBase,
-        firstName: r.firstName,
-        lastName: r.lastName,
-        fullName: `${r.lastName.toUpperCase()} ${r.firstName}`,
-        phone: r.phone || undefined,
-        village: r.village,
-        section,
-        region: r.region || 'Bélier',
-        country: "Côte d'Ivoire",
-        nationalId: r.nationalId || undefined,
-        gender: r.gender,
-        birthYear: r.birthYear,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        assignedAgentId: 'agent-001',
-        parcelCount: 0,
-        totalHectares: 0,
-      }
-    })
-    newOnes.forEach((p) => addProducer(p))
-    addNotification({
-      type: 'success',
-      title: 'Import terminé',
-      message: `${newOnes.length} producteur(s) enregistré(s) automatiquement.`,
-    })
-    setImporting(false)
-    setImportRows([])
-    setImportFileName('')
-    setShowImport(false)
-  }
-
   return (
     <div className="p-6 space-y-5">
       <Header title="Producteurs" subtitle={`${coopProducers.length} producteurs enregistrés`} />
@@ -270,7 +177,7 @@ export default function ProducersPage() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-800">{p.fullName}</p>
-                          <p className="text-xs text-gray-400">{p.gender === 'F' ? 'Femme' : 'Homme'} · né en {p.birthYear}</p>
+                          <p className="text-xs text-gray-400">{p.gender === 'F' ? 'Femme' : 'Homme'}{p.birthYear ? ` · né en ${p.birthYear}` : ''}</p>
                         </div>
                       </div>
                     </td>
@@ -304,108 +211,7 @@ export default function ProducersPage() {
         </div>
       </div>
 
-      {/* ─── Excel import modal ──────────────────────────────────────────── */}
-      {showImport && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
-              <div>
-                <h3 className="font-bold text-gray-900">Importer des producteurs (Excel)</h3>
-                <p className="text-xs text-gray-500">Enregistrement automatique depuis un classeur .xlsx / .csv</p>
-              </div>
-              <button onClick={() => { setShowImport(false); setImportRows([]); setImportFileName('') }} className="p-1.5 hover:bg-gray-100 rounded-lg">
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* Step 1: template + upload */}
-              <div className="bg-blue-50 rounded-xl p-4 text-sm text-blue-800">
-                <p className="font-semibold mb-1">📋 Format attendu</p>
-                <p className="text-xs">Colonnes : <span className="font-mono">Nom, Prénom, Téléphone, Genre, Année naissance, Village, Section, Région, CNI</span>. Le FIELD ID est généré automatiquement.</p>
-                <button
-                  onClick={() => downloadBlob(buildProducerTemplate(), 'modele_import_producteurs.xlsx')}
-                  className="mt-2 inline-flex items-center gap-1.5 text-blue-700 hover:text-blue-900 font-medium text-xs"
-                >
-                  <Download className="w-3.5 h-3.5" /> Télécharger le modèle Excel
-                </button>
-              </div>
-
-              <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileSelected} className="hidden" />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed border-gray-300 rounded-2xl py-8 flex flex-col items-center gap-2 text-gray-500 hover:border-primary-400 hover:bg-primary-50/30 transition"
-              >
-                <Upload className="w-8 h-8" />
-                <p className="text-sm font-medium">{importFileName || 'Cliquez pour choisir un fichier Excel'}</p>
-                <p className="text-xs text-gray-400">.xlsx, .xls ou .csv</p>
-              </button>
-
-              {/* Step 2: preview */}
-              {importRows.length > 0 && (
-                <>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="flex items-center gap-1.5 text-green-600">
-                      <CheckCircle2 className="w-4 h-4" /> {validRows.length} valide(s)
-                    </span>
-                    {importRows.length - validRows.length > 0 && (
-                      <span className="flex items-center gap-1.5 text-red-600">
-                        <AlertTriangle className="w-4 h-4" /> {importRows.length - validRows.length} en erreur (ignoré)
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="border border-gray-100 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
-                    <table className="w-full text-xs">
-                      <thead className="bg-gray-50 text-gray-500 sticky top-0">
-                        <tr>
-                          <th className="text-left px-3 py-2 font-medium">Nom</th>
-                          <th className="text-left px-3 py-2 font-medium">Prénom</th>
-                          <th className="text-left px-3 py-2 font-medium">Village</th>
-                          <th className="text-left px-3 py-2 font-medium">Section</th>
-                          <th className="text-left px-3 py-2 font-medium">Statut</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {importRows.map((r, i) => (
-                          <tr key={i} className={r._errors.length ? 'bg-red-50' : ''}>
-                            <td className="px-3 py-2">{r.lastName || '—'}</td>
-                            <td className="px-3 py-2">{r.firstName || '—'}</td>
-                            <td className="px-3 py-2">{r.village || '—'}</td>
-                            <td className="px-3 py-2">{r.section || '—'}</td>
-                            <td className="px-3 py-2">
-                              {r._errors.length === 0
-                                ? <span className="text-green-600">✓ OK</span>
-                                : <span className="text-red-600">{r._errors.join(', ')}</span>}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => { setShowImport(false); setImportRows([]); setImportFileName('') }}
-                  className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleConfirmImport}
-                  disabled={validRows.length === 0 || importing}
-                  className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl transition"
-                >
-                  <Save className="w-4 h-4" />
-                  {importing ? 'Import...' : `Enregistrer ${validRows.length} producteur(s)`}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {showImport && <ProducerImportModal cooperativeId={coopId} onClose={() => setShowImport(false)} />}
 
       {/* ─── New producer form modal ─────────────────────────────────────── */}
       {showForm && (
@@ -580,6 +386,19 @@ export default function ProducersPage() {
                 </div>
               ))}
             </div>
+            {selected.extraData && Object.keys(selected.extraData).length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500 font-medium uppercase">Données du fichier Excel</p>
+                <div className="border border-gray-100 rounded-xl divide-y divide-gray-50">
+                  {Object.entries(selected.extraData).map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-3 px-3 py-1.5 text-xs">
+                      <span className="text-gray-500">{k}</span>
+                      <span className="font-medium text-gray-800 text-right break-all">{String(v)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-primary-50 rounded-xl p-3 text-center">
                 <p className="text-2xl font-black text-primary-700">{parcels.filter((p) => p.producerId === selected.id).length}</p>

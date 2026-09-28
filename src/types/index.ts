@@ -96,6 +96,21 @@ export interface Producer {
   assignedAgentId?: string
   parcelCount?: number
   totalHectares?: number
+  // Toutes les colonnes du fichier Excel importé, sous leur entête d'origine
+  extraData?: Record<string, unknown>
+}
+
+// ─── Ancien polygone (importé : KML, GeoPackage, Shapefile, GeoJSON) ────────
+
+export interface LegacyParcel {
+  id: string
+  cooperativeId: string
+  name: string
+  geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon
+  properties: Record<string, unknown>
+  areaHectares: number | null
+  sourceFile: string
+  createdAt: string
 }
 
 // ─── Parcelle ────────────────────────────────────────────────────────────────

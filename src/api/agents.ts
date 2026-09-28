@@ -1,4 +1,4 @@
-import api from './client'
+import api, { fetchAll } from './client'
 
 export interface CreateAgentPayload {
   full_name: string
@@ -20,7 +20,7 @@ export interface CreatedAgentAccount {
 }
 
 export const agentsApi = {
-  list: () => api.get('/agents/'),
+  list: () => fetchAll('/agents/'),
   create: (data: CreateAgentPayload) =>
     api.post<CreatedAgentAccount>('/agents/', data),
 }

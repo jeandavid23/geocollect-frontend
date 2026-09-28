@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
-  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine,
+  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   // Cooperative
   { label: 'Tableau de bord', to: '/coop', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['cooperative'] },
   { label: 'Producteurs', to: '/coop/producers', icon: <Users className="w-5 h-5" />, roles: ['cooperative'] },
+  { label: 'Registre', to: '/coop/registry', icon: <BookOpen className="w-5 h-5" />, roles: ['cooperative'] },
   { label: 'Parcelles', to: '/coop/parcels', icon: <MapPin className="w-5 h-5" />, roles: ['cooperative'] },
   { label: 'Agents', to: '/coop/agents', icon: <UserCog className="w-5 h-5" />, roles: ['cooperative'] },
   { label: 'Rapports', to: '/coop/reports', icon: <FileBarChart className="w-5 h-5" />, roles: ['cooperative'] },
@@ -36,8 +37,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Producteurs à mapper', to: '/agent/producers', icon: <Users className="w-5 h-5" />, roles: ['agent'] },
   { label: 'Nouveau Mapping', to: '/agent/mapping', icon: <Satellite className="w-5 h-5" />, roles: ['agent'] },
   { label: 'Mes Parcelles', to: '/agent/parcels', icon: <MapPin className="w-5 h-5" />, roles: ['agent'] },
-  // Carte interactive : admin + coopérative uniquement
-  { label: 'Carte Interactive', to: '/map', icon: <Map className="w-5 h-5" />, roles: ['super_admin', 'cooperative'] },
+  // Carte interactive : tous les rôles (l'agent y voit toutes les parcelles et anciens polygones de sa coopérative)
+  { label: 'Carte Interactive', to: '/map', icon: <Map className="w-5 h-5" />, roles: ['super_admin', 'cooperative', 'agent'] },
   // Mon compte : tous les rôles
   { label: 'Mon compte', to: '/account', icon: <UserCircle className="w-5 h-5" />, roles: ['super_admin', 'cooperative', 'agent'] },
 ]

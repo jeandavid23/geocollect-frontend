@@ -1,5 +1,5 @@
 // Convertit les objets de l'API Django (snake_case) vers les types frontend (camelCase)
-import type { Cooperative, Agent, Producer, Parcel } from '../types'
+import type { Cooperative, Agent, Producer, Parcel, LegacyParcel } from '../types'
 
 type Any = Record<string, unknown>
 const s = (v: unknown, d = '') => (v == null ? d : String(v))
@@ -69,6 +69,20 @@ export function mapProducer(p: Any): Producer {
     assignedAgentId: p.assigned_agent ? s(p.assigned_agent) : undefined,
     parcelCount: n(p.parcel_count),
     totalHectares: n(p.total_hectares),
+    extraData: (p.extra_data && typeof p.extra_data === 'object') ? p.extra_data as Record<string, unknown> : undefined,
+  }
+}
+
+export function mapLegacyParcel(p: Any): LegacyParcel {
+  return {
+    id: s(p.id),
+    cooperativeId: s(p.cooperative),
+    name: s(p.name),
+    geometry: p.geometry as LegacyParcel['geometry'],
+    properties: (p.properties as Record<string, unknown>) ?? {},
+    areaHectares: p.area_hectares != null ? n(p.area_hectares) : null,
+    sourceFile: s(p.source_file),
+    createdAt: s(p.created_at),
   }
 }
 

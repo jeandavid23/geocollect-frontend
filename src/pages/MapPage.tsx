@@ -1,10 +1,14 @@
 import { useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Polygon, Popup, LayersControl, useMap } from 'react-leaflet'
-import { Search, Filter, X } from 'lucide-react'
+import { Search, Filter, X, Layers, Eye, EyeOff } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import Header from '../components/layout/Header'
 import { useAppStore } from '../store/appStore'
+import { useAuthStore } from '../store/authStore'
 import type { Parcel } from '../types'
+import LegacyParcelsLayer, { MapLegend, LEGACY_COLOR } from '../components/map/LegacyParcelsLayer'
+import LegacyImportModal from '../components/map/LegacyImportModal'
+import FitToData from '../components/map/FitToData'
 
 const { BaseLayer } = LayersControl
 
@@ -21,7 +25,18 @@ function MapAutoCenter({ lat, lng }: { lat: number; lng: number }) {
 }
 
 export default function MapPage() {
-  const { parcels, producers } = useAppStore()
+  const { parcels, producers, legacyParcels, cooperatives } = useAppStore()
+  const role = useAuthStore((s) => s.user?.role)
+  const isAdmin = role === 'super_admin'
+  // Super admin : toutes les coopératives, ou une seule
+  const [filterCoop, setFilterCoop] = useState('all')
+  const [showLegacy, setShowLegacy] = useState(true)
+  const [showLegacyImport, setShowLegacyImport] = useState(false)
+  const coopName = (id: string) => cooperatives.find((c) => c.id === id)?.name
+  const legacy = useMemo(
+    () => legacyParcels.filter((p) => filterCoop === 'all' || p.cooperativeId === filterCoop),
+    [legacyParcels, filterCoop],
+  )
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null)
@@ -30,6 +45,8 @@ export default function MapPage() {
   const filtered = useMemo(() => {
     return parcels.filter((p) => {
       const matchStatus = filterStatus === 'all' || p.eudrStatus === filterStatus
+      const matchCoop = filterCoop === 'all' || p.cooperativeId === filterCoop
+      if (!matchCoop) return false
       const matchSearch =
         !search ||
         p.fieldId.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,7 +55,7 @@ export default function MapPage() {
         producers.find((pr) => pr.id === p.producerId)?.fullName.toLowerCase().includes(search.toLowerCase())
       return matchStatus && matchSearch
     })
-  }, [parcels, producers, search, filterStatus])
+  }, [parcels, producers, search, filterStatus, filterCoop])
 
   const centerLat = 7.67
   const centerLng = -5.68
@@ -90,17 +107,45 @@ export default function MapPage() {
           ))}
         </div>
 
+        {isAdmin && (
+          <select value={filterCoop} onChange={(e) => setFilterCoop(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none">
+            <option value="all">Toutes les coopératives</option>
+            {cooperatives.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
+
+        <button
+          onClick={() => setShowLegacy((v) => !v)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border border-gray-200 hover:bg-gray-50"
+          style={{ color: LEGACY_COLOR }}
+        >
+          {showLegacy ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          Anciens polygones ({legacy.length})
+        </button>
+        {(role === 'cooperative' || (isAdmin && filterCoop !== 'all')) && (
+          <button
+            onClick={() => setShowLegacyImport(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white hover:opacity-90"
+            style={{ background: LEGACY_COLOR }}
+          >
+            <Layers className="w-3.5 h-3.5" /> Importer
+          </button>
+        )}
+
         <span className="text-xs text-gray-400 ml-auto">{filtered.length} parcelle(s)</span>
       </div>
 
       {/* Map */}
       <div className="flex-1 px-6 pb-6">
-        <div className="h-full rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+        <div className="relative h-full rounded-2xl overflow-hidden shadow-sm border border-gray-100">
           <MapContainer
             center={[centerLat, centerLng]}
             zoom={12}
             className="h-full w-full"
           >
+            <FitToData geometries={[...filtered.map((p) => p.geometry), ...legacy.map((p) => p.geometry)]} />
+            {showLegacy && <LegacyParcelsLayer parcels={legacy} coopName={isAdmin ? coopName : undefined} />}
             {centerOn && <MapAutoCenter lat={centerOn.lat} lng={centerOn.lng} />}
 
             <LayersControl position="topright">
@@ -177,8 +222,15 @@ export default function MapPage() {
               )
             })}
           </MapContainer>
+          <MapLegend legacyCount={showLegacy ? legacy.length : 0} mappedCount={filtered.length} />
         </div>
       </div>
+      {showLegacyImport && (
+        <LegacyImportModal
+          onClose={() => setShowLegacyImport(false)}
+          cooperativeId={isAdmin ? filterCoop : undefined}
+        />
+      )}
 
       {/* Selected parcel panel */}
       {selectedParcel && (

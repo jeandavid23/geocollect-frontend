@@ -1,4 +1,4 @@
-import api from './client'
+import api, { fetchAll } from './client'
 import type { Parcel } from '../types'
 
 interface PaginatedResponse<T> {
@@ -11,6 +11,9 @@ interface PaginatedResponse<T> {
 export const parcelsApi = {
   list: (params?: Record<string, string>) =>
     api.get<PaginatedResponse<Parcel>>('/parcels/', { params }),
+
+  // Toutes les parcelles visibles (toutes les pages)
+  listAll: () => fetchAll('/parcels/'),
 
   create: (data: Partial<Parcel>) =>
     api.post<Parcel>('/parcels/', data),

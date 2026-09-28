@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Polygon, Popup, LayersControl, useMap } from 'react-leaflet'
-import { Search, Filter, X, MapPin } from 'lucide-react'
+import { Search, Filter, X, MapPin, Layers, Eye, EyeOff } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 import type { Parcel } from '../../types'
+import LegacyParcelsLayer, { MapLegend, LEGACY_COLOR } from '../../components/map/LegacyParcelsLayer'
+import LegacyImportModal from '../../components/map/LegacyImportModal'
+import FitToData from '../../components/map/FitToData'
 
 const { BaseLayer } = LayersControl
 
@@ -23,8 +26,11 @@ function MapAutoCenter({ lat, lng }: { lat: number; lng: number }) {
 
 export default function CoopParcelsPage() {
   const user = useAuthStore((s) => s.user)
-  const { parcels, producers, agents } = useAppStore()
+  const { parcels, producers, agents, legacyParcels } = useAppStore()
   const coopId = user?.cooperativeId ?? 'coop-001'
+  const [showLegacyImport, setShowLegacyImport] = useState(false)
+  const [showLegacy, setShowLegacy] = useState(true)
+  const coopLegacy = useMemo(() => legacyParcels.filter((p) => p.cooperativeId === coopId), [legacyParcels, coopId])
 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -58,7 +64,27 @@ export default function CoopParcelsPage() {
 
   return (
     <div className="p-6 space-y-5">
-      <Header title="Parcelles de la coopérative" subtitle={`${coopParcels.length} parcelles cartographiées par ${coopAgents.length} agents`} />
+      <Header title="Parcelles de la coopérative" subtitle={`${coopParcels.length} parcelles cartographiées par ${coopAgents.length} agents · ${coopLegacy.length} anciens polygones`} />
+
+      {/* Anciens polygones */}
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={() => setShowLegacyImport(true)}
+          className="flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition hover:opacity-90"
+          style={{ background: LEGACY_COLOR }}
+        >
+          <Layers className="w-4 h-4" /> Importer les anciens polygones (KML, GPKG, SHP)
+        </button>
+        {coopLegacy.length > 0 && (
+          <button
+            onClick={() => setShowLegacy((v) => !v)}
+            className="flex items-center gap-2 border border-gray-200 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50"
+          >
+            {showLegacy ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {showLegacy ? 'Masquer' : 'Afficher'} les anciens polygones
+          </button>
+        )}
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
@@ -95,8 +121,10 @@ export default function CoopParcelsPage() {
       </div>
 
       {/* Map */}
-      <div className="h-[420px] rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+      <div className="relative h-[480px] rounded-2xl overflow-hidden shadow-sm border border-gray-100">
         <MapContainer center={[7.67, -5.68]} zoom={13} className="h-full w-full">
+          <FitToData geometries={[...coopParcels.map((p) => p.geometry), ...coopLegacy.map((p) => p.geometry)]} />
+          {showLegacy && <LegacyParcelsLayer parcels={coopLegacy} />}
           {centerOn && <MapAutoCenter lat={centerOn.lat} lng={centerOn.lng} />}
           <LayersControl position="topright">
             <BaseLayer checked name="Satellite Google">
@@ -145,7 +173,9 @@ export default function CoopParcelsPage() {
             )
           })}
         </MapContainer>
+        <MapLegend legacyCount={showLegacy ? coopLegacy.length : 0} mappedCount={filtered.length} />
       </div>
+      {showLegacyImport && <LegacyImportModal onClose={() => setShowLegacyImport(false)} />}
 
       {/* Table with agent info */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

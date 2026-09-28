@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type {
   Producer,
   Parcel,
+  LegacyParcel,
   Cooperative,
   Agent,
   MappingSession,
@@ -14,7 +15,8 @@ import { cooperativesApi } from '../api/cooperatives'
 import { agentsApi } from '../api/agents'
 import { producersApi } from '../api/producers'
 import { parcelsApi } from '../api/parcels'
-import { mapCooperative, mapAgent, mapProducer, mapParcel, unwrap } from '../api/mappers'
+import { legacyApi } from '../api/legacy'
+import { mapCooperative, mapAgent, mapProducer, mapParcel, mapLegacyParcel, unwrap } from '../api/mappers'
 
 interface AppStore {
   // Data
@@ -22,6 +24,9 @@ interface AppStore {
   producers: Producer[]
   parcels: Parcel[]
   agents: Agent[]
+  // Anciens polygones importés par les coopératives (visibles coop + agents + admin)
+  legacyParcels: LegacyParcel[]
+  loadLegacyParcels: () => Promise<void>
 
   // Live (backend) data state
   isLive: boolean
@@ -67,6 +72,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
   producers: MOCK_PRODUCERS,
   parcels: MOCK_PARCELS,
   agents: MOCK_AGENTS,
+  legacyParcels: [],
+
+  loadLegacyParcels: async () => {
+    try {
+      const { data } = await legacyApi.list()
+      set({ legacyParcels: unwrap(data).map(mapLegacyParcel) })
+    } catch {
+      /* hors ligne ou mode démo : on garde la liste actuelle */
+    }
+  },
 
   isLive: false,
   currentAgentId: null,
@@ -74,11 +89,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Charge toutes les données depuis la base (API Django) selon le rôle de l'utilisateur
   loadFromApi: async (userId) => {
     try {
-      const [coopsRes, agentsRes, prodsRes, parcelsRes] = await Promise.allSettled([
+      const [coopsRes, agentsRes, prodsRes, parcelsRes, legacyRes] = await Promise.allSettled([
         cooperativesApi.list(),
         agentsApi.list(),
         producersApi.list(),
-        parcelsApi.list(),
+        parcelsApi.listAll(),
+        legacyApi.list(),
       ])
 
       const next: Partial<AppStore> = { isLive: true }
@@ -89,6 +105,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
         next.producers = unwrap(prodsRes.value.data).map(mapProducer)
       if (parcelsRes.status === 'fulfilled')
         next.parcels = unwrap(parcelsRes.value.data).map(mapParcel)
+      if (legacyRes.status === 'fulfilled')
+        next.legacyParcels = unwrap(legacyRes.value.data).map(mapLegacyParcel)
       if (agentsRes.status === 'fulfilled') {
         const agents = unwrap(agentsRes.value.data).map(mapAgent)
         next.agents = agents
