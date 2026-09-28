@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
-  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen,
+  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
@@ -32,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Agents', to: '/coop/agents', icon: <UserCog className="w-5 h-5" />, roles: ['cooperative'] },
   { label: 'Rapports', to: '/coop/reports', icon: <FileBarChart className="w-5 h-5" />, roles: ['cooperative'] },
   { label: 'Analyse déforestation', to: '/coop/deforestation', icon: <TreePine className="w-5 h-5" />, roles: ['cooperative'] },
+  { label: 'Polygon Validator', to: '/coop/validator', icon: <ShieldCheck className="w-5 h-5" />, roles: ['cooperative'] },
   // Agent
   { label: 'Tableau de bord', to: '/agent', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['agent'] },
   { label: 'Producteurs à mapper', to: '/agent/producers', icon: <Users className="w-5 h-5" />, roles: ['agent'] },

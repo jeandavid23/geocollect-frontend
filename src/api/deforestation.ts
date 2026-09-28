@@ -1,38 +1,48 @@
 import api from './client'
 
-export type RiskLevel = 'high' | 'medium' | 'low' | 'unknown'
+// Statuts et niveaux de risque du plugin « Deforestation check »
+export type DefStatus = 'Conforme' | 'A risque' | 'Non conforme' | 'Indetermine'
+export type RiskLevel = 'Faible' | 'Modere' | 'Eleve' | 'Tres eleve'
+export type Standard = 'EUDR' | 'RA' | 'EUDR+RA'
 
 export interface DeforestationResult {
-  name: string
-  geometry_type: string
+  status: DefStatus
+  risk_level?: RiskLevel
   area_ha?: number
-  forest_pct?: number
-  loss_recent_pct?: number   // perte forestière après le seuil EUDR (2020)
-  loss_total_pct?: number    // perte totale 2001 -> 2023
-  loss_recent_ha?: number
-  alert_area_ha?: number | null  // alertes GFW/RADD récentes
-  risk: RiskLevel
-  risk_label: string
+  defor_ha?: number          // perte forestière APRÈS la date de coupure
+  defor_pct?: number
+  forest2000_pct?: number    // part de la parcelle boisée en 2000 (couvert >= seuil FAO)
+  forest2020_pct?: number    // part encore boisée au 31/12 de l'année de coupure
+  cover2020?: 'Foret' | 'Agriculture'
+  years?: string             // années de perte détectées
+  loss_by_year?: Record<string, number>
+  pixels?: number
+  method?: 'pixels' | 'pixels_touches' | 'centroide'
   error?: string
+}
+
+export interface DeforestationOptions {
+  standard: Standard
+  tolerance_ha: number
+  alert_pct: number
+  treecover_min: number
 }
 
 export interface DeforestationResponse {
   count: number
+  standard: Standard
   cutoff_year: number
-  summary: Record<RiskLevel, number>
+  source: string
   results: DeforestationResult[]
 }
 
 export interface AnalyzeFeature {
-  name: string
-  area_ha: number | null
   geometry: GeoJSON.Geometry
+  area_ha: number | null
 }
 
 export const deforestationApi = {
-  analyze: (features: AnalyzeFeature[], cutoffYear = 2020) =>
-    api.post<DeforestationResponse>('/parcels/deforestation/analyze/', {
-      features,
-      cutoff_year: cutoffYear,
-    }),
+  // 1000 parcelles max par appel : la page découpe les gros fichiers en lots
+  analyze: (features: AnalyzeFeature[], options: DeforestationOptions) =>
+    api.post<DeforestationResponse>('/parcels/deforestation/analyze/', { features, ...options }, { timeout: 180000 }),
 }

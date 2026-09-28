@@ -25,6 +25,7 @@ import CoopParcelsPage from './pages/coop/CoopParcelsPage'
 import CoopAgentsPage from './pages/coop/CoopAgentsPage'
 import ReportsPage from './pages/coop/ReportsPage'
 import DeforestationPage from './pages/coop/DeforestationPage'
+import ValidatorPage from './pages/coop/ValidatorPage'
 // Le registre embarque le moteur de formules : chargé seulement à l'ouverture de la page
 const RegistryPage = lazy(() => import('./pages/coop/RegistryPage'))
 
@@ -104,6 +105,7 @@ export default function App() {
           <Route path="/coop/agents" element={<CoopAgentsPage />} />
           <Route path="/coop/reports" element={<ReportsPage />} />
           <Route path="/coop/deforestation" element={<DeforestationPage />} />
+          <Route path="/coop/validator" element={<ValidatorPage />} />
           <Route path="/coop/registry" element={<Suspense fallback={<p className="p-6 text-gray-500">Chargement du registre…</p>}><RegistryPage /></Suspense>} />
         </Route>
 
