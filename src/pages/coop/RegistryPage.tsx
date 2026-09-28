@@ -106,7 +106,8 @@ export default function RegistryPage() {
       }
     }
     if (!list.length) list = [{ key: newKey(), name: 'Registre', data: [], colWidths: [] }]
-    markSaved(list.filter((s) => s.id))
+    // la feuille vide proposée par défaut n'est enregistrée qu'à la première saisie
+    markSaved(list)
     history.current = { past: [], future: [] }
     setSheets(list)
     setActive(0)
