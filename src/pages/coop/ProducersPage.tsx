@@ -54,6 +54,33 @@ export default function ProducersPage() {
     return matchSearch && matchSection
   })
 
+  // Pagination : 100 lignes par page (des milliers de producteurs après un import Excel)
+  const PAGE = 100
+  const [page, setPage] = useState(0)
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE))
+  const currentPage = Math.min(page, pageCount - 1)
+  const pageRows = filtered.slice(currentPage * PAGE, (currentPage + 1) * PAGE)
+  // Parcelles par producteur, calculées une fois (au lieu d'un filtre par ligne)
+  const parcelsByProducer = useMemo(() => {
+    const m = new Map<string, { n: number; ha: number }>()
+    for (const parc of parcels) {
+      const v = m.get(parc.producerId) ?? { n: 0, ha: 0 }
+      v.n += 1; v.ha += parc.areaHectares
+      m.set(parc.producerId, v)
+    }
+    return m
+  }, [parcels])
+
+  const pager = (
+    <div className="flex items-center gap-2">
+      <button disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}
+        className="px-2.5 py-1 rounded-lg border border-gray-200 disabled:opacity-40">‹ Précédent</button>
+      <span>Page {currentPage + 1} / {pageCount}</span>
+      <button disabled={currentPage >= pageCount - 1} onClick={() => setPage(currentPage + 1)}
+        className="px-2.5 py-1 rounded-lg border border-gray-200 disabled:opacity-40">Suivant ›</button>
+    </div>
+  )
+
   const setField = (key: keyof typeof form, value: string) =>
     setForm((f) => ({ ...f, [key]: value }))
 
@@ -130,14 +157,14 @@ export default function ProducersPage() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(0) }}
             placeholder="Rechercher producteur, village, FIELD ID..."
             className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
         <select
           value={filterSection}
-          onChange={(e) => setFilterSection(e.target.value)}
+          onChange={(e) => { setFilterSection(e.target.value); setPage(0) }}
           className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none"
         >
           <option value="all">Toutes les sections</option>
@@ -176,27 +203,28 @@ export default function ProducersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((p) => (
+                {pageRows.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelected(p)}>
                     <td className="px-4 py-2 font-mono text-xs text-gray-700 whitespace-nowrap">{p.fieldIdBase}</td>
                     {excelHeaders.map((h) => {
                       const v = p.extraData?.[h]
                       return <td key={h} className={`px-4 py-2 whitespace-nowrap ${typeof v === 'number' ? 'text-right' : ''} text-gray-700`}>{v === undefined || v === null ? '' : String(v)}</td>
                     })}
-                    <td className="px-4 py-2 text-center">{parcels.filter((parc) => parc.producerId === p.id).length}</td>
+                    <td className="px-4 py-2 text-center">{parcelsByProducer.get(p.id)?.n ?? 0}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="px-5 py-3 border-t border-gray-50 text-xs text-gray-400">
-            {filtered.length} sur {coopProducers.length} producteurs · {excelHeaders.length} colonne(s) du fichier
+          <div className="px-5 py-3 border-t border-gray-50 text-xs text-gray-500 flex flex-wrap items-center justify-between gap-2">
+            <span>{filtered.length} sur {coopProducers.length} producteurs · {excelHeaders.length} colonne(s) du fichier</span>
+            {pageCount > 1 && pager}
           </div>
         </div>
       )}
 
       {/* Table */}
-      <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${showExcel ? 'hidden' : ''}`}>
+      {!showExcel && <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -211,9 +239,9 @@ export default function ProducersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filtered.map((p) => {
-                const prodParcels = parcels.filter((parc) => parc.producerId === p.id)
-                const totalHa = prodParcels.reduce((s, parc) => s + parc.areaHectares, 0)
+              {pageRows.map((p) => {
+                const stat = parcelsByProducer.get(p.id)
+                const totalHa = stat?.ha ?? 0
                 return (
                   <tr key={p.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => setSelected(p)}>
                     <td className="px-5 py-3">
@@ -234,7 +262,7 @@ export default function ProducersPage() {
                     <td className="px-5 py-3">
                       <span className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-lg font-medium">{p.section}</span>
                     </td>
-                    <td className="px-5 py-3 text-sm font-medium text-gray-800">{prodParcels.length}</td>
+                    <td className="px-5 py-3 text-sm font-medium text-gray-800">{stat?.n ?? 0}</td>
                     <td className="px-5 py-3 text-sm font-medium text-gray-800">{totalHa.toFixed(2)} ha</td>
                     <td className="px-5 py-3">
                       <button className="text-xs text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1">
@@ -254,10 +282,11 @@ export default function ProducersPage() {
             </tbody>
           </table>
         </div>
-        <div className="px-5 py-3 border-t border-gray-50 text-xs text-gray-400">
-          {filtered.length} sur {coopProducers.length} producteurs
+        <div className="px-5 py-3 border-t border-gray-50 text-xs text-gray-500 flex flex-wrap items-center justify-between gap-2">
+          <span>{filtered.length} sur {coopProducers.length} producteurs</span>
+          {pageCount > 1 && pager}
         </div>
-      </div>
+      </div>}
 
       {showImport && <ProducerImportModal cooperativeId={coopId} onClose={() => setShowImport(false)} />}
 

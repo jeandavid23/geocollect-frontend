@@ -9,6 +9,7 @@ import { producersApi } from '../../api/producers'
 import { registryApi } from '../../api/registry'
 import { mapProducer, firstText } from '../../api/mappers'
 import { useAppStore } from '../../store/appStore'
+import { withRetry, apiErrorMessage } from '../../utils/retry'
 import { generateFieldIdBase, getNextProducerIndex } from '../../utils/fieldId'
 import type { Producer } from '../../types'
 
@@ -17,10 +18,10 @@ interface Props {
   onClose: () => void
 }
 
-const CHUNK = 500
+const CHUNK = 1000
 
 export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
-  const { producers, addProducer, addNotification, isLive } = useAppStore()
+  const { producers, addProducers, addNotification, isLive } = useAppStore()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [wb, setWb] = useState<ParsedWorkbook | null>(null)
@@ -35,7 +36,9 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
   const [error, setError] = useState('')
   const [rejected, setRejected] = useState<{ excelRow: number; message: string }[]>([])
   const [done, setDone] = useState(false)
-  const [excluded, setExcluded] = useState<Set<number>>(new Set()) // lignes Excel à ne pas enregistrer (ex. « Total ») // import déjà envoyé : évite un doublon en recliquant
+  const [excluded, setExcluded] = useState<Set<number>>(new Set()) // lignes Excel à ne pas enregistrer (ex. « Total »)
+  const [savedRows, setSavedRows] = useState<Set<number>>(new Set()) // lignes déjà enregistrées (reprise sans doublon)
+  const [registrySaved, setRegistrySaved] = useState(false) // import déjà envoyé : évite un doublon en recliquant
 
   const sheet = wb?.sheets[sheetIdx]
   const headers = useMemo(() => (sheet ? headersOf(sheet.values, headerRow) : []), [sheet, headerRow])
@@ -53,7 +56,7 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
     const file = e.target.files?.[0]
     if (inputRef.current) inputRef.current.value = ''
     if (!file) return
-    setError(''); setRejected([]); setDone(false)
+    setError(''); setRejected([]); setDone(false); setSavedRows(new Set()); setRegistrySaved(false)
     try {
       const parsed = await readWorkbook(file)
       const withData = parsed.sheets.map((s, i) => [i, s.values.length] as const).filter(([, n]) => n > 1)
@@ -93,69 +96,97 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
     .filter((s) => s.data.length)
     .map((s, i) => ({ name: s.name.slice(0, 100), data: s.data, col_widths: s.colWidths, position: i }))
 
+  // Lignes restant à envoyer (après un échec partiel, seules celles-ci sont renvoyées : pas de doublon)
+  const pendingRows = validRows.filter((r) => !savedRows.has(r.excelRow))
+
   const doImport = async () => {
-    if (!wb || !validRows.length) return
+    if (!wb || !pendingRows.length) return
     setBusy(true); setError(''); setRejected([])
 
     // ─── Mode démo : enregistrement local ────────────────────────────────
     if (!isLive) {
       const counters: Record<string, number> = {}
-      for (const r of validRows) {
+      const locals: Producer[] = pendingRows.map((r) => {
         const p = r.payload
         const section = p.section || 'PROD'
         counters[section] = counters[section] === undefined ? getNextProducerIndex(producers, section) : counters[section] + 1
-        const local: Producer = {
+        return {
           id: crypto.randomUUID(), cooperativeId, fieldIdBase: generateFieldIdBase(section, counters[section]),
           firstName: p.first_name, lastName: p.last_name, fullName: `${p.last_name ?? ''} ${p.first_name ?? ''}`.trim() || firstText(p.extra_data),
           phone: p.phone, village: p.village ?? '', section, region: p.region ?? '', country: "Côte d'Ivoire",
           nationalId: p.national_id, gender: p.gender, birthYear: p.birth_year, isActive: true,
           createdAt: new Date().toISOString(), parcelCount: 0, totalHectares: 0, extraData: p.extra_data,
         }
-        addProducer(local)
-      }
-      addNotification({ type: 'success', title: 'Import terminé (mode démo)', message: `${validRows.length} producteur(s) ajouté(s) localement.` })
+      })
+      addProducers(locals)
+      addNotification({ type: 'success', title: 'Import terminé (mode démo)', message: `${locals.length} producteur(s) ajouté(s) localement.` })
       setBusy(false)
       onClose()
       return
     }
 
-    // ─── Mode connecté : envoi par lots ──────────────────────────────────
+    // ─── Mode connecté : lots de 1000, 3 tentatives par lot, on continue si un lot échoue ──
     let created = 0
+    const saved = new Set(savedRows)
     const errs: { excelRow: number; message: string }[] = []
-    try {
-      for (let start = 0; start < validRows.length; start += CHUNK) {
-        const chunk = validRows.slice(start, start + CHUNK)
-        setProgress(`Enregistrement des producteurs… ${Math.min(start + CHUNK, validRows.length)}/${validRows.length}`)
-        const { data } = await producersApi.bulk(chunk.map((r) => r.payload))
-        data.created.forEach((p) => addProducer(mapProducer(p)))
+    let lastError = ''
+    const total = pendingRows.length
+    for (let start = 0; start < total; start += CHUNK) {
+      const chunk = pendingRows.slice(start, start + CHUNK)
+      const label = `Enregistrement des producteurs… ${Math.min(start + CHUNK, total)}/${total}`
+      setProgress(label)
+      try {
+        const { data } = await withRetry(
+          () => producersApi.bulk(chunk.map((r) => r.payload)),
+          3,
+          (n) => setProgress(`${label} (nouvelle tentative ${n}/2)`),
+        )
+        if (!Array.isArray(data.created)) {
+          // refus global du lot (ex. coopérative manquante) : inutile d'envoyer les suivants
+          lastError = (data as { detail?: string }).detail ?? 'Lot refusé par le serveur.'
+          break
+        }
+        addProducers(data.created.map((p) => mapProducer(p)))
         created += data.created.length
+        const rejectedIdx = new Set(data.errors.map((e) => e.index))
+        chunk.forEach((r, i) => { if (!rejectedIdx.has(i)) saved.add(r.excelRow) })
         for (const e of data.errors) {
           const msg = Object.entries(e.errors).map(([k, v]) => `${k} : ${Array.isArray(v) ? v.join(', ') : String(v)}`).join(' · ')
           errs.push({ excelRow: chunk[e.index]?.excelRow ?? 0, message: msg })
+          saved.add(chunk[e.index]?.excelRow ?? -1) // ligne refusée : inutile de la renvoyer telle quelle
         }
+      } catch (err) {
+        lastError = apiErrorMessage(err)
       }
-
-      if (saveRegistry) {
-        setProgress('Enregistrement du classeur dans le registre…')
-        await registryApi.importWorkbook(sheetsForRegistry(), wb.fileName, registryMode)
-      }
-
-      addNotification({
-        type: created ? 'success' : 'error',
-        title: 'Import Excel terminé',
-        message: `${created} producteur(s) enregistré(s)${errs.length ? `, ${errs.length} ligne(s) rejetée(s)` : ''}${saveRegistry ? ' · registre mis à jour' : ''}.`,
-      })
-      setDone(true)
-      if (errs.length) setRejected(errs)
-      else onClose()
-    } catch (err) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-      setError(`${detail ?? 'Échec de l\'enregistrement.'} ${created ? `(${created} producteur(s) déjà enregistré(s))` : ''}`)
-      if (errs.length) setRejected(errs)
-    } finally {
-      setBusy(false)
-      setProgress('')
+      setSavedRows(new Set(saved))
     }
+    const remaining = validRows.filter((r) => !saved.has(r.excelRow)).length
+
+    if (saveRegistry && !registrySaved && remaining === 0) {
+      setProgress('Enregistrement du classeur dans le registre…')
+      try {
+        await withRetry(() => registryApi.importWorkbook(sheetsForRegistry(), wb.fileName, registryMode))
+        setRegistrySaved(true)
+      } catch (err) {
+        lastError = `Producteurs enregistrés, mais le registre n'a pas pu l'être : ${apiErrorMessage(err)}`
+      }
+    }
+
+    setBusy(false)
+    setProgress('')
+    if (errs.length) setRejected(errs)
+    addNotification({
+      type: remaining ? 'error' : 'success',
+      title: remaining ? 'Import Excel incomplet' : 'Import Excel terminé',
+      message: `${created} producteur(s) enregistré(s)${remaining ? `, ${remaining} en attente` : ''}${errs.length ? `, ${errs.length} ligne(s) refusée(s)` : ''}.`,
+    })
+    if (remaining) {
+      setError(`${lastError} ${created} producteur(s) enregistré(s) ; ${remaining} ligne(s) non envoyée(s). Cliquez sur « Renvoyer » pour réessayer (sans doublon).`)
+      return
+    }
+    if (lastError) { setError(lastError); setDone(true); return }
+    setDone(true)
+    if (!errs.length) onClose()
   }
 
   const input = 'px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
@@ -313,9 +344,11 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
                 <button onClick={onClose} className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50">
                   {rejected.length ? 'Fermer' : 'Annuler'}
                 </button>
-                <button onClick={doImport} disabled={busy || done || !validRows.length}
+                <button onClick={doImport} disabled={busy || done || !pendingRows.length}
                   className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl">
-                  <Save className="w-4 h-4" /> {busy ? (progress || 'Import…') : `Enregistrer ${validRows.length} producteur(s)`}
+                  <Save className="w-4 h-4" /> {busy ? (progress || 'Import…')
+                    : savedRows.size && pendingRows.length ? `Renvoyer les ${pendingRows.length} ligne(s) non enregistrée(s)`
+                    : `Enregistrer ${pendingRows.length} producteur(s)`}
                 </button>
               </div>
             </>

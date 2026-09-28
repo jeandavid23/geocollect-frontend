@@ -43,6 +43,7 @@ export const producersApi = {
   bulk: (producers: CreateProducerPayload[], cooperative?: string) =>
     api.post<BulkImportResult>('/producers/bulk/', { producers, cooperative }, {
       // un statut 400 renvoie quand même le détail des lignes rejetées
-      validateStatus: (s) => s === 201 || s === 400,
+      validateStatus: (s) => s === 201 || (s === 400),
+      timeout: 120000,
     }),
 }

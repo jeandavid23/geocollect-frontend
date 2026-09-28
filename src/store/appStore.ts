@@ -30,6 +30,7 @@ interface AppStore {
 
   // Live (backend) data state
   isLive: boolean
+  isLoading: boolean // chargement des données en cours (milliers de producteurs / polygones)
   currentAgentId: string | null
   loadFromApi: (userId?: string) => Promise<void>
 
@@ -53,6 +54,7 @@ interface AppStore {
   addParcel: (parcel: Parcel) => void
   updateParcel: (id: string, updates: Partial<Parcel>) => void
   addProducer: (producer: Producer) => void
+  addProducers: (list: Producer[]) => void // import Excel : un seul changement d'état pour des milliers de lignes
   updateProducer: (id: string, updates: Partial<Producer>) => void
 
   addCooperative: (coop: Cooperative) => void
@@ -84,10 +86,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   isLive: false,
+  isLoading: false,
   currentAgentId: null,
 
   // Charge toutes les données depuis la base (API Django) selon le rôle de l'utilisateur
   loadFromApi: async (userId) => {
+    // Compte réel : mode connecté immédiatement (sans attendre la fin du chargement, qui peut
+    // prendre plusieurs secondes avec des milliers de lignes) ; les données de démonstration sont retirées.
+    set({ isLive: true, isLoading: true, cooperatives: [], producers: [], parcels: [], agents: [], legacyParcels: [] })
     try {
       const [coopsRes, agentsRes, prodsRes, parcelsRes, legacyRes] = await Promise.allSettled([
         cooperativesApi.list(),
@@ -97,7 +103,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         legacyApi.list(),
       ])
 
-      const next: Partial<AppStore> = { isLive: true }
+      const next: Partial<AppStore> = { isLive: true, isLoading: false }
 
       if (coopsRes.status === 'fulfilled')
         next.cooperatives = unwrap(coopsRes.value.data).map(mapCooperative)
@@ -117,8 +123,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       set(next)
     } catch {
-      // Échec → on garde les données mock (mode démo)
-      set({ isLive: false })
+      set({ isLoading: false })
     }
   },
 
@@ -168,6 +173,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   addProducer: (producer) =>
     set((state) => ({ producers: [producer, ...state.producers] })),
+
+  addProducers: (list) =>
+    set((state) => ({ producers: [...list, ...state.producers] })),
 
   updateProducer: (id, updates) =>
     set((state) => ({

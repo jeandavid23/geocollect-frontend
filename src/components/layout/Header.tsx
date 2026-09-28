@@ -11,7 +11,7 @@ interface HeaderProps {
 
 export default function Header({ title, subtitle }: HeaderProps) {
   const user = useAuthStore((s) => s.user)
-  const { isOnline, isSyncing } = useAppStore()
+  const { isOnline, isSyncing, isLoading } = useAppStore()
 
   return (
     <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
@@ -25,6 +25,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
         <span className="text-sm text-gray-500 hidden md:block">
           {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
         </span>
+
+        {/* Chargement des données */}
+        {isLoading && (
+          <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            Chargement des données…
+          </div>
+        )}
 
         {/* Sync indicator */}
         {isSyncing && (

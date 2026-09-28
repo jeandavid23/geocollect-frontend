@@ -58,7 +58,7 @@ export default api
 export async function fetchAll<T = unknown>(url: string, params: Record<string, string> = {}): Promise<{ data: T[] }> {
   const out: T[] = []
   for (let page = 1; ; page++) {
-    const { data } = await api.get(url, { params: { page_size: '1000', ...params, page: String(page) } })
+    const { data } = await api.get(url, { params: { page_size: '1000', ...params, page: String(page) }, timeout: 120000 })
     if (Array.isArray(data)) return { data: data as T[] }
     out.push(...((data?.results ?? []) as T[]))
     if (!data?.next) return { data: out }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, MapPin, Satellite, CheckCircle2, Clock } from 'lucide-react'
 import Header from '../../components/layout/Header'
@@ -15,7 +15,14 @@ export default function AgentProducersPage() {
   const [filter, setFilter] = useState<'all' | 'todo' | 'done'>('all')
 
   const coopProducers = producers.filter((p) => p.cooperativeId === coopId)
-  const parcelCount = (pid: string) => parcels.filter((pc) => pc.producerId === pid).length
+  // Parcelles par producteur, calculées une fois (des milliers de producteurs possibles)
+  const counts = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const pc of parcels) m.set(pc.producerId, (m.get(pc.producerId) ?? 0) + 1)
+    return m
+  }, [parcels])
+  const parcelCount = (pid: string) => counts.get(pid) ?? 0
+  const LIMIT = 200
 
   const filtered = coopProducers.filter((p) => {
     const matchSearch = !search ||
@@ -71,7 +78,7 @@ export default function AgentProducersPage() {
       {/* List */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="divide-y divide-gray-50">
-          {filtered.map((p) => {
+          {filtered.slice(0, LIMIT).map((p) => {
             const n = parcelCount(p.id)
             return (
               <div key={p.id} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition">
@@ -104,6 +111,11 @@ export default function AgentProducersPage() {
               </div>
             )
           })}
+          {filtered.length > LIMIT && (
+            <p className="px-5 py-3 text-center text-xs text-gray-500">
+              {LIMIT} premiers affichés sur {filtered.length} — précisez la recherche (nom, village, FIELD ID).
+            </p>
+          )}
           {filtered.length === 0 && (
             <p className="px-5 py-10 text-center text-sm text-gray-400 flex flex-col items-center gap-2">
               <MapPin className="w-8 h-8 text-gray-300" />

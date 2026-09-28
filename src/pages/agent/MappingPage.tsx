@@ -95,6 +95,17 @@ export default function MappingPage() {
 
   // L'agent voit TOUS les producteurs de sa coopérative à mapper
   const myProducers = producers.filter((p) => p.cooperativeId === coopId)
+  // Choix du producteur : recherche + 100 premiers résultats (des milliers de producteurs possibles)
+  const [producerSearch, setProducerSearch] = useState('')
+  const parcelCounts = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const pc of parcels) m.set(pc.producerId, (m.get(pc.producerId) ?? 0) + 1)
+    return m
+  }, [parcels])
+  const q = producerSearch.trim().toLowerCase()
+  const shownProducers = (q
+    ? myProducers.filter((p) => `${p.fullName} ${p.fieldIdBase} ${p.village} ${Object.values(p.extraData ?? {}).join(' ')}`.toLowerCase().includes(q))
+    : myProducers).slice(0, 100)
   const selectedProducer = producers.find((p) => p.id === selectedProducerId)
 
   // Keep refs in sync so the geolocation callback always reads the latest values
@@ -419,8 +430,15 @@ export default function MappingPage() {
           </div>
         </div>
 
+        <input
+          value={producerSearch}
+          onChange={(e) => setProducerSearch(e.target.value)}
+          placeholder={`Rechercher parmi ${myProducers.length} producteurs (nom, FIELD ID, village…)`}
+          className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+
         <div className="space-y-3">
-          {myProducers.map((p) => (
+          {shownProducers.map((p) => (
             <button
               key={p.id}
               onClick={() => { setSelectedProducerId(p.id); setStep('configure') }}
@@ -437,7 +455,7 @@ export default function MappingPage() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-sm font-bold text-gray-700">{parcels.filter((parc) => parc.producerId === p.id).length}</p>
+                  <p className="text-sm font-bold text-gray-700">{parcelCounts.get(p.id) ?? 0}</p>
                   <p className="text-xs text-gray-400">parcelles</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />

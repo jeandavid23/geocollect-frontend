@@ -1,4 +1,4 @@
-import api from './client'
+import api, { fetchAll } from './client'
 
 export interface LegacyFeaturePayload {
   name: string
@@ -16,12 +16,13 @@ export interface LegacySource {
 
 // Anciens polygones de la coopérative (KML, GeoPackage, Shapefile, GeoJSON)
 export const legacyApi = {
+  // Toutes les pages (plus de 10 000 polygones possibles)
   list: (cooperative?: string) =>
-    api.get('/parcels/legacy/', { params: cooperative ? { cooperative } : undefined }),
+    fetchAll('/parcels/legacy/', { page_size: '2000', ...(cooperative ? { cooperative } : {}) }),
   sources: () => api.get<LegacySource[]>('/parcels/legacy/sources/'),
-  import: (sourceFile: string, features: LegacyFeaturePayload[], replace = true, cooperative?: string) =>
+  import: (sourceFile: string, features: LegacyFeaturePayload[], replace = true, cooperative?: string, notify = true) =>
     api.post<{ created: number; skipped: number }>('/parcels/legacy/import/', {
-      source_file: sourceFile, features, replace, cooperative,
+      source_file: sourceFile, features, replace, cooperative, notify,
     }),
   removeSource: (sourceFile: string, cooperative?: string) =>
     api.delete('/parcels/legacy/', { params: { source_file: sourceFile, cooperative } }),

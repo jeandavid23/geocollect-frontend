@@ -4,6 +4,9 @@ import { parseLegacyFiles, LEGACY_ACCEPT, type LegacyParseResult } from '../../u
 import { legacyApi, type LegacySource } from '../../api/legacy'
 import { useAppStore } from '../../store/appStore'
 import { LEGACY_COLOR } from './LegacyParcelsLayer'
+import { withRetry, apiErrorMessage } from '../../utils/retry'
+
+const CHUNK = 1000
 
 interface Props {
   onClose: () => void
@@ -21,6 +24,7 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [sources, setSources] = useState<LegacySource[]>([])
+  const [progress, setProgress] = useState('')
 
   const refreshSources = async () => {
     try {
@@ -54,20 +58,35 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
       return
     }
     setBusy(true); setError('')
+    // Lots de 1000 polygones : le 1er remplace l'import précédent du même fichier, les suivants s'ajoutent
+    const total = parsed.features.length
+    let created = 0
     try {
-      const { data } = await legacyApi.import(parsed.sourceName, parsed.features, true, cooperativeId)
+      for (let start = 0; start < total; start += CHUNK) {
+        const chunk = parsed.features.slice(start, start + CHUNK)
+        const label = `Enregistrement… ${Math.min(start + CHUNK, total)}/${total}`
+        setProgress(label)
+        const { data } = await withRetry(
+          () => legacyApi.import(parsed.sourceName, chunk, start === 0, cooperativeId, start === 0),
+          3,
+          (n) => setProgress(`${label} (nouvelle tentative ${n}/2)`),
+        )
+        created += data.created
+      }
+      setProgress('Chargement sur la carte…')
       await loadLegacyParcels()
       await refreshSources()
       addNotification({
         type: 'success',
         title: 'Anciens polygones importés',
-        message: `${data.created} polygone(s) depuis ${parsed.sourceName}.`,
+        message: `${created} polygone(s) depuis ${parsed.sourceName}.`,
       })
       setParsed(null)
     } catch (err) {
-      setError(errorMessage(err))
+      setError(`${apiErrorMessage(err)}${created ? ` ${created} polygone(s) déjà enregistré(s) : relancez l'import, le fichier sera remplacé sans doublon.` : ''}`)
     } finally {
       setBusy(false)
+      setProgress('')
     }
   }
 
@@ -165,7 +184,7 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
                 className="w-full flex items-center justify-center gap-2 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60"
                 style={{ background: LEGACY_COLOR }}
               >
-                <CheckCircle2 className="w-4 h-4" /> {busy ? 'Enregistrement…' : `Enregistrer ${parsed.features.length} ancien(s) polygone(s)`}
+                <CheckCircle2 className="w-4 h-4" /> {busy ? (progress || 'Enregistrement…') : `Enregistrer ${parsed.features.length} ancien(s) polygone(s)`}
               </button>
             </div>
           )}

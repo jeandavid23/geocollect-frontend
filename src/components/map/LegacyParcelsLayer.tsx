@@ -55,7 +55,8 @@ export default function LegacyParcelsLayer({ parcels, coopName, interactive = tr
       onEachFeature={(feature, layer) => {
         if (!interactive) return
         const p = byId.get(String(feature.properties?.id))
-        if (p) layer.bindPopup(popupHtml(p, coopName?.(p.cooperativeId)))
+        // contenu construit à l'ouverture : 10 000 polygones sans générer 10 000 fiches d'avance
+        if (p) layer.bindPopup(() => popupHtml(p, coopName?.(p.cooperativeId)))
       }}
       // options transmises à chaque polygone à sa création (`interactive` n'est pas modifiable ensuite)
       {...({ renderer, interactive } as object)}
