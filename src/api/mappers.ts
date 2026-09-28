@@ -46,6 +46,14 @@ export function mapAgent(a: Any): Agent {
   }
 }
 
+// Première valeur textuelle d'une ligne Excel (ex. « DOSSO Awa »), en ignorant numéros et codes
+export function firstText(extra: unknown): string {
+  const values = Object.values((extra as Record<string, unknown>) ?? {})
+  const v = values.find((x) => typeof x === 'string' && /[A-Za-zÀ-ÿ]{2,}/.test(x) && !/\d/.test(x))
+    ?? values.find((x) => typeof x === 'string' && x.trim() !== '')
+  return v ? String(v).trim() : ''
+}
+
 export function mapProducer(p: Any): Producer {
   const first = s(p.first_name)
   const last = s(p.last_name)
@@ -55,7 +63,9 @@ export function mapProducer(p: Any): Producer {
     fieldIdBase: s(p.field_id_base),
     firstName: first,
     lastName: last,
-    fullName: s(p.full_name) || `${last.toUpperCase()} ${first}`,
+    // Import Excel sans colonne nom : on affiche la 1re valeur du fichier, sinon le FIELD ID
+    fullName: s(p.full_name).trim() || `${last.toUpperCase()} ${first}`.trim()
+      || firstText(p.extra_data) || s(p.field_id_base),
     phone: s(p.phone) || undefined,
     village: s(p.village),
     section: s(p.section),

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Search, Plus, MapPin, X, Save, FileSpreadsheet } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
@@ -34,12 +34,22 @@ export default function ProducersPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [showImport, setShowImport] = useState(false)
 
+  // Entêtes des fichiers Excel importés (dans l'ordre du fichier) : colonnes de la vue « Fichier Excel »
+  const excelHeaders = useMemo(() => {
+    const seen = new Set<string>()
+    for (const p of coopProducers) for (const k of Object.keys(p.extraData ?? {})) seen.add(k)
+    return [...seen]
+  }, [coopProducers])
+  const [view, setView] = useState<'excel' | 'standard'>('excel')
+  const showExcel = view === 'excel' && excelHeaders.length > 0
+
   const sections = [...new Set(coopProducers.map((p) => p.section))]
   const filtered = coopProducers.filter((p) => {
     const matchSearch = !search ||
       p.fullName.toLowerCase().includes(search.toLowerCase()) ||
       p.village.toLowerCase().includes(search.toLowerCase()) ||
-      p.fieldIdBase.toLowerCase().includes(search.toLowerCase())
+      p.fieldIdBase.toLowerCase().includes(search.toLowerCase()) ||
+      Object.values(p.extraData ?? {}).some((v) => String(v).toLowerCase().includes(search.toLowerCase()))
     const matchSection = filterSection === 'all' || p.section === filterSection
     return matchSearch && matchSection
   })
@@ -131,8 +141,14 @@ export default function ProducersPage() {
           className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none"
         >
           <option value="all">Toutes les sections</option>
-          {sections.map((s) => <option key={s} value={s}>{s}</option>)}
+          {sections.map((s) => <option key={s} value={s}>{s || '(sans section)'}</option>)}
         </select>
+        {excelHeaders.length > 0 && (
+          <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm">
+            <button onClick={() => setView('excel')} className={`px-3 py-2.5 ${view === 'excel' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>Fichier Excel</button>
+            <button onClick={() => setView('standard')} className={`px-3 py-2.5 ${view === 'standard' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>Vue standard</button>
+          </div>
+        )}
         <button
           onClick={() => setShowImport(true)}
           className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
@@ -147,8 +163,40 @@ export default function ProducersPage() {
         </button>
       </div>
 
+      {/* Vue « Fichier Excel » : les colonnes sont les entêtes du fichier importé */}
+      {showExcel && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-auto max-h-[70vh]">
+            <table className="text-sm">
+              <thead className="sticky top-0 z-[1]">
+                <tr className="bg-green-50 text-xs text-green-900">
+                  <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">FIELD ID</th>
+                  {excelHeaders.map((h) => <th key={h} className="text-left px-4 py-3 font-semibold whitespace-nowrap">{h}</th>)}
+                  <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Parcelles mappées</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map((p) => (
+                  <tr key={p.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelected(p)}>
+                    <td className="px-4 py-2 font-mono text-xs text-gray-700 whitespace-nowrap">{p.fieldIdBase}</td>
+                    {excelHeaders.map((h) => {
+                      const v = p.extraData?.[h]
+                      return <td key={h} className={`px-4 py-2 whitespace-nowrap ${typeof v === 'number' ? 'text-right' : ''} text-gray-700`}>{v === undefined || v === null ? '' : String(v)}</td>
+                    })}
+                    <td className="px-4 py-2 text-center">{parcels.filter((parc) => parc.producerId === p.id).length}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-5 py-3 border-t border-gray-50 text-xs text-gray-400">
+            {filtered.length} sur {coopProducers.length} producteurs · {excelHeaders.length} colonne(s) du fichier
+          </div>
+        </div>
+      )}
+
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${showExcel ? 'hidden' : ''}`}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

@@ -7,7 +7,7 @@ import {
 import { downloadBlob } from '../../utils/geoExport'
 import { producersApi } from '../../api/producers'
 import { registryApi } from '../../api/registry'
-import { mapProducer } from '../../api/mappers'
+import { mapProducer, firstText } from '../../api/mappers'
 import { useAppStore } from '../../store/appStore'
 import { generateFieldIdBase, getNextProducerIndex } from '../../utils/fieldId'
 import type { Producer } from '../../types'
@@ -34,7 +34,8 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
   const [progress, setProgress] = useState('')
   const [error, setError] = useState('')
   const [rejected, setRejected] = useState<{ excelRow: number; message: string }[]>([])
-  const [done, setDone] = useState(false) // import déjà envoyé : évite un doublon en recliquant
+  const [done, setDone] = useState(false)
+  const [excluded, setExcluded] = useState<Set<number>>(new Set()) // lignes Excel à ne pas enregistrer (ex. « Total ») // import déjà envoyé : évite un doublon en recliquant
 
   const sheet = wb?.sheets[sheetIdx]
   const headers = useMemo(() => (sheet ? headersOf(sheet.values, headerRow) : []), [sheet, headerRow])
@@ -44,6 +45,7 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
     const hr = detectHeaderRow(s.values)
     setSheetIdx(idx)
     setHeaderRow(hr)
+    setExcluded(new Set())
     setMapping(autoMapping(headersOf(s.values, hr)))
   }
 
@@ -68,6 +70,7 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
   const changeHeaderRow = (row: number) => {
     if (!sheet) return
     setHeaderRow(row)
+    setExcluded(new Set())
     setMapping(autoMapping(headersOf(sheet.values, row)))
   }
 
@@ -78,9 +81,13 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
     () => (sheet ? buildProducerRows(sheet.values, headerRow, mapping, defaults) : []),
     [sheet, headerRow, mapping, defaults],
   )
-  const validRows = rows.filter((r) => r.errors.length === 0)
-  const hasName = mapping.includes('fullName') || (mapping.includes('lastName') && mapping.includes('firstName'))
-  const hasSection = mapping.includes('section') || defaults.section.trim() !== ''
+  // Aucune colonne obligatoire : toutes les lignes non vides sont enregistrées, sauf celles décochées
+  const validRows = rows.filter((r) => !excluded.has(r.excelRow))
+  const toggleRow = (excelRow: number) => setExcluded((ex) => {
+    const next = new Set(ex)
+    if (next.has(excelRow)) next.delete(excelRow); else next.add(excelRow)
+    return next
+  })
 
   const sheetsForRegistry = () => (wb?.sheets ?? [])
     .filter((s) => s.data.length)
@@ -95,11 +102,11 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
       const counters: Record<string, number> = {}
       for (const r of validRows) {
         const p = r.payload
-        const section = p.section
+        const section = p.section || 'PROD'
         counters[section] = counters[section] === undefined ? getNextProducerIndex(producers, section) : counters[section] + 1
         const local: Producer = {
           id: crypto.randomUUID(), cooperativeId, fieldIdBase: generateFieldIdBase(section, counters[section]),
-          firstName: p.first_name, lastName: p.last_name, fullName: `${p.last_name} ${p.first_name}`,
+          firstName: p.first_name, lastName: p.last_name, fullName: `${p.last_name ?? ''} ${p.first_name ?? ''}`.trim() || firstText(p.extra_data),
           phone: p.phone, village: p.village ?? '', section, region: p.region ?? '', country: "Côte d'Ivoire",
           nationalId: p.national_id, gender: p.gender, birthYear: p.birth_year, isActive: true,
           createdAt: new Date().toISOString(), parcelCount: 0, totalHectares: 0, extraData: p.extra_data,
@@ -198,7 +205,7 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
                   <input type="number" min={1} max={Math.max(sheet.values.length, 1)} value={headerRow + 1}
                     onChange={(e) => changeHeaderRow(Math.max(0, Number(e.target.value) - 1))} className={`${input} w-full mt-1`} />
                 </label>
-                <label className="text-xs text-gray-600">Section par défaut {mapping.includes('section') ? '(si vide)' : '*'}
+                <label className="text-xs text-gray-600">Section par défaut (facultatif)
                   <input value={defaults.section} onChange={(e) => setDefaults((d) => ({ ...d, section: e.target.value }))}
                     placeholder="ex. BEOUMI" className={`${input} w-full mt-1`} />
                 </label>
@@ -208,14 +215,53 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
                 </label>
               </div>
 
-              {/* 3. Correspondance des colonnes */}
+              {/* 3. Aperçu : les entêtes du fichier, telles quelles */}
               <div>
-                <p className="text-sm font-semibold text-gray-800 mb-1">Colonnes du fichier ({headers.length})</p>
+                <div className="flex flex-wrap items-center gap-4 text-sm mb-1">
+                  <span className="font-semibold text-gray-800">Entêtes du fichier ({headers.length})</span>
+                  <span className="flex items-center gap-1.5 text-green-600"><CheckCircle2 className="w-4 h-4" /> {validRows.length} producteur(s) à enregistrer</span>
+                  {excluded.size > 0 && <span className="text-gray-500">{excluded.size} ligne(s) écartée(s)</span>}
+                </div>
                 <p className="text-xs text-gray-500 mb-2">
-                  Chaque colonne est enregistrée telle quelle dans la fiche du producteur. Associez celles qui correspondent
-                  aux champs de GeoCollect (nom, section…) : elles servent à créer le producteur et son FIELD ID.
+                  Chaque ligne devient un producteur ; toutes ses colonnes sont enregistrées sous les entêtes du fichier.
+                  Décochez les lignes à ne pas enregistrer (totaux, notes…).
                 </p>
-                <div className="border border-gray-100 rounded-xl max-h-72 overflow-y-auto divide-y divide-gray-50">
+                <div className="border border-gray-100 rounded-xl overflow-auto max-h-72">
+                  <table className="text-xs">
+                    <thead className="bg-gray-50 text-gray-600 sticky top-0">
+                      <tr>
+                        <th className="px-2 py-2" />
+                        <th className="text-left px-2 py-2 text-gray-400">Ligne</th>
+                        {headers.map((h) => <th key={h} className="text-left px-3 py-2 whitespace-nowrap font-semibold">{h}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {rows.slice(0, 200).map((r) => {
+                        const off = excluded.has(r.excelRow)
+                        return (
+                          <tr key={r.excelRow} className={off ? 'bg-gray-50 text-gray-300 line-through' : ''}>
+                            <td className="px-2 py-1"><input type="checkbox" checked={!off} onChange={() => toggleRow(r.excelRow)} /></td>
+                            <td className="px-2 py-1 text-gray-400">{r.excelRow}</td>
+                            {r.cells.map((v, c) => <td key={c} className="px-3 py-1 whitespace-nowrap">{v === null ? '' : String(v)}</td>)}
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {rows.length > 200 && <p className="text-xs text-gray-400 mt-1">Aperçu des 200 premières lignes sur {rows.length} (toutes seront enregistrées).</p>}
+              </div>
+
+              {/* 4. Correspondance facultative avec les champs GeoCollect */}
+              <details className="border border-gray-100 rounded-xl">
+                <summary className="cursor-pointer px-3 py-2 text-sm text-gray-700">
+                  Associer des colonnes aux champs GeoCollect <span className="text-gray-400">(facultatif — {mapping.filter(Boolean).length} associée(s) automatiquement)</span>
+                </summary>
+                <p className="text-xs text-gray-500 px-3 pb-2">
+                  Sert seulement à remplir les champs de la plateforme (nom affiché, village, section du FIELD ID, cartographie).
+                  Les colonnes du fichier sont enregistrées dans tous les cas.
+                </p>
+                <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 border-t border-gray-100">
                   {headers.map((h, c) => {
                     const sample = sheet.values.slice(headerRow + 1).map((r) => r[c]).find((v) => v !== null && v !== '')
                     return (
@@ -224,52 +270,14 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
                         <span className="col-span-3 text-xs text-gray-400 truncate" title={String(sample ?? '')}>{String(sample ?? '—')}</span>
                         <select value={mapping[c] ?? ''} onChange={(e) => setColumnField(c, e.target.value)}
                           className={`col-span-5 px-2 py-1.5 border rounded-lg text-xs ${mapping[c] ? 'border-primary-300 bg-primary-50 text-primary-800' : 'border-gray-200 text-gray-500'}`}>
-                          <option value="">Conservée dans la fiche uniquement</option>
+                          <option value="">Aucun champ (colonne enregistrée telle quelle)</option>
                           {PRODUCER_FIELDS.map((f) => <option key={f.key} value={f.key}>→ {f.label}</option>)}
                         </select>
                       </div>
                     )
                   })}
                 </div>
-                {!hasName && <p className="text-xs text-red-600 mt-1">Associez une colonne « Nom » et une colonne « Prénom(s) », ou une colonne « Nom et prénoms ».</p>}
-                {!hasSection && <p className="text-xs text-red-600 mt-1">Associez une colonne « Section » ou saisissez une section par défaut.</p>}
-              </div>
-
-              {/* 4. Aperçu */}
-              <div>
-                <div className="flex items-center gap-4 text-sm mb-2">
-                  <span className="flex items-center gap-1.5 text-green-600"><CheckCircle2 className="w-4 h-4" /> {validRows.length} prêt(s)</span>
-                  {rows.length - validRows.length > 0 && (
-                    <span className="flex items-center gap-1.5 text-red-600"><AlertTriangle className="w-4 h-4" /> {rows.length - validRows.length} incomplet(s), ignoré(s)</span>
-                  )}
-                </div>
-                <div className="border border-gray-100 rounded-xl overflow-auto max-h-56">
-                  <table className="w-full text-xs">
-                    <thead className="bg-gray-50 text-gray-500 sticky top-0">
-                      <tr>
-                        <th className="text-left px-3 py-2">Ligne</th><th className="text-left px-3 py-2">Nom</th>
-                        <th className="text-left px-3 py-2">Prénom(s)</th><th className="text-left px-3 py-2">Village</th>
-                        <th className="text-left px-3 py-2">Section</th><th className="text-left px-3 py-2">Colonnes</th>
-                        <th className="text-left px-3 py-2">Statut</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {rows.slice(0, 100).map((r) => (
-                        <tr key={r.excelRow} className={r.errors.length ? 'bg-red-50' : ''}>
-                          <td className="px-3 py-1.5 text-gray-400">{r.excelRow}</td>
-                          <td className="px-3 py-1.5">{r.payload.last_name || '—'}</td>
-                          <td className="px-3 py-1.5">{r.payload.first_name || '—'}</td>
-                          <td className="px-3 py-1.5">{r.payload.village || '—'}</td>
-                          <td className="px-3 py-1.5">{r.payload.section || '—'}</td>
-                          <td className="px-3 py-1.5 text-gray-500">{Object.keys(r.payload.extra_data ?? {}).length}</td>
-                          <td className="px-3 py-1.5">{r.errors.length ? <span className="text-red-600">{r.errors.join(', ')}</span> : <span className="text-green-600">✓</span>}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {rows.length > 100 && <p className="text-xs text-gray-400 mt-1">Aperçu des 100 premières lignes sur {rows.length}.</p>}
-              </div>
+              </details>
 
               {/* 5. Registre */}
               <div className="bg-amber-50 rounded-xl p-4 text-sm space-y-2">
@@ -305,7 +313,7 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
                 <button onClick={onClose} className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50">
                   {rejected.length ? 'Fermer' : 'Annuler'}
                 </button>
-                <button onClick={doImport} disabled={busy || done || !validRows.length || !hasName || !hasSection}
+                <button onClick={doImport} disabled={busy || done || !validRows.length}
                   className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl">
                   <Save className="w-4 h-4" /> {busy ? (progress || 'Import…') : `Enregistrer ${validRows.length} producteur(s)`}
                 </button>

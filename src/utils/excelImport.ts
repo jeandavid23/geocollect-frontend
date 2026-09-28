@@ -177,6 +177,7 @@ export function autoMapping(headers: string[]): string[] {
 
 export interface ProducerImportRow {
   excelRow: number // numéro de ligne dans Excel (1 = première ligne)
+  cells: CellValue[] // valeurs de la ligne, dans l'ordre des entêtes du fichier
   payload: CreateProducerPayload
   errors: string[]
 }
@@ -244,13 +245,12 @@ export function buildProducerRows(
     if (!p.region && defaults.region.trim()) p.region = defaults.region.trim()
     if (!p.gender) p.gender = 'M'
 
+    // Aucune colonne obligatoire : la ligne est enregistrée avec les entêtes du fichier
     const errors: string[] = []
-    if (!p.last_name) errors.push('Nom manquant')
-    if (!p.first_name) errors.push('Prénom manquant')
-    if (!p.section) errors.push('Section manquante')
 
     out.push({
       excelRow: headerRow + i + 2,
+      cells: headers.map((_, c) => row[c] ?? null),
       payload: { ...(p as unknown as CreateProducerPayload), extra_data: extra },
       errors,
     })
