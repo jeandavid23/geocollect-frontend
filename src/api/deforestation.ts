@@ -19,6 +19,13 @@ export interface DeforestationResult {
   pixels?: number
   method?: 'pixels' | 'pixels_touches' | 'centroide'
   error?: string
+  // Matrice RDUE (si activée)
+  usage_cat?: string          // Enclave | Parc/reserve | Foret classee | Agro-foret classee | Domaine rural
+  zone?: string               // nom de la forêt classée / du parc / de l'enclave
+  legalite?: string
+  zero_def?: string
+  rdue_stat?: 'Potentiellement conforme' | 'Non conforme' | 'A verifier'
+  legal_note?: string
 }
 
 export interface DeforestationOptions {
@@ -26,6 +33,8 @@ export interface DeforestationOptions {
   tolerance_ha: number
   alert_pct: number
   treecover_min: number
+  apply_rdue: boolean         // matrice RDUE : légalité foncière x zéro déforestation
+  forest_min_frac: number     // part de forêt au 31/12 de coupure pour classer la parcelle « Forêt »
 }
 
 export interface DeforestationResponse {
@@ -42,6 +51,8 @@ export interface AnalyzeFeature {
 }
 
 export const deforestationApi = {
+  // Forêts classées, parcs / réserves, enclaves (données privées de la coopérative, en base)
+  landZones: () => api.get<GeoJSON.FeatureCollection>('/parcels/landuse/', { timeout: 120000 }),
   // 1000 parcelles max par appel : la page découpe les gros fichiers en lots
   analyze: (features: AnalyzeFeature[], options: DeforestationOptions) =>
     api.post<DeforestationResponse>('/parcels/deforestation/analyze/', { features, ...options }, { timeout: 180000 }),

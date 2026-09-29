@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { MapContainer, TileLayer, LayersControl } from 'react-leaflet'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { MapContainer, TileLayer, LayersControl, GeoJSON } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import * as XLSX from 'xlsx'
 import { TreePine, Play, Square, Download, FileSpreadsheet, RotateCcw, Search, AlertTriangle, Loader2 } from 'lucide-react'
@@ -29,6 +29,18 @@ const STANDARDS: { value: Standard; label: string }[] = [
   { value: 'EUDR+RA', label: 'EUDR + RA — le plus strict (après 2013)' },
 ]
 
+// Zones foncières RDUE : couleur par catégorie (carte + tableau)
+const CAT_STYLE: Record<string, { color: string; label: string }> = {
+  'Foret classee': { color: '#b91c1c', label: 'Forêt classée' },
+  'Parc/reserve': { color: '#7f1d1d', label: 'Parc / réserve' },
+  'Agro-foret classee': { color: '#ca8a04', label: 'Agro-forêt classée' },
+  'Enclave': { color: '#eab308', label: 'Enclave' },
+  'Domaine rural': { color: '#16a34a', label: 'Domaine rural' },
+}
+const RDUE_BADGE: Record<string, string> = {
+  'Potentiellement conforme': 'bg-green-100 text-green-700', 'Non conforme': 'bg-red-100 text-red-700', 'A verifier': 'bg-amber-100 text-amber-800',
+}
+
 const CHUNK = 400        // parcelles par appel
 const PARALLEL = 3       // appels simultanés
 const PAGE = 100
@@ -41,13 +53,22 @@ function latOf(g: GeoJSON.Geometry): number {
 
 export default function DeforestationPage() {
   const [picked, setPicked] = useState<PickedSource | null>(null)
-  const [opts, setOpts] = useState<DeforestationOptions>({ standard: 'EUDR', tolerance_ha: 0.01, alert_pct: 1, treecover_min: 10 })
+  const [opts, setOpts] = useState<DeforestationOptions>({
+    standard: 'EUDR', tolerance_ha: 0.01, alert_pct: 1, treecover_min: 10, apply_rdue: false, forest_min_frac: 0.1,
+  })
+  // Forêts classées, parcs / réserves et enclaves (matrice RDUE)
+  const [zones, setZones] = useState<GeoJSON.FeatureCollection | null>(null)
+  const [showZones, setShowZones] = useState(true)
+  useEffect(() => {
+    deforestationApi.landZones().then(({ data }) => setZones(data)).catch(() => setZones(null))
+  }, [])
+  const zoneCount = (cat: string) => zones?.features.filter((f) => f.properties?.category === cat).length ?? 0
   const [results, setResults] = useState<(DeforestationResult | undefined)[]>([])
   const [running, setRunning] = useState(false)
   const [progress, setProgress] = useState({ done: 0, total: 0, retry: '' })
   const [failed, setFailed] = useState<number[]>([])
   const [error, setError] = useState('')
-  const [meta, setMeta] = useState<{ cutoff: number; source: string } | null>(null)
+  const [meta, setMeta] = useState<{ cutoff: number; source: string; rdue: boolean } | null>(null)
   const [filter, setFilter] = useState<DefStatus | 'all'>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
@@ -84,7 +105,7 @@ export default function DeforestationPage() {
             (n) => setProgress((p) => ({ ...p, retry: `nouvelle tentative ${n}/3 d'un lot` })),
           )
           chunk.forEach((i, k) => { acc[i] = data.results[k] })
-          setMeta({ cutoff: data.cutoff_year, source: data.source })
+          setMeta({ cutoff: data.cutoff_year, source: data.source, rdue: Boolean((data as { rdue?: boolean }).rdue) })
         } catch (err) {
           lastError = apiErrorMessage(err)
           chunk.forEach((i) => { acc[i] = { status: 'Indetermine', error: lastError } })
@@ -106,12 +127,14 @@ export default function DeforestationPage() {
 
   // ─── Synthèse ────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const s = { total: 0, byStatus: {} as Record<string, number>, byRisk: {} as Record<string, number>, area: 0, defor: 0 }
+    const s = { total: 0, byStatus: {} as Record<string, number>, byRisk: {} as Record<string, number>, byCat: {} as Record<string, number>, byRdue: {} as Record<string, number>, area: 0, defor: 0 }
     for (const r of results) {
       if (!r) continue
       s.total++
       s.byStatus[r.status] = (s.byStatus[r.status] ?? 0) + 1
       if (r.risk_level) s.byRisk[r.risk_level] = (s.byRisk[r.risk_level] ?? 0) + 1
+      if (r.usage_cat) s.byCat[r.usage_cat] = (s.byCat[r.usage_cat] ?? 0) + 1
+      if (r.rdue_stat) s.byRdue[r.rdue_stat] = (s.byRdue[r.rdue_stat] ?? 0) + 1
       s.area += r.area_ha ?? 0
       s.defor += r.defor_ha ?? 0
     }
@@ -139,6 +162,7 @@ export default function DeforestationPage() {
         ${r.area_ha ?? '—'} ha · perte ${r.defor_ha ?? 0} ha (${r.defor_pct ?? 0} %)<br/>
         ${r.years ? `Années de perte : ${escapeHtml(r.years)}<br/>` : ''}
         Forêt 2000 : ${r.forest2000_pct ?? '—'} % · ${r.cover2020 ?? ''}
+        ${r.rdue_stat ? `<br/><b>RDUE : ${escapeHtml(r.rdue_stat)}</b> · ${escapeHtml(CAT_STYLE[r.usage_cat ?? '']?.label ?? r.usage_cat)}${r.zone ? ` (${escapeHtml(r.zone)})` : ''}<br/>Légalité ${escapeHtml(r.legalite)} · zéro déforestation ${escapeHtml(r.zero_def)}` : ''}
         ${r.error ? `<br/><span style="color:#dc2626">${escapeHtml(r.error)}</span>` : ''}</div>`,
     }]
   }), [features, results])
@@ -149,6 +173,10 @@ export default function DeforestationPage() {
     surface_ha: r?.area_ha ?? '', perte_ha: r?.defor_ha ?? '', perte_pct: r?.defor_pct ?? '', annees_perte: r?.years ?? '',
     foret_2000_pct: r?.forest2000_pct ?? '', foret_coupure_pct: r?.forest2020_pct ?? '', usage_coupure: r?.cover2020 ?? '',
     methode: r?.method ?? '', erreur: r?.error ?? '',
+    ...(r?.rdue_stat ? {
+      categorie_fonciere: CAT_STYLE[r.usage_cat ?? '']?.label ?? r.usage_cat, zone: r.zone ?? '', legalite: r.legalite ?? '',
+      zero_deforestation: r.zero_def ?? '', statut_rdue: r.rdue_stat, note_legale: r.legal_note ?? '',
+    } : {}),
   })
 
   const exportExcel = () => {
@@ -156,11 +184,15 @@ export default function DeforestationPage() {
       ['Analyse déforestation — GeoCollect (règles du plugin Deforestation check)'],
       ['Source', picked?.label ?? ''], ['Norme', opts.standard], ['Perte comptée après', meta?.cutoff ?? ''],
       ['Données', meta?.source ?? ''], ['Tolérance (ha)', opts.tolerance_ha], ['Seuil « À risque » (%)', opts.alert_pct],
-      ['Couvert forestier minimal (%)', opts.treecover_min], [],
+      ['Couvert forestier minimal (%)', opts.treecover_min],
+      ['Matrice RDUE', meta?.rdue ? `Oui (forêt au 31/12 si ≥ ${Math.round(opts.forest_min_frac * 100)} % boisé)` : 'Non'], [],
       ['Parcelles analysées', stats.total], ['Conformes', stats.byStatus['Conforme'] ?? 0],
       ['À risque', stats.byStatus['A risque'] ?? 0], ['Non conformes', stats.byStatus['Non conforme'] ?? 0],
       ['Indéterminées', stats.byStatus['Indetermine'] ?? 0], ['Taux de conformité (%)', rate],
       ['Surface totale (ha)', Math.round(stats.area * 100) / 100], ['Surface déforestée (ha)', Math.round(stats.defor * 1000) / 1000],
+      ...(meta?.rdue ? [[], ['Matrice RDUE'],
+        ...Object.entries(stats.byRdue).map(([k, v]) => [k, v]), [], ['Catégorie foncière'],
+        ...Object.entries(stats.byCat).map(([k, v]) => [CAT_STYLE[k]?.label ?? k, v])] : []),
     ]
     const detail = features.map((f, i) => ({ identifiant: f.id, ...resultProps(results[i]), ...f.properties }))
     const wb = XLSX.utils.book_new()
@@ -207,6 +239,23 @@ export default function DeforestationPage() {
           <label className="text-xs text-gray-600">Forêt si couvert 2000 ≥ (%)
             <input type="number" min="0" max="100" value={opts.treecover_min} onChange={(e) => setOpts({ ...opts, treecover_min: Number(e.target.value) })} className={input} />
           </label>
+        </div>
+        <div className="rounded-xl border border-gray-100 p-3 space-y-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-800">
+            <input type="checkbox" checked={opts.apply_rdue} onChange={(e) => setOpts({ ...opts, apply_rdue: e.target.checked })} />
+            Appliquer la matrice RDUE (légalité foncière × zéro déforestation)
+          </label>
+          <p className="text-xs text-gray-500">
+            Base foncière : {zoneCount('Foret classee')} forêts classées · {zoneCount('Parc/reserve')} parcs / réserves · {zoneCount('Enclave')} enclaves
+            {zoneCount('Agro-foret classee') ? ` · ${zoneCount('Agro-foret classee')} agro-forêts` : ''}.
+            Forêt classée, parc / réserve : illégal · enclave, agro-forêt, domaine rural : légal. Une enclave prime sur la forêt qui l'entoure.
+          </p>
+          {opts.apply_rdue && (
+            <label className="text-xs text-gray-600 block max-w-xs">Parcelle « forêt au 31/12/{opts.standard === 'EUDR' ? 2020 : 2013} » si boisée à ≥ (%)
+              <input type="number" min="0" max="100" value={Math.round(opts.forest_min_frac * 100)}
+                onChange={(e) => setOpts({ ...opts, forest_min_frac: Number(e.target.value) / 100 })} className={input} />
+            </label>
+          )}
         </div>
         <p className="text-xs text-gray-500">
           Perte ≤ tolérance : Conforme · perte ≤ seuil : À risque (à vérifier) · au-delà : Non conforme.
@@ -273,6 +322,18 @@ export default function DeforestationPage() {
                 )
               })}
             </div>
+            {meta?.rdue && (
+              <div className="min-w-[220px]">
+                <p className="font-semibold text-gray-700 mb-2">Matrice RDUE</p>
+                {Object.entries(stats.byRdue).map(([k, v]) => (
+                  <p key={k} className="flex justify-between gap-4"><span className={`px-2 rounded-full ${RDUE_BADGE[k] ?? ''}`}>{k}</span><b>{v.toLocaleString('fr-FR')}</b></p>
+                ))}
+                <p className="font-semibold text-gray-700 mt-2 mb-1">Catégorie foncière</p>
+                {Object.entries(stats.byCat).map(([k, v]) => (
+                  <p key={k} className="flex justify-between gap-4"><span style={{ color: CAT_STYLE[k]?.color }}>{CAT_STYLE[k]?.label ?? k}</span><b>{v.toLocaleString('fr-FR')}</b></p>
+                ))}
+              </div>
+            )}
             <div className="text-gray-500 max-w-sm">
               <p>Surface analysée : <b className="text-gray-800">{stats.area.toFixed(2)} ha</b></p>
               <p>Perte comptée après : <b className="text-gray-800">{meta?.cutoff ?? '—'}</b></p>
@@ -284,13 +345,27 @@ export default function DeforestationPage() {
             </div>
           </section>
 
-          <section className="h-[460px] rounded-2xl overflow-hidden border border-gray-100">
+          <section className="relative h-[460px] rounded-2xl overflow-hidden border border-gray-100">
+            {zones && zones.features.length > 0 && (
+              <button onClick={() => setShowZones((v) => !v)}
+                className="absolute top-3 left-14 z-[500] bg-white/95 shadow rounded-xl px-3 py-1.5 text-xs font-medium border border-gray-100 text-red-800">
+                {showZones ? 'Masquer' : 'Afficher'} forêts classées, parcs et enclaves
+              </button>
+            )}
             <MapContainer center={[7.54, -5.55]} zoom={7} className="h-full w-full" preferCanvas>
               <LayersControl position="topright">
                 <BaseLayer checked name="Satellite Google"><TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" attribution="&copy; Google" /></BaseLayer>
                 <BaseLayer name="OpenStreetMap"><TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" /></BaseLayer>
               </LayersControl>
               <FitToData geometries={features.map((f) => f.geometry)} />
+              {zones && showZones && (
+                <GeoJSON
+                  key={`zones-${zones.features.length}`}
+                  data={zones}
+                  style={(f) => ({ color: CAT_STYLE[f?.properties?.category]?.color ?? '#991b1b', weight: 1.5, fillOpacity: 0.08, dashArray: '4 3' })}
+                  onEachFeature={(f, layer) => layer.bindTooltip(`${CAT_STYLE[f.properties?.category]?.label ?? ''} — ${f.properties?.name ?? ''}`, { sticky: true })}
+                />
+              )}
               {!running && <ResultsLayer items={mapItems} version={`d${version}-${mapItems.length}`} />}
             </MapContainer>
           </section>
@@ -312,7 +387,8 @@ export default function DeforestationPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-xs text-gray-500">
-                  <tr>{['Identifiant', 'Statut', 'Risque', 'Surface (ha)', 'Perte (ha)', 'Perte (%)', 'Années', 'Forêt 2000'].map((h) => <th key={h} className="text-left px-4 py-2 font-medium">{h}</th>)}</tr>
+                  <tr>{['Identifiant', 'Statut', 'Risque', 'Surface (ha)', 'Perte (ha)', 'Perte (%)', 'Années', 'Forêt 2000',
+                    ...(meta?.rdue ? ['Catégorie foncière', 'Légalité', 'Zéro défor.', 'RDUE'] : [])].map((h) => <th key={h} className="text-left px-4 py-2 font-medium">{h}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {rows.slice(current * PAGE, (current + 1) * PAGE).map(({ f, i, r }) => (
@@ -326,6 +402,13 @@ export default function DeforestationPage() {
                       <td className="px-4 py-2">{r!.defor_pct ?? '—'}</td>
                       <td className="px-4 py-2 text-xs">{r!.years || '—'}</td>
                       <td className="px-4 py-2 text-xs">{r!.forest2000_pct != null ? `${r!.forest2000_pct} %` : '—'}</td>
+                      {meta?.rdue && <>
+                        <td className="px-4 py-2 text-xs" style={{ color: CAT_STYLE[r!.usage_cat ?? '']?.color }}>
+                          {CAT_STYLE[r!.usage_cat ?? '']?.label ?? '—'}{r!.zone && <span className="block text-gray-500">{r!.zone}</span>}</td>
+                        <td className="px-4 py-2 text-xs">{r!.legalite ?? '—'}</td>
+                        <td className="px-4 py-2 text-xs">{r!.zero_def ?? '—'}</td>
+                        <td className="px-4 py-2 text-xs" title={r!.legal_note}>{r!.rdue_stat && <span className={`px-2 py-0.5 rounded-full ${RDUE_BADGE[r!.rdue_stat] ?? ''}`}>{r!.rdue_stat}</span>}</td>
+                      </>}
                     </tr>
                   ))}
                 </tbody>
