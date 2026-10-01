@@ -91,7 +91,7 @@ export default function AccountPage() {
   const handleChangePwd = async (e: React.FormEvent) => {
     e.preventDefault()
     setPwdMsg(null)
-    if (newPwd.length < 6) { setPwdMsg({ t: 'err', m: 'Le mot de passe doit faire au moins 6 caractères.' }); return }
+    if (newPwd.length < 8) { setPwdMsg({ t: 'err', m: 'Le mot de passe doit faire au moins 8 caractères.' }); return }
     if (newPwd !== confirm) { setPwdMsg({ t: 'err', m: 'Les deux mots de passe ne correspondent pas.' }); return }
     setSavingPwd(true)
     try {
@@ -99,8 +99,18 @@ export default function AccountPage() {
       setPwdMsg({ t: 'ok', m: 'Mot de passe modifié avec succès.' })
       setOldPwd(''); setNewPwd(''); setConfirm('')
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: Record<string, unknown> } })?.response?.data
-      setPwdMsg({ t: 'err', m: detail?.old_password ? 'Mot de passe actuel incorrect.' : 'Échec (vérifiez la connexion au serveur).' })
+      const e = err as { response?: { status?: number; data?: Record<string, unknown> } }
+      const data = e.response?.data
+      // Affiche la vraie raison renvoyée par le serveur (règles de sécurité du mot de passe)
+      const pick = (v: unknown) => (Array.isArray(v) ? String(v[0]) : typeof v === 'string' ? v : '')
+      let m: string
+      if (e.response?.status === 429) m = 'Trop de tentatives. Patientez une minute avant de réessayer.'
+      else if (data?.old_password) m = 'Mot de passe actuel incorrect.'
+      else if (data?.new_password) m = pick(data.new_password)
+      else if (data?.detail) m = pick(data.detail)
+      else if (!e.response) m = 'Serveur injoignable. Vérifiez votre connexion Internet.'
+      else m = 'Échec de la modification du mot de passe.'
+      setPwdMsg({ t: 'err', m })
     } finally { setSavingPwd(false) }
   }
 
@@ -192,6 +202,9 @@ export default function AccountPage() {
             <input type={show ? 'text' : 'password'} value={confirm} onChange={(e) => setConfirm(e.target.value)} required className={inputCls} />
           </div>
         </div>
+        <p className="text-xs text-gray-500">
+          Au moins 8 caractères. Évitez un mot de passe trop courant ou composé uniquement de chiffres.
+        </p>
         <button type="submit" disabled={savingPwd}
           className="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl transition">
           {savingPwd ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
