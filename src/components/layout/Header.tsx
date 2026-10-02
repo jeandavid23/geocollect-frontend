@@ -1,6 +1,7 @@
 import { RefreshCw } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
+import LiveBadge from '../ui/LiveBadge'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -21,6 +22,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
+        <LiveBadge />
         {/* Date */}
         <span className="text-sm text-gray-500 hidden md:block">
           {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}

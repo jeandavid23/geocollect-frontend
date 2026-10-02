@@ -6,12 +6,14 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
+import { useLivePolling } from '../../hooks/useLivePolling'
 import Header from '../../components/layout/Header'
 import StatCard from '../../components/ui/StatCard'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 
 export default function CoopDashboardPage() {
+  useLivePolling()
   const user = useAuthStore((s) => s.user)
   const { getCooperativeStats, parcels, agents } = useAppStore()
 

@@ -2,6 +2,8 @@ import api from './client'
 
 export type CellValue = string | number | boolean | null
 
+export interface TableDef { name: string; r1: number; c1: number; r2: number; c2: number; style?: string }
+
 export interface RegistrySheetDTO {
   id: string
   cooperative: string
@@ -9,6 +11,8 @@ export interface RegistrySheetDTO {
   position: number
   data: CellValue[][]
   col_widths: number[]
+  formats?: Record<string, unknown>
+  tables?: TableDef[]
   source_file: string
   updated_by_name: string
   created_at: string
@@ -19,6 +23,8 @@ export interface SheetPayload {
   name: string
   data: CellValue[][]
   col_widths?: number[]
+  formats?: Record<string, unknown>
+  tables?: TableDef[]
   position?: number
 }
 

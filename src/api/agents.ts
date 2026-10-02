@@ -6,6 +6,7 @@ export interface CreateAgentPayload {
   phone?: string
   code: string
   zone?: string
+  sections?: string[]
   cooperative?: string
   login_username?: string
   login_password?: string

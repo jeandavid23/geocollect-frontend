@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Polygon, Popup, LayersControl, useMap } from 'react-leaflet'
 import { Search, Filter, X, MapPin, Layers, Eye, EyeOff } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
+import { useLivePolling } from '../../hooks/useLivePolling'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
@@ -25,6 +26,7 @@ function MapAutoCenter({ lat, lng }: { lat: number; lng: number }) {
 }
 
 export default function CoopParcelsPage() {
+  useLivePolling()
   const user = useAuthStore((s) => s.user)
   const { parcels, producers, agents, legacyParcels } = useAppStore()
   const coopId = user?.cooperativeId ?? 'coop-001'

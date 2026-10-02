@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Polygon, Popup, LayersControl, useMap } from 'react-leaflet'
 import { Search, Filter, X, Layers, Eye, EyeOff } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
+import { useLivePolling } from '../hooks/useLivePolling'
 import Header from '../components/layout/Header'
 import { useAppStore } from '../store/appStore'
 import { useAuthStore } from '../store/authStore'
@@ -25,6 +26,7 @@ function MapAutoCenter({ lat, lng }: { lat: number; lng: number }) {
 }
 
 export default function MapPage() {
+  useLivePolling()
   const { parcels, producers, legacyParcels, cooperatives } = useAppStore()
   const role = useAuthStore((s) => s.user?.role)
   const isAdmin = role === 'super_admin'

@@ -11,20 +11,23 @@ import SpreadsheetGrid, {
 import Calculator from '../../components/registry/Calculator'
 import FunctionsHelp from '../../components/registry/FunctionsHelp'
 import { WorkbookEngine, formatComputed, numericValue, isError } from '../../utils/spreadsheet/engine'
+import { type CellFormat, mergeFormat, fmtKey, XLSX_NUMFMT } from '../../utils/spreadsheet/format'
+import FormatToolbar from '../../components/registry/FormatToolbar'
 import {
   cellName, shiftFormula, adjustForInsert, renameSheetInFormula, normalizeFormulaInput,
 } from '../../utils/spreadsheet/refs'
 import { readWorkbook, type ParsedWorkbook } from '../../utils/excelImport'
 import { downloadBlob } from '../../utils/geoExport'
-import { registryApi, type CellValue, type RegistrySheetDTO } from '../../api/registry'
+import { registryApi, type CellValue, type RegistrySheetDTO, type TableDef } from '../../api/registry'
 import { useAppStore } from '../../store/appStore'
 
-interface SheetState { key: string; id?: string; name: string; data: CellValue[][]; colWidths: number[] }
-interface SavedState { name: string; data: CellValue[][]; colWidths: number[]; position: number }
+interface SheetState { key: string; id?: string; name: string; data: CellValue[][]; colWidths: number[]; formats: Record<string, CellFormat>; tables: TableDef[] }
+interface SavedState { name: string; data: CellValue[][]; colWidths: number[]; formats: Record<string, CellFormat>; tables: TableDef[]; position: number }
 
 const newKey = () => crypto.randomUUID()
 const fromDTO = (s: RegistrySheetDTO): SheetState =>
-  ({ key: newKey(), id: s.id, name: s.name, data: s.data ?? [], colWidths: s.col_widths ?? [] })
+  ({ key: newKey(), id: s.id, name: s.name, data: s.data ?? [], colWidths: s.col_widths ?? [],
+     formats: (s.formats as Record<string, CellFormat>) ?? {}, tables: s.tables ?? [] })
 const AUTOSAVE_MS = 20000
 const FORBIDDEN_SHEET_CHARS = /[:\\/?*[\]]/
 
@@ -89,7 +92,7 @@ export default function RegistryPage() {
   const sheetName = sheet?.name ?? ''
 
   const markSaved = (list: SheetState[]) => {
-    saved.current = new Map(list.map((s, i) => [s.key, { name: s.name, data: s.data, colWidths: s.colWidths, position: i }]))
+    saved.current = new Map(list.map((s, i) => [s.key, { name: s.name, data: s.data, colWidths: s.colWidths, formats: s.formats, tables: s.tables, position: i }]))
     deletedIds.current = []
   }
 
@@ -105,7 +108,7 @@ export default function RegistryPage() {
         addNotification({ type: 'error', title: 'Registre', message: 'Chargement impossible. Vérifiez la connexion.' })
       }
     }
-    if (!list.length) list = [{ key: newKey(), name: 'Registre', data: [], colWidths: [] }]
+    if (!list.length) list = [{ key: newKey(), name: 'Registre', data: [], colWidths: [], formats: {}, tables: [] }]
     // la feuille vide proposée par défaut n'est enregistrée qu'à la première saisie
     markSaved(list)
     history.current = { past: [], future: [] }
@@ -119,7 +122,7 @@ export default function RegistryPage() {
 
   const dirtyCount = sheets.filter((s, i) => {
     const v = saved.current.get(s.key)
-    return !v || v.data !== s.data || v.name !== s.name || v.colWidths !== s.colWidths || v.position !== i
+    return !v || v.data !== s.data || v.name !== s.name || v.colWidths !== s.colWidths || v.formats !== s.formats || v.tables !== s.tables || v.position !== i
   }).length + deletedIds.current.length
 
   // ─── Modifications (avec historique d'annulation) ───────────────────────
@@ -177,6 +180,50 @@ export default function RegistryPage() {
       return { ...s, colWidths: widths }
     }))
   }, [active])
+
+  // ─── Mise en forme (gras, couleurs, alignement, format de nombre, bordures) ─
+  const applyFormat = (patch: Partial<CellFormat>) => {
+    apply((ss) => ss.map((s, i) => {
+      if (i !== active) return s
+      const formats = { ...s.formats }
+      for (let r = sel.r1; r <= sel.r2; r++)
+        for (let c = sel.c1; c <= sel.c2; c++) {
+          const merged = mergeFormat(formats[fmtKey(r, c)], patch)
+          if (merged) formats[fmtKey(r, c)] = merged
+          else delete formats[fmtKey(r, c)]
+        }
+      return { ...s, formats }
+    }))
+  }
+  const clearFormat = () => {
+    apply((ss) => ss.map((s, i) => {
+      if (i !== active) return s
+      const formats = { ...s.formats }
+      for (let r = sel.r1; r <= sel.r2; r++)
+        for (let c = sel.c1; c <= sel.c2; c++) delete formats[fmtKey(r, c)]
+      return { ...s, formats }
+    }))
+  }
+  // Format actuel de la cellule active (pour l'état des boutons de la barre d'outils)
+  const activeFormat: CellFormat = sheet?.formats[fmtKey(sel.ar, sel.ac)] ?? {}
+
+  // « Mettre sous forme de tableau » : entête en gras sur fond, lignes alternées, sur la sélection
+  const makeTable = () => {
+    if (!sheet) return
+    const r1 = sel.r1, c1 = sel.c1, r2 = Math.max(sel.r2, sel.r1 + 1), c2 = sel.c2
+    apply((ss) => ss.map((s, i) => {
+      if (i !== active) return s
+      const formats = { ...s.formats }
+      for (let c = c1; c <= c2; c++)
+        formats[fmtKey(r1, c)] = mergeFormat(formats[fmtKey(r1, c)], { b: true, bg: '#16a34a', c: '#ffffff' })!
+      for (let r = r1 + 1; r <= r2; r++)
+        for (let c = c1; c <= c2; c++)
+          formats[fmtKey(r, c)] = mergeFormat(formats[fmtKey(r, c)], { bg: (r - r1) % 2 === 0 ? '#f0fdf4' : '' })!
+      const name = `Tableau${s.tables.length + 1}`
+      return { ...s, formats, tables: [...s.tables, { name, r1, c1, r2, c2, style: 'green' }] }
+    }))
+    addNotification({ type: 'success', title: 'Tableau créé', message: 'Entête et lignes alternées appliquées. Utilisez Trier/Filtrer sur l\'entête.' })
+  }
 
   // ─── Lignes / colonnes ───────────────────────────────────────────────────
   const insertRows = (below: boolean) => {
@@ -330,7 +377,7 @@ export default function RegistryPage() {
 
   const addSheet = () => {
     const name = uniqueName(`Feuil${sheets.length + 1}`)
-    apply((ss) => [...ss, { key: newKey(), name, data: [], colWidths: [] }])
+    apply((ss) => [...ss, { key: newKey(), name, data: [], colWidths: [], formats: {}, tables: [] }])
     setActive(sheets.length)
     setSel(selectCell(0, 0))
   }
@@ -368,7 +415,7 @@ export default function RegistryPage() {
       for (let i = 0; i < current.length; i++) {
         const s = current[i]
         const v = saved.current.get(s.key)
-        const payload = { name: s.name, data: s.data, col_widths: s.colWidths, position: i }
+        const payload = { name: s.name, data: s.data, col_widths: s.colWidths, formats: s.formats, tables: s.tables, position: i }
         if (!s.id) ids.set(s.key, (await registryApi.create(payload)).data.id)
         else if (!v || v.data !== s.data || v.name !== s.name || v.colWidths !== s.colWidths || v.position !== i) {
           await registryApi.update(s.id, payload)
@@ -395,8 +442,8 @@ export default function RegistryPage() {
   }, [sheets, isLive, dirtyCount, loading, save])
 
   // Ctrl+Z / Ctrl+Y / Ctrl+S valables sur toute la page (hors champs texte, qui gardent leur propre annulation)
-  const shortcuts = useRef({ undo: () => {}, redo: () => {}, save: () => {} })
-  shortcuts.current = { undo, redo, save: () => { save() } }
+  const shortcuts = useRef({ undo: () => {}, redo: () => {}, save: () => {}, fmt: (_: Partial<CellFormat>) => {}, active: {} as CellFormat })
+  shortcuts.current = { undo, redo, save: () => { save() }, fmt: applyFormat, active: activeFormat }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return
@@ -406,6 +453,9 @@ export default function RegistryPage() {
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
       if (k === 'z') { e.preventDefault(); if (e.shiftKey) shortcuts.current.redo(); else shortcuts.current.undo() }
       else if (k === 'y') { e.preventDefault(); shortcuts.current.redo() }
+      else if (k === 'b') { e.preventDefault(); shortcuts.current.fmt({ b: !shortcuts.current.active.b }) }
+      else if (k === 'i') { e.preventDefault(); shortcuts.current.fmt({ i: !shortcuts.current.active.i }) }
+      else if (k === 'u') { e.preventDefault(); shortcuts.current.fmt({ u: !shortcuts.current.active.u }) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -438,7 +488,7 @@ export default function RegistryPage() {
       try {
         if (dirtyCount) await save(true)
         const { data } = await registryApi.importWorkbook(
-          incoming.map((s, i) => ({ name: s.name, data: s.data, col_widths: s.colWidths, position: i })), wb.fileName, mode)
+          incoming.map((s, i) => ({ name: s.name, data: s.data, col_widths: s.colWidths, formats: {}, tables: [], position: i })), wb.fileName, mode)
         const list = data.map(fromDTO)
         markSaved(list)
         history.current = { past: [], future: [] }
@@ -448,7 +498,7 @@ export default function RegistryPage() {
         return
       }
     } else {
-      const imported = incoming.map((s) => ({ key: newKey(), name: s.name, data: s.data, colWidths: s.colWidths }))
+      const imported = incoming.map((s) => ({ key: newKey(), name: s.name, data: s.data, colWidths: s.colWidths, formats: {}, tables: [] }))
       apply((ss) => (mode === 'replace' ? imported : [...ss.filter((s) => !imported.some((n) => n.name === s.name)), ...imported]))
     }
     setActive(0)
@@ -472,6 +522,10 @@ export default function RegistryPage() {
         } else {
           ws[addr] = { t: typeof v === 'number' ? 'n' : typeof v === 'boolean' ? 'b' : 's', v }
         }
+        // Format de nombre (monnaie, pourcentage, date…) : SheetJS l'écrit dans le .xlsx
+        const nf = s.formats[fmtKey(r, c)]?.nf
+        const z = nf && XLSX_NUMFMT[nf]
+        if (z && ws[addr].t === 'n') ws[addr].z = z
       }))
       ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(s.data.length - 1, 0), c: maxC } })
       ws['!cols'] = s.colWidths.map((w) => ({ wpx: w }))
@@ -582,6 +636,9 @@ export default function RegistryPage() {
         </div>
       </div>
 
+      {/* Barre de mise en forme */}
+      <FormatToolbar active={activeFormat} onApply={applyFormat} onClear={clearFormat} onTable={makeTable} />
+
       {/* Barre de formule */}
       <div className="mx-6 mt-2 flex items-center gap-2">
         <span className="w-24 text-center font-mono text-xs bg-gray-100 rounded-lg py-1.5 text-gray-700">{selRef}</span>
@@ -615,6 +672,7 @@ export default function RegistryPage() {
               commitEdit={commitEdit}
               freezeTop={freezeTop}
               onSetCells={setCells}
+              formats={sheet.formats}
               onColWidth={onColWidth}
               onShortcut={onShortcut}
               scrollToken={scrollToken}

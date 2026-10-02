@@ -3,6 +3,7 @@ import {
   CheckCircle2, XCircle, Clock, BarChart3, Shield, Activity,
 } from 'lucide-react'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { useLivePolling } from '../../hooks/useLivePolling'
 import Header from '../../components/layout/Header'
 import StatCard from '../../components/ui/StatCard'
 import { useAppStore } from '../../store/appStore'
@@ -11,6 +12,7 @@ import { MOCK_COOPERATIVES } from '../../utils/mockData'
 const COLORS = ['#16a34a', '#dc2626', '#f59e0b']
 
 export default function AdminDashboardPage() {
+  useLivePolling()
   const { cooperatives, producers, parcels, agents } = useAppStore()
 
   const totalHa = parcels.reduce((s, p) => s + p.areaHectares, 0)

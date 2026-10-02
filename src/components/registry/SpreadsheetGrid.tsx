@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CellValue } from '../../api/registry'
 import { colName, cellName, shiftFormula } from '../../utils/spreadsheet/refs'
 import { formatComputed, isError, type WorkbookEngine } from '../../utils/spreadsheet/engine'
+import { applyNumberFormat, cellStyle, fmtKey, type CellFormat } from '../../utils/spreadsheet/format'
 
 export interface Selection { ar: number; ac: number; r1: number; c1: number; r2: number; c2: number }
 export interface EditState { r: number; c: number; text: string }
@@ -39,6 +40,7 @@ interface Props {
   // Ctrl+Z / Ctrl+Y / Ctrl+S sont gérés au niveau de la page
   onShortcut: (action: 'find' | 'fillDown' | 'fillRight') => void
   scrollToken: number // change quand la cellule active doit être ramenée dans la vue
+  formats?: Record<string, CellFormat> // mise en forme par cellule (clé « r:c »)
 }
 
 // Presse-papiers interne : garde les formules (le presse-papiers système ne reçoit que les valeurs)
@@ -253,6 +255,10 @@ export default function SpreadsheetGrid(props: Props) {
     const header = freezeTop && r === 0
     const numeric = typeof computed === 'number'
     const err = isError(computed)
+    // Mise en forme de la cellule (gras, couleurs, alignement, format de nombre, bordures)
+    const fmt = props.formats?.[fmtKey(r, c)]
+    const display = (fmt?.nf && applyNumberFormat(computed, fmt.nf)) ?? formatComputed(computed, v)
+    const style = { left: colLeft[c], top, width: width(c), height: ROW_H, ...cellStyle(fmt) }
     return (
       <div
         key={c}
@@ -261,13 +267,13 @@ export default function SpreadsheetGrid(props: Props) {
         onMouseEnter={() => onCellMouseEnter(r, c)}
         onDoubleClick={() => startEdit(r, c)}
         className={`absolute border-r border-b border-gray-200 px-1.5 text-xs leading-[25px] whitespace-nowrap overflow-hidden select-none
-          ${header ? 'font-semibold bg-amber-50 text-gray-800' : ''}
-          ${inSel && !active ? 'bg-primary-50' : ''} ${numeric ? 'text-right' : ''} ${err ? 'text-red-600' : ''}
+          ${header && !fmt?.bg ? 'font-semibold bg-amber-50 text-gray-800' : ''}
+          ${inSel && !active && !fmt?.bg ? 'bg-primary-50' : ''} ${numeric && !fmt?.a ? 'text-right' : ''} ${err ? 'text-red-600' : ''}
           ${active ? 'outline outline-2 -outline-offset-2 outline-primary-600 z-[1]' : ''}`}
-        style={{ left: colLeft[c], top, width: width(c), height: ROW_H }}
+        style={style}
         title={typeof v === 'string' && v.startsWith('=') ? v : undefined}
       >
-        {formatComputed(computed, v)}
+        {display}
       </div>
     )
   }

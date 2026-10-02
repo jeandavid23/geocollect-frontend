@@ -18,6 +18,7 @@ interface Report {
   icon: React.ReactNode
   color: string
   action: () => void | Promise<void>
+  needs: 'parcels' | 'producers'
 }
 
 interface AnalysisRow extends PolygonAnalysis {
@@ -26,7 +27,7 @@ interface AnalysisRow extends PolygonAnalysis {
 
 export default function ReportsPage() {
   const user = useAuthStore((s) => s.user)
-  const { parcels, producers, updateParcel, addNotification, isLive } = useAppStore()
+  const { parcels, producers, updateParcel, addNotification, isLive, isLoading } = useAppStore()
   const coopId = user?.cooperativeId ?? 'coop-001'
   const [loading, setLoading] = useState<string | null>(null)
   const [done, setDone] = useState<string[]>([])
@@ -111,8 +112,9 @@ export default function ReportsPage() {
       await fn()
       setDone((d) => [...d, id])
       setTimeout(() => setDone((d) => d.filter((x) => x !== id)), 3000)
-    } catch {
-      // swallow — UI returns to idle
+    } catch (err) {
+      addNotification({ type: 'error', title: 'Export impossible',
+        message: err instanceof Error ? err.message : 'Une erreur est survenue pendant la génération du fichier.' })
     } finally {
       setLoading(null)
     }
@@ -121,6 +123,7 @@ export default function ReportsPage() {
   const reports: Report[] = [
     {
       id: 'geojson',
+      needs: 'parcels',
       title: 'Polygones — GeoJSON',
       description: 'Toutes les parcelles au format GeoJSON (QGIS, ArcGIS, Leaflet, web).',
       format: 'GeoJSON',
@@ -130,6 +133,7 @@ export default function ReportsPage() {
     },
     {
       id: 'kml',
+      needs: 'parcels',
       title: 'Polygones — KML',
       description: 'Parcelles au format KML, ouvrables directement dans Google Earth.',
       format: 'KML',
@@ -139,6 +143,7 @@ export default function ReportsPage() {
     },
     {
       id: 'shp',
+      needs: 'parcels',
       title: 'Polygones — Shapefile',
       description: 'Archive .zip (.shp/.shx/.dbf/.prj) pour les SIG professionnels.',
       format: 'Shapefile (.zip)',
@@ -151,6 +156,7 @@ export default function ReportsPage() {
     },
     {
       id: 'producers',
+      needs: 'producers',
       title: 'Liste des producteurs',
       description: 'Producteurs avec nb de parcelles, superficie totale et conformité EUDR.',
       format: 'Excel (.xlsx)',
@@ -160,6 +166,7 @@ export default function ReportsPage() {
     },
     {
       id: 'parcels',
+      needs: 'parcels',
       title: 'Liste des parcelles',
       description: 'Détail de chaque parcelle : superficie, périmètre, score EUDR, statut.',
       format: 'Excel (.xlsx)',
@@ -169,6 +176,7 @@ export default function ReportsPage() {
     },
     {
       id: 'eudr',
+      needs: 'parcels',
       title: 'Rapport de conformité EUDR',
       description: 'Synthèse texte de la conformité EUDR de chaque parcelle.',
       format: 'TXT',
@@ -187,6 +195,23 @@ export default function ReportsPage() {
   return (
     <div className="p-6 space-y-6">
       <Header title="Rapports & Exports" subtitle="Polygones (GeoJSON, KML, SHP) et listes producteurs/parcelles" />
+
+      {isLoading && (
+        <div className="bg-amber-50 text-amber-800 rounded-xl px-4 py-3 text-sm flex items-center gap-2">
+          <span className="w-3 h-3 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+          Chargement des données en cours… les boutons s'activeront dès que les producteurs et parcelles seront chargés.
+        </div>
+      )}
+      {!isLoading && coopProducers.length === 0 && coopParcels.length === 0 && (
+        <div className="bg-blue-50 text-blue-800 rounded-xl px-4 py-3 text-sm">
+          Aucune donnée à exporter pour le moment. Enregistrez des producteurs et faites mapper des parcelles : les exports s'activeront automatiquement.
+        </div>
+      )}
+      {!isLoading && coopParcels.length === 0 && coopProducers.length > 0 && (
+        <div className="bg-blue-50 text-blue-800 rounded-xl px-4 py-3 text-sm">
+          Les exports de <b>polygones</b> (GeoJSON, KML, Shapefile) et de parcelles s'activeront dès qu'une parcelle sera mappée. L'export de la <b>liste des producteurs</b> est déjà disponible.
+        </div>
+      )}
 
       {/* Polygon Validator EUDR by JDK — analysis banner */}
       <div className="bg-gradient-to-r from-primary-700 to-green-800 text-white rounded-2xl p-5 flex items-center justify-between">
@@ -240,7 +265,7 @@ export default function ReportsPage() {
               <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">{r.format}</span>
               <button
                 onClick={() => runExport(r.id, r.action)}
-                disabled={loading === r.id || coopParcels.length === 0}
+                disabled={loading === r.id || (r.needs === 'parcels' ? coopParcels.length === 0 : coopProducers.length === 0)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
                   done.includes(r.id)
                     ? 'bg-green-100 text-green-700'

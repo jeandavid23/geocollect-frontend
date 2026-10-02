@@ -17,12 +17,21 @@ export default function CoopAgentsPage() {
 
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [sections, setSections] = useState<string[]>([])
   const [confirmDelete, setConfirmDelete] = useState<Agent | null>(null)
   const [saving, setSaving] = useState(false)
   const [credentials, setCredentials] = useState<{ name: string; username: string; password: string } | null>(null)
 
   const coopAgents = agents.filter((a) => a.cooperativeId === coopId)
   const setField = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
+
+  // Sections de la coopérative (déduites des producteurs et parcelles) à attribuer à l'agent
+  const coopSections = [...new Set([
+    ...producers.filter((p) => p.cooperativeId === coopId).map((p) => p.section),
+    ...parcels.filter((p) => p.cooperativeId === coopId).map((p) => p.section),
+  ].filter((s) => s && s.trim()))].sort((a, b) => a.localeCompare(b, 'fr'))
+  const toggleSection = (s: string) =>
+    setSections((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]))
 
   const stats = (agentId: string) => {
     const ap = parcels.filter((p) => p.agentId === agentId)
@@ -60,7 +69,8 @@ export default function CoopAgentsPage() {
       fullName: form.fullName.trim(),
       phone: form.phone.trim(),
       email: form.email.trim(),
-      zone: form.zone.trim() || 'Non assignée',
+      zone: form.zone.trim() || (sections.length ? sections.join(', ') : 'Non assignée'),
+      sections,
       isActive: true,
       createdAt: new Date().toISOString(),
       parcelCount: 0,
@@ -74,10 +84,11 @@ export default function CoopAgentsPage() {
         email: form.email.trim(),
         phone: form.phone.trim(),
         code,
-        zone: form.zone.trim() || 'Non assignée',
+        zone: form.zone.trim() || (sections.length ? sections.join(', ') : 'Non assignée'),
+        sections,
       })
       addAgent({ ...baseAgent, id: data.id, code: data.code || code })
-      setForm(EMPTY_FORM)
+      setForm(EMPTY_FORM); setSections([])
       setShowForm(false)
       setCredentials({ name: baseAgent.fullName, username: data.account_username, password: data.account_password })
     } catch {
@@ -106,7 +117,7 @@ export default function CoopAgentsPage() {
       <Header title="Agents de la coopérative" subtitle={`${coopAgents.length} agents mappeurs`} />
 
       <div className="flex justify-end">
-        <button onClick={() => setShowForm(true)}
+        <button onClick={() => { setSections([]); setForm(EMPTY_FORM); setShowForm(true) }}
           className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition">
           <Plus className="w-4 h-4" /> Ajouter un agent
         </button>
@@ -135,7 +146,18 @@ export default function CoopAgentsPage() {
               </div>
 
               <div className="space-y-1.5 text-xs text-gray-600 mb-4">
-                <p className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-gray-400" /> {a.zone}</p>
+                {a.sections && a.sections.length > 0 ? (
+                  <div className="flex items-start gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex flex-wrap gap-1">
+                      {a.sections.map((s) => (
+                        <span key={s} className="bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded font-medium">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-gray-400" /> {a.zone}</p>
+                )}
                 <p className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-gray-400" /> {a.phone || '—'}</p>
                 <p className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-gray-400" /> {a.email || '—'}</p>
               </div>
@@ -184,7 +206,7 @@ export default function CoopAgentsPage() {
                 <h3 className="font-bold text-gray-900">Ajouter un agent mappeur</h3>
                 <p className="text-xs text-gray-500">Code attribué : <span className="font-mono">{nextCode()}</span></p>
               </div>
-              <button onClick={() => setShowForm(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => { setShowForm(false); setSections([]) }} className="p-1.5 hover:bg-gray-100 rounded-lg">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -207,12 +229,27 @@ export default function CoopAgentsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Zone d'intervention</label>
-                <input value={form.zone} onChange={(e) => setField('zone', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Zone Nord-Beoumi" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sections de travail attribuées {sections.length > 0 && <span className="text-primary-600">({sections.length} sélectionnée{sections.length > 1 ? 's' : ''})</span>}
+                </label>
+                {coopSections.length === 0 ? (
+                  <p className="text-xs text-gray-400 bg-gray-50 rounded-xl p-3">
+                    Aucune section dans la coopérative pour le moment. Enregistrez d'abord des producteurs (chaque producteur a une section), puis attribuez-les ici.
+                  </p>
+                ) : (
+                  <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-2 grid grid-cols-2 gap-1">
+                    {coopSections.map((s) => (
+                      <label key={s} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm cursor-pointer ${sections.includes(s) ? 'bg-primary-50 text-primary-800' : 'hover:bg-gray-50 text-gray-700'}`}>
+                        <input type="checkbox" checked={sections.includes(s)} onChange={() => toggleSection(s)} />
+                        {s}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[11px] text-gray-400 mt-1">L'agent mappera en priorité les producteurs de ces sections. Vous pourrez les modifier plus tard.</p>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowForm(false)}
+                <button type="button" onClick={() => { setShowForm(false); setSections([]) }}
                   className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition">Annuler</button>
                 <button type="submit" disabled={saving}
                   className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl transition">

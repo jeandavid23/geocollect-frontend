@@ -67,6 +67,7 @@ export interface Agent {
   phone: string
   email: string
   zone: string
+  sections?: string[]
   isActive: boolean
   createdAt: string
   parcelCount?: number

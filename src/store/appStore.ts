@@ -31,8 +31,13 @@ interface AppStore {
   // Live (backend) data state
   isLive: boolean
   isLoading: boolean // chargement des données en cours (milliers de producteurs / polygones)
+  lastSync: number | null // horodatage du dernier rafraîchissement réussi
   currentAgentId: string | null
   loadFromApi: (userId?: string) => Promise<void>
+  // Rafraîchissement silencieux (temps quasi réel) : recharge parcelles, producteurs et agents
+  refreshData: () => Promise<void>
+  pollersActive: number
+  setPolling: (on: boolean) => void
 
   // Mapping session
   mappingSession: MappingSession | null
@@ -87,6 +92,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   isLive: false,
   isLoading: false,
+  lastSync: null,
+  pollersActive: 0,
   currentAgentId: null,
 
   // Charge toutes les données depuis la base (API Django) selon le rôle de l'utilisateur
@@ -103,7 +110,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         legacyApi.list(),
       ])
 
-      const next: Partial<AppStore> = { isLive: true, isLoading: false }
+      const next: Partial<AppStore> = { isLive: true, isLoading: false, lastSync: Date.now() }
 
       if (coopsRes.status === 'fulfilled')
         next.cooperatives = unwrap(coopsRes.value.data).map(mapCooperative)
@@ -124,6 +131,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set(next)
     } catch {
       set({ isLoading: false })
+    }
+  },
+
+  // Rafraîchit en arrière-plan sans vider l'écran (utilisé par le rafraîchissement automatique ~15 s)
+  setPolling: (on) => set((st) => ({ pollersActive: Math.max(0, st.pollersActive + (on ? 1 : -1)) })),
+
+  refreshData: async () => {
+    if (!get().isLive) return
+    try {
+      const [prodsRes, parcelsRes, agentsRes] = await Promise.allSettled([
+        producersApi.list(),
+        parcelsApi.listAll(),
+        agentsApi.list(),
+      ])
+      const next: Partial<AppStore> = { lastSync: Date.now() }
+      if (prodsRes.status === 'fulfilled') next.producers = unwrap(prodsRes.value.data).map(mapProducer)
+      if (parcelsRes.status === 'fulfilled') next.parcels = unwrap(parcelsRes.value.data).map(mapParcel)
+      if (agentsRes.status === 'fulfilled') next.agents = unwrap(agentsRes.value.data).map(mapAgent)
+      set(next)
+    } catch {
+      /* hors ligne : on garde les données affichées */
     }
   },
 

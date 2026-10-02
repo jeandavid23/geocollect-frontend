@@ -3,11 +3,17 @@ import * as shpwrite from '@mapbox/shp-write'
 import type { Parcel, Producer } from '../types'
 
 // Build a GeoJSON FeatureCollection from parcels (+ producer name)
+// Une géométrie exploitable = Polygon/MultiPolygon avec au moins un anneau de points
+function hasGeometry(p: Parcel): boolean {
+  const g = p.geometry as { type?: string; coordinates?: unknown[] } | undefined
+  return !!g && (g.type === 'Polygon' || g.type === 'MultiPolygon') && Array.isArray(g.coordinates) && g.coordinates.length > 0
+}
+
 export function parcelsToFeatureCollection(parcels: Parcel[], producers: Producer[]) {
   const producerName = (id: string) => producers.find((p) => p.id === id)?.fullName ?? ''
   return {
     type: 'FeatureCollection' as const,
-    features: parcels.map((p) => ({
+    features: parcels.filter(hasGeometry).map((p) => ({
       type: 'Feature' as const,
       properties: {
         fieldId: p.fieldId,
@@ -37,8 +43,13 @@ export function toKML(parcels: Parcel[], producers: Producer[]): string {
   const esc = (s: string) =>
     String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-  const placemarks = parcels.map((p) => {
-    const ring = p.geometry.coordinates[0]
+  const placemarks = parcels.filter(hasGeometry).map((p) => {
+    // Polygon -> anneau extérieur ; MultiPolygon -> 1er polygone, anneau extérieur
+    const g = p.geometry as unknown as { type: string; coordinates: number[][][] | number[][][][] }
+    const outer = (g.type === 'MultiPolygon'
+      ? (g.coordinates as number[][][][])[0]?.[0]
+      : (g.coordinates as number[][][])[0]) as number[][] | undefined
+    const ring = (outer ?? [])
       .map(([lng, lat]) => `${lng},${lat},0`)
       .join(' ')
     const color =
@@ -50,7 +61,7 @@ export function toKML(parcels: Parcel[], producers: Producer[]): string {
         Producteur: ${producerName(p.producerId)}<br/>
         Village: ${p.village} - ${p.section}<br/>
         Culture: ${p.culture}<br/>
-        Superficie: ${p.areaHectares.toFixed(2)} ha<br/>
+        Superficie: ${(p.areaHectares ?? 0).toFixed(2)} ha<br/>
         Score EUDR: ${p.eudrScore ?? '—'}%
       ]]></description>
       <Style><PolyStyle><color>7f${color.slice(2)}</color></PolyStyle><LineStyle><color>${color}</color><width>2</width></LineStyle></Style>
@@ -70,6 +81,7 @@ ${placemarks}
 // Shapefile (zip Blob)
 export async function toShapefileZip(parcels: Parcel[], producers: Producer[]): Promise<Blob> {
   const fc = parcelsToFeatureCollection(parcels, producers)
+  if (fc.features.length === 0) throw new Error('Aucune parcelle avec une géométrie valide à exporter.')
   const options = {
     outputType: 'blob',
     types: { polygon: 'parcelles_eudr' },

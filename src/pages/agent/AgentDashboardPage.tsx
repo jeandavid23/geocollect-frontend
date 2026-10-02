@@ -4,6 +4,7 @@ import {
   WifiOff, TrendingUp, Play, RefreshCw, Calendar,
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { useLivePolling } from '../../hooks/useLivePolling'
 import Header from '../../components/layout/Header'
 import StatCard from '../../components/ui/StatCard'
 import { useAuthStore } from '../../store/authStore'
@@ -12,6 +13,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 export default function AgentDashboardPage() {
+  useLivePolling()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const { parcels, producers, isOnline, isSyncing, syncAll, currentAgentId } = useAppStore()

@@ -39,6 +39,7 @@ export function mapAgent(a: Any): Agent {
     phone: s(a.phone),
     email: s(a.email),
     zone: s(a.zone),
+    sections: Array.isArray(a.sections) ? (a.sections as string[]) : [],
     isActive: a.is_active !== false,
     createdAt: s(a.created_at),
     parcelCount: n(a.parcel_count),
