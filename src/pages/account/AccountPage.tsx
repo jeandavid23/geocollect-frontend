@@ -44,7 +44,8 @@ export default function AccountPage() {
   const [savingPwd, setSavingPwd] = useState(false)
   const [pwdMsg, setPwdMsg] = useState<{ t: 'ok' | 'err'; m: string } | null>(null)
 
-  const roleLabel = user?.role === 'super_admin' ? 'Super Administrateur'
+  const roleLabel = user?.role === 'owner' ? 'Super Super Admin (propriétaire)'
+    : user?.role === 'super_admin' ? 'Super Administrateur'
     : user?.role === 'cooperative' ? 'Coopérative' : 'Agent Mappeur'
 
   // Charge le profil complet depuis le backend

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Leaf, Loader2, MapPin, Shield } from 'lucide-react'
 import { useAuthStore, MOCK_USERS } from '../../store/authStore'
@@ -8,7 +8,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  // Motif d'une déconnexion forcée (organisation suspendue, abonnement expiré…)
+  const [error, setError] = useState(() => {
+    try { return sessionStorage.getItem('geocollect-logout-reason') || '' } catch { return '' }
+  })
+  // le motif n'est affiché qu'une fois : effacé après le premier affichage
+  useEffect(() => { try { sessionStorage.removeItem('geocollect-logout-reason') } catch { /* indisponible */ } }, [])
 
   const { loginWithApi, loginMock } = useAuthStore()
   const navigate = useNavigate()
@@ -21,7 +26,14 @@ export default function LoginPage() {
     try {
       await loginWithApi(username, password)
     } catch (err) {
-      const status = (err as { response?: { status?: number } })?.response?.status
+      const resp = (err as { response?: { status?: number; data?: { code?: string; detail?: string } } })?.response
+      const status = resp?.status
+      // Organisation suspendue / abonnement expiré / coopérative désactivée : on affiche le vrai motif
+      if (resp?.data?.code === 'tenant_inactive' && resp.data.detail) {
+        setError(resp.data.detail)
+        setLoading(false)
+        return
+      }
       // En production : jamais de connexion « démo » de secours (elle masquait les vraies erreurs)
       if (!import.meta.env.DEV) {
         setError(status === 429 ? 'Trop de tentatives. Patientez une minute avant de réessayer.'
@@ -42,7 +54,8 @@ export default function LoginPage() {
 
     setLoading(false)
     const currentRole = useAuthStore.getState().user?.role
-    if (currentRole === 'super_admin') navigate('/admin')
+    if (currentRole === 'owner') navigate('/owner')
+    else if (currentRole === 'super_admin') navigate('/admin')
     else if (currentRole === 'cooperative') navigate('/coop')
     else navigate('/agent')
   }

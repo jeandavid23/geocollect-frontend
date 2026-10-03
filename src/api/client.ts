@@ -26,11 +26,21 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config
-    if (error.response?.status === 401 && !original._retry) {
+    // Organisation suspendue, abonnement expiré ou coopérative désactivée : déconnexion avec le motif
+    if (error.response?.status === 401 && error.response?.data?.code === 'tenant_inactive') {
+      try { sessionStorage.setItem('geocollect-logout-reason', String(error.response.data.detail || '')) } catch { /* indisponible */ }
+      localStorage.removeItem('geocollect-auth')
+      if (!window.location.pathname.startsWith('/login')) window.location.href = '/login'
+      return Promise.reject(error)
+    }
+    // Connexion / rafraîchissement refusés : c'est un mauvais identifiant, pas un jeton expiré.
+    // Sans cette exception, l'échec rechargeait la page et effaçait le message d'erreur.
+    const isAuthCall = /\/auth\/(login|token\/refresh)\//.test(String(original?.url ?? ''))
+    if (error.response?.status === 401 && !original._retry && !isAuthCall) {
       original._retry = true
       try {
         const stored = localStorage.getItem('geocollect-auth')
-        if (stored) {
+        if (stored && JSON.parse(stored)?.state?.refreshToken) {
           const { state } = JSON.parse(stored)
           const { data } = await axios.post(`${BASE_URL}/auth/token/refresh/`, {
             refresh: state?.refreshToken,

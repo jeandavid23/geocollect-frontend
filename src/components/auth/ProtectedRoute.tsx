@@ -12,7 +12,7 @@ export default function ProtectedRoute({ roles, children }: Props) {
 
   if (!isAuthenticated) return <Navigate to="/login" replace />
   if (roles && user && !roles.includes(user.role)) {
-    const redirect = user.role === 'super_admin' ? '/admin' : user.role === 'cooperative' ? '/coop' : '/agent'
+    const redirect = user.role === 'owner' ? '/owner' : user.role === 'super_admin' ? '/admin' : user.role === 'cooperative' ? '/coop' : '/agent'
     return <Navigate to={redirect} replace />
   }
 

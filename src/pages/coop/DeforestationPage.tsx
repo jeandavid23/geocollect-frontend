@@ -11,6 +11,7 @@ import {
   deforestationApi, type DeforestationResult, type DeforestationOptions, type DefStatus, type Standard,
 } from '../../api/deforestation'
 import { withRetry, apiErrorMessage } from '../../utils/retry'
+import { useHasModule } from '../../utils/modules'
 import { downloadBlob } from '../../utils/geoExport'
 
 const { BaseLayer } = LayersControl
@@ -52,6 +53,7 @@ function latOf(g: GeoJSON.Geometry): number {
 }
 
 export default function DeforestationPage() {
+  const hasRdue = useHasModule('rdue')
   const [picked, setPicked] = useState<PickedSource | null>(null)
   const [opts, setOpts] = useState<DeforestationOptions>({
     standard: 'EUDR', tolerance_ha: 0.01, alert_pct: 1, treecover_min: 10, apply_rdue: false, forest_min_frac: 0.1,
@@ -240,7 +242,7 @@ export default function DeforestationPage() {
             <input type="number" min="0" max="100" value={opts.treecover_min} onChange={(e) => setOpts({ ...opts, treecover_min: Number(e.target.value) })} className={input} />
           </label>
         </div>
-        <div className="rounded-xl border border-gray-100 p-3 space-y-2">
+        {hasRdue && <div className="rounded-xl border border-gray-100 p-3 space-y-2">
           <label className="flex items-center gap-2 text-sm font-medium text-gray-800">
             <input type="checkbox" checked={opts.apply_rdue} onChange={(e) => setOpts({ ...opts, apply_rdue: e.target.checked })} />
             Appliquer la matrice RDUE (légalité foncière × zéro déforestation)
@@ -256,7 +258,7 @@ export default function DeforestationPage() {
                 onChange={(e) => setOpts({ ...opts, forest_min_frac: Number(e.target.value) / 100 })} className={input} />
             </label>
           )}
-        </div>
+        </div>}
         <p className="text-xs text-gray-500">
           Perte ≤ tolérance : Conforme · perte ≤ seuil : À risque (à vérifier) · au-delà : Non conforme.
           Seule la perte sur une zone boisée en 2000 (couvert ≥ seuil FAO) est comptée comme déforestation.

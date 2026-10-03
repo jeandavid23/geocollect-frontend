@@ -26,6 +26,8 @@ export function mapCooperative(c: Any): Cooperative {
     parcelCount: n(c.parcel_count),
     totalHectares: n(c.total_hectares),
     agentCount: n(c.agent_count),
+    managedBy: c.managed_by ? s(c.managed_by) : null,
+    managedByName: c.managed_by_name ? s(c.managed_by_name) : null,
   }
 }
 

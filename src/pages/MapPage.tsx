@@ -6,6 +6,7 @@ import { useLivePolling } from '../hooks/useLivePolling'
 import Header from '../components/layout/Header'
 import { useAppStore } from '../store/appStore'
 import { useAuthStore } from '../store/authStore'
+import { useHasModule } from '../utils/modules'
 import type { Parcel } from '../types'
 import LegacyParcelsLayer, { MapLegend, LEGACY_COLOR } from '../components/map/LegacyParcelsLayer'
 import LegacyImportModal from '../components/map/LegacyImportModal'
@@ -29,7 +30,8 @@ export default function MapPage() {
   useLivePolling()
   const { parcels, producers, legacyParcels, cooperatives } = useAppStore()
   const role = useAuthStore((s) => s.user?.role)
-  const isAdmin = role === 'super_admin'
+  const hasLegacy = useHasModule('legacy')
+  const isAdmin = role === 'super_admin' || role === 'owner'
   // Super admin : toutes les coopératives, ou une seule
   const [filterCoop, setFilterCoop] = useState('all')
   const [showLegacy, setShowLegacy] = useState(true)
@@ -125,7 +127,7 @@ export default function MapPage() {
           {showLegacy ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
           Anciens polygones ({legacy.length})
         </button>
-        {(role === 'cooperative' || (isAdmin && filterCoop !== 'all')) && (
+        {hasLegacy && (role === 'cooperative' || (isAdmin && filterCoop !== 'all')) && (
           <button
             onClick={() => setShowLegacyImport(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white hover:opacity-90"

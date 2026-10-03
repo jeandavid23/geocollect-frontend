@@ -63,6 +63,7 @@ interface AppStore {
   updateProducer: (id: string, updates: Partial<Producer>) => void
 
   addCooperative: (coop: Cooperative) => void
+  updateCooperative: (id: string, updates: Partial<Cooperative>) => void
   addAgent: (agent: Agent) => void
   removeAgent: (id: string) => void
   toggleAgentActive: (id: string) => void
@@ -214,6 +215,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   addCooperative: (coop) =>
     set((state) => ({ cooperatives: [coop, ...state.cooperatives] })),
+
+  updateCooperative: (id, updates) =>
+    set((state) => ({ cooperatives: state.cooperatives.map((c) => (c.id === id ? { ...c, ...updates } : c)) })),
 
   addAgent: (agent) =>
     set((state) => ({ agents: [agent, ...state.agents] })),

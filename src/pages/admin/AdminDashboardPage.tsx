@@ -6,6 +6,7 @@ import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { useLivePolling } from '../../hooks/useLivePolling'
 import Header from '../../components/layout/Header'
 import StatCard from '../../components/ui/StatCard'
+import LicenseCard from '../../components/ui/LicenseCard'
 import { useAppStore } from '../../store/appStore'
 import { MOCK_COOPERATIVES } from '../../utils/mockData'
 
@@ -47,6 +48,7 @@ export default function AdminDashboardPage() {
         title="Tableau de bord Administrateur"
         subtitle="Vue globale de la plateforme GeoCollect EUDR"
       />
+      <LicenseCard />
 
       {/* Stats globales */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

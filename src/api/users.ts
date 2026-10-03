@@ -6,7 +6,7 @@ export interface ApiUser {
   email: string | null
   full_name: string
   phone: string
-  role: 'super_admin' | 'cooperative' | 'agent'
+  role: 'owner' | 'super_admin' | 'cooperative' | 'agent'
   is_active: boolean
   cooperative_id: string | null
   cooperative_name: string | null

@@ -15,6 +15,8 @@ export interface CreateCooperativePayload {
   address?: string
   login_username?: string
   login_password?: string
+  // propriétaire : super admin (client) qui gérera la coopérative ; vide = vous
+  managed_by?: string | null
 }
 
 export interface CreatedAccount {

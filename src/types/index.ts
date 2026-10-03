@@ -1,6 +1,20 @@
 // ─── User & Authentication ───────────────────────────────────────────────────
 
-export type UserRole = 'super_admin' | 'cooperative' | 'agent'
+// owner = Super Super Admin (propriétaire de la plateforme) ; super_admin = client
+export type UserRole = 'owner' | 'super_admin' | 'cooperative' | 'agent'
+
+export type ModuleId = 'deforestation' | 'rdue' | 'validator' | 'registry' | 'legacy'
+
+export interface LicenseSummary {
+  organization: string
+  max_cooperatives: number | null
+  max_agents_per_coop: number | null
+  modules: ModuleId[] | null
+  expires_at: string | null
+  is_expired: boolean
+  cooperatives_used: number
+  agents_used: number
+}
 
 export interface User {
   id: string
@@ -14,6 +28,10 @@ export interface User {
   lastLogin?: string
   createdAt: string
   cooperativeId?: string
+  // Modules autorisés pour l'organisation (null / absent = tous)
+  modules?: ModuleId[] | null
+  // Licence du super admin (son abonnement)
+  license?: LicenseSummary | null
 }
 
 export interface AuthState {
@@ -46,6 +64,9 @@ export interface Cooperative {
   totalHectares?: number
   agentCount?: number
   documents?: Document[]
+  // Super admin (client) gestionnaire ; null = géré par le propriétaire
+  managedBy?: string | null
+  managedByName?: string | null
 }
 
 export interface Document {

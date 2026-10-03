@@ -3,6 +3,7 @@ import { useEffect, lazy, Suspense } from 'react'
 import { useAppStore } from './store/appStore'
 import { useAuthStore } from './store/authStore'
 import ProtectedRoute from './components/auth/ProtectedRoute'
+import RequireModule from './components/auth/RequireModule'
 import Layout from './components/layout/Layout'
 
 // Auth
@@ -16,6 +17,10 @@ import CooperativesPage from './pages/admin/CooperativesPage'
 import AdminAgentsPage from './pages/admin/AdminAgentsPage'
 import AccountsPage from './pages/admin/AccountsPage'
 import LogsPage from './pages/admin/LogsPage'
+
+// Propriétaire de la plateforme (Super Super Admin)
+import PlatformPage from './pages/owner/PlatformPage'
+import SuperAdminsPage from './pages/owner/SuperAdminsPage'
 
 // Shared account
 import AccountPage from './pages/account/AccountPage'
@@ -43,6 +48,7 @@ import MapPage from './pages/MapPage'
 function RootRedirect() {
   const { isAuthenticated, user } = useAuthStore()
   if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (user?.role === 'owner') return <Navigate to="/owner" replace />
   if (user?.role === 'super_admin') return <Navigate to="/admin" replace />
   if (user?.role === 'cooperative') return <Navigate to="/coop" replace />
   return <Navigate to="/agent" replace />
@@ -68,6 +74,8 @@ export default function App() {
   useEffect(() => {
     if (isAuthenticated && token && !token.startsWith('mock')) {
       loadFromApi(user?.id)
+      // modules / licence à jour (les droits changés par le propriétaire s'appliquent sans reconnexion)
+      useAuthStore.getState().refreshMe()
     }
   }, [isAuthenticated, token, user?.id, loadFromApi])
 
@@ -81,10 +89,22 @@ export default function App() {
         <Route path="/confidentialite" element={<ConfidentialitePage />} />
         <Route path="/" element={<RootRedirect />} />
 
-        {/* Super Admin */}
+        {/* Propriétaire de la plateforme */}
         <Route
           element={
-            <ProtectedRoute roles={['super_admin']}>
+            <ProtectedRoute roles={['owner']}>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/owner" element={<PlatformPage />} />
+          <Route path="/owner/admins" element={<SuperAdminsPage />} />
+        </Route>
+
+        {/* Super Admin (le propriétaire y a aussi accès, sur tous les clients) */}
+        <Route
+          element={
+            <ProtectedRoute roles={['super_admin', 'owner']}>
               <Layout />
             </ProtectedRoute>
           }
@@ -109,9 +129,9 @@ export default function App() {
           <Route path="/coop/parcels" element={<CoopParcelsPage />} />
           <Route path="/coop/agents" element={<CoopAgentsPage />} />
           <Route path="/coop/reports" element={<ReportsPage />} />
-          <Route path="/coop/deforestation" element={<DeforestationPage />} />
-          <Route path="/coop/validator" element={<ValidatorPage />} />
-          <Route path="/coop/registry" element={<Suspense fallback={<p className="p-6 text-gray-500">Chargement du registre…</p>}><RegistryPage /></Suspense>} />
+          <Route path="/coop/deforestation" element={<RequireModule module="deforestation"><DeforestationPage /></RequireModule>} />
+          <Route path="/coop/validator" element={<RequireModule module="validator"><ValidatorPage /></RequireModule>} />
+          <Route path="/coop/registry" element={<RequireModule module="registry"><Suspense fallback={<p className="p-6 text-gray-500">Chargement du registre…</p>}><RegistryPage /></Suspense></RequireModule>} />
         </Route>
 
         {/* Agent */}
@@ -132,7 +152,7 @@ export default function App() {
             déclaration, réservée à l'admin, renvoyait coopérative et agent vers leur accueil) */}
         <Route
           element={
-            <ProtectedRoute roles={['super_admin', 'cooperative', 'agent']}>
+            <ProtectedRoute roles={['owner', 'super_admin', 'cooperative', 'agent']}>
               <Layout />
             </ProtectedRoute>
           }

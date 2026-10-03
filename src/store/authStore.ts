@@ -15,6 +15,8 @@ interface AuthStore {
   loginMock: (user: User, token: string) => void
   logout: () => Promise<void>
   updateUser: (updates: Partial<User>) => void
+  // Recharge le profil (modules, licence) : les droits changés par le propriétaire s'appliquent sans reconnexion
+  refreshMe: () => Promise<void>
   clearError: () => void
 }
 
@@ -58,6 +60,8 @@ function mapApiUser(apiUser: Record<string, unknown>): User {
     isActive: Boolean(apiUser.is_active),
     createdAt: String(apiUser.created_at),
     cooperativeId: apiUser.cooperative_id ? String(apiUser.cooperative_id) : undefined,
+    modules: (apiUser.modules as User['modules']) ?? null,
+    license: (apiUser.license as User['license']) ?? null,
   }
 }
 
@@ -87,7 +91,8 @@ export const useAuthStore = create<AuthStore>()(
           const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
             || 'Identifiant ou mot de passe incorrect.'
           set({ error: msg, isLoading: false })
-          throw new Error(msg)
+          // on relance l'erreur d'origine : la page de connexion a besoin du statut HTTP et du motif
+          throw err
         }
       },
 
@@ -107,6 +112,15 @@ export const useAuthStore = create<AuthStore>()(
         })),
 
       clearError: () => set({ error: null }),
+
+      refreshMe: async () => {
+        const { token } = get()
+        if (!token || token.startsWith('mock')) return
+        try {
+          const { data } = await authApi.me()
+          set({ user: mapApiUser(data as Record<string, unknown>) })
+        } catch { /* hors ligne : on garde le profil connu */ }
+      },
     }),
     { name: 'geocollect-auth' }
   )

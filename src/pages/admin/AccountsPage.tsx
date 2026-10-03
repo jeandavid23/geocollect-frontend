@@ -3,17 +3,23 @@ import { Search, KeyRound, RefreshCw, ShieldCheck, Loader2, AlertTriangle, Power
 import Header from '../../components/layout/Header'
 import CredentialsModal from '../../components/ui/CredentialsModal'
 import { usersApi, type ApiUser } from '../../api/users'
+import { useAuthStore } from '../../store/authStore'
 
 const ROLE_LABEL: Record<string, string> = {
-  super_admin: 'Super Admin', cooperative: 'Coopérative', agent: 'Agent',
+  owner: 'Super Super Admin', super_admin: 'Super Admin', cooperative: 'Coopérative', agent: 'Agent',
 }
 const ROLE_COLOR: Record<string, string> = {
+  owner: 'bg-amber-100 text-amber-800',
   super_admin: 'bg-purple-100 text-purple-700',
   cooperative: 'bg-blue-100 text-blue-700',
   agent: 'bg-green-100 text-green-700',
 }
 
 export default function AccountsPage() {
+  const me = useAuthStore((s) => s.user)
+  // Le propriétaire gère tous les comptes (sauf le sien) ; un super admin, ceux de ses coopératives
+  const canManage = (u: ApiUser) =>
+    u.id !== me?.id && u.role !== 'owner' && (me?.role === 'owner' || (u.role !== 'super_admin'))
   const [users, setUsers] = useState<ApiUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -85,7 +91,8 @@ export default function AccountsPage() {
           <option value="all">Tous les rôles</option>
           <option value="cooperative">Coopératives</option>
           <option value="agent">Agents</option>
-          <option value="super_admin">Admins</option>
+          <option value="super_admin">Super admins</option>
+          {me?.role === 'owner' && <option value="owner">Super Super Admin</option>}
         </select>
         <button onClick={load} className="flex items-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-2.5 rounded-xl text-sm font-medium">
           <RefreshCw className="w-4 h-4" /> Actualiser
@@ -132,12 +139,12 @@ export default function AccountsPage() {
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleReset(u)} disabled={resetting === u.id}
+                        {canManage(u) && <button onClick={() => handleReset(u)} disabled={resetting === u.id}
                           className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-medium">
                           {resetting === u.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                           Réinitialiser
-                        </button>
-                        {u.role !== 'super_admin' && (
+                        </button>}
+                        {canManage(u) && (
                           <button onClick={() => handleToggle(u)} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 font-medium">
                             <Power className="w-3.5 h-3.5" /> {u.is_active ? 'Désactiver' : 'Activer'}
                           </button>

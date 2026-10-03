@@ -49,15 +49,10 @@ export default function CoopAgentsPage() {
     return `${prefix}-${String(n).padStart(3, '0')}`
   }
 
-  const MAX_AGENTS = 10
-
+  // Le nombre maximum d'agents dépend de l'abonnement du client : c'est le serveur qui le vérifie
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.fullName.trim()) return
-    if (coopAgents.length >= MAX_AGENTS) {
-      addNotification({ type: 'warning', title: 'Limite atteinte', message: `Maximum ${MAX_AGENTS} agents par coopérative.` })
-      return
-    }
     setSaving(true)
 
     const code = nextCode()
@@ -91,7 +86,15 @@ export default function CoopAgentsPage() {
       setForm(EMPTY_FORM); setSections([])
       setShowForm(false)
       setCredentials({ name: baseAgent.fullName, username: data.account_username, password: data.account_password })
-    } catch {
+    } catch (err) {
+      // Le serveur a répondu (limite d'agents de l'abonnement, données invalides…) : rien n'est créé
+      const resp = (err as { response?: { data?: Record<string, unknown> } })?.response
+      if (resp) {
+        const d = resp.data ?? {}
+        const msg = Object.values(d).map((v) => (Array.isArray(v) ? v.join(', ') : String(v))).join(' · ')
+        addNotification({ type: 'error', title: 'Agent non créé', message: msg || 'Refusé par le serveur.' })
+        return
+      }
       // Backend unreachable → local only (no login account)
       addAgent(baseAgent)
       addNotification({

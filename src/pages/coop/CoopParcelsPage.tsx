@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import { useLivePolling } from '../../hooks/useLivePolling'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
+import { useHasModule } from '../../utils/modules'
 import { useAppStore } from '../../store/appStore'
 import type { Parcel } from '../../types'
 import LegacyParcelsLayer, { MapLegend, LEGACY_COLOR } from '../../components/map/LegacyParcelsLayer'
@@ -28,6 +29,7 @@ function MapAutoCenter({ lat, lng }: { lat: number; lng: number }) {
 export default function CoopParcelsPage() {
   useLivePolling()
   const user = useAuthStore((s) => s.user)
+  const hasLegacy = useHasModule('legacy')
   const { parcels, producers, agents, legacyParcels } = useAppStore()
   const coopId = user?.cooperativeId ?? 'coop-001'
   const [showLegacyImport, setShowLegacyImport] = useState(false)
@@ -68,8 +70,8 @@ export default function CoopParcelsPage() {
     <div className="p-6 space-y-5">
       <Header title="Parcelles de la coopérative" subtitle={`${coopParcels.length} parcelles cartographiées par ${coopAgents.length} agents · ${coopLegacy.length} anciens polygones`} />
 
-      {/* Anciens polygones */}
-      <div className="flex flex-wrap items-center gap-3">
+      {/* Anciens polygones (module de l'abonnement) */}
+      {hasLegacy && <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={() => setShowLegacyImport(true)}
           className="flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition hover:opacity-90"
@@ -86,7 +88,7 @@ export default function CoopParcelsPage() {
             {showLegacy ? 'Masquer' : 'Afficher'} les anciens polygones
           </button>
         )}
-      </div>
+      </div>}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
