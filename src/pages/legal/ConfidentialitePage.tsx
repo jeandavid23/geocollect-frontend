@@ -11,8 +11,8 @@ export default function ConfidentialitePage() {
       <h2>1. Responsable du traitement</h2>
       <p>
         Le responsable du traitement est [Nom de la coopérative / de l'opérateur], [adresse], joignable à [adresse e-mail].
-        Chaque coopérative est responsable des données de ses producteurs et de ses agents. L'éditeur de la Plateforme agit
-        comme sous-traitant technique, pour le compte des coopératives.
+        Chaque coopérative est responsable des données de ses producteurs et de ses agents. La Plateforme est éditée par <b>Jean David Konan</b>, qui agit comme
+        sous-traitant technique, pour le compte des coopératives.
       </p>
 
       <h2>2. Données collectées</h2>

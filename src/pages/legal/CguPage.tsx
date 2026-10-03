@@ -6,8 +6,8 @@ export default function CguPage() {
       <h2>1. Objet</h2>
       <p>
         Les présentes conditions générales d'utilisation (les « CGU ») régissent l'accès et l'utilisation de la
-        plateforme <b>GeoCollect EUDR</b> (la « Plateforme »), éditée par [Nom de l'éditeur / de la structure],
-        [forme juridique], immatriculée sous le [RCCM / identifiant], dont le siège est situé à [adresse].
+        plateforme <b>GeoCollect EUDR</b> (la « Plateforme »), éditée par <b>Jean David Konan</b>, [forme juridique / statut à préciser : personne physique,
+        entreprise individuelle, société…], [numéro d'immatriculation RCCM le cas échéant], domicilié à [adresse].
         La Plateforme permet la collecte GPS des parcelles agricoles, le suivi des producteurs et le contrôle de
         conformité au règlement de l'Union européenne sur la déforestation (EUDR / RDUE).
       </p>
