@@ -23,9 +23,10 @@ export default function LegalLayout({ title, updated, children }: { title: strin
         <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
         <p className="text-sm text-gray-500 mt-1 mb-6">Dernière mise à jour : {updated}</p>
 
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm mb-8">
-          <b>Modèle à personnaliser.</b> Ce document est un modèle fourni avec la plateforme. Remplacez les mentions entre
-          crochets [ ] par vos informations réelles et faites-le valider par un conseil juridique avant publication définitive.
+        <div className="bg-gray-100 text-gray-600 rounded-xl px-4 py-3 text-sm mb-8">
+          Éditeur : <b>GeoLab Service</b> — Jean David Konan, Côte d'Ivoire ·{' '}
+          <a href="mailto:jeandavidkyao@gmail.com" className="text-primary-700 underline">jeandavidkyao@gmail.com</a> ·{' '}
+          <a href="tel:+2250714039692" className="text-primary-700 underline">+225 07 14 03 96 92</a>
         </div>
 
         <article className="space-y-6 text-sm leading-relaxed text-gray-700

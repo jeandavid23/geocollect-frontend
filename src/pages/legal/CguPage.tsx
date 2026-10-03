@@ -6,8 +6,8 @@ export default function CguPage() {
       <h2>1. Objet</h2>
       <p>
         Les présentes conditions générales d'utilisation (les « CGU ») régissent l'accès et l'utilisation de la
-        plateforme <b>GeoCollect EUDR</b> (la « Plateforme »), éditée par <b>Jean David Konan</b>, [forme juridique / statut à préciser : personne physique,
-        entreprise individuelle, société…], [numéro d'immatriculation RCCM le cas échéant], domicilié à [adresse].
+        plateforme <b>GeoCollect EUDR</b> (la « Plateforme »), éditée par <b>GeoLab Service</b>, représentée par <b>Jean David Konan</b>, établie en Côte d'Ivoire
+        (contact : jeandavidkyao@gmail.com, +225 07 14 03 96 92).
         La Plateforme permet la collecte GPS des parcelles agricoles, le suivi des producteurs et le contrôle de
         conformité au règlement de l'Union européenne sur la déforestation (EUDR / RDUE).
       </p>
@@ -28,7 +28,7 @@ export default function CguPage() {
       </ul>
       <p>
         Chaque utilisateur est responsable de la confidentialité de ses identifiants et de toute activité réalisée depuis
-        son compte. Tout usage non autorisé doit être signalé sans délai à [adresse e-mail de contact].
+        son compte. Tout usage non autorisé doit être signalé sans délai à <a href="mailto:jeandavidkyao@gmail.com">jeandavidkyao@gmail.com</a>.
       </p>
 
       <h2>4. Utilisation conforme</h2>
@@ -79,13 +79,13 @@ export default function CguPage() {
 
       <h2>10. Droit applicable</h2>
       <p>
-        Les présentes CGU sont régies par le droit [de la Côte d'Ivoire / du pays applicable]. Tout litige relatif à leur
-        interprétation ou à leur exécution relève des juridictions compétentes de [ville / ressort], après recherche d'une
+        Les présentes CGU sont régies par le droit ivoirien. Tout litige relatif à leur
+        interprétation ou à leur exécution relève des juridictions compétentes de Côte d'Ivoire, après recherche d'une
         solution amiable.
       </p>
 
       <h2>11. Contact</h2>
-      <p>Pour toute question relative aux présentes CGU : [adresse e-mail] — [téléphone] — [adresse postale].</p>
+      <p>Pour toute question relative aux présentes CGU : <b>GeoLab Service</b> (Jean David Konan) — <a href="mailto:jeandavidkyao@gmail.com">jeandavidkyao@gmail.com</a> — <a href="tel:+2250714039692">+225 07 14 03 96 92</a> — Côte d'Ivoire.</p>
     </LegalLayout>
   )
 }

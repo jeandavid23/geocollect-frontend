@@ -10,9 +10,9 @@ export default function ConfidentialitePage() {
 
       <h2>1. Responsable du traitement</h2>
       <p>
-        Le responsable du traitement est [Nom de la coopérative / de l'opérateur], [adresse], joignable à [adresse e-mail].
-        Chaque coopérative est responsable des données de ses producteurs et de ses agents. La Plateforme est éditée par <b>Jean David Konan</b>, qui agit comme
-        sous-traitant technique, pour le compte des coopératives.
+        Chaque coopérative qui utilise la Plateforme est responsable du traitement des données de ses producteurs et de
+        ses agents. La Plateforme est éditée par <b>GeoLab Service</b>, représentée par <b>Jean David Konan</b>
+        (Côte d'Ivoire), qui agit comme sous-traitant technique pour le compte des coopératives et reste joignable à <a href="mailto:jeandavidkyao@gmail.com">jeandavidkyao@gmail.com</a>.
       </p>
 
       <h2>2. Données collectées</h2>
@@ -84,7 +84,7 @@ export default function ConfidentialitePage() {
         Conformément à la réglementation applicable (notamment la loi n° 2013-450 relative à la protection des données à
         caractère personnel en Côte d'Ivoire, et le RGPD lorsqu'il s'applique), toute personne concernée dispose d'un droit
         d'accès, de rectification, d'effacement, d'opposition et de limitation du traitement de ses données. Ces droits
-        s'exercent auprès de la coopérative responsable, à l'adresse [adresse e-mail de contact].
+        s'exercent auprès de la coopérative concernée, ou à défaut auprès de GeoLab Service à l'adresse <a href="mailto:jeandavidkyao@gmail.com">jeandavidkyao@gmail.com</a>.
       </p>
 
       <h2>10. Modifications</h2>
@@ -94,7 +94,7 @@ export default function ConfidentialitePage() {
       </p>
 
       <h2>11. Contact</h2>
-      <p>Pour toute question relative à vos données : [adresse e-mail] — [téléphone] — [adresse postale].</p>
+      <p>Pour toute question relative à vos données : <b>GeoLab Service</b> (Jean David Konan) — <a href="mailto:jeandavidkyao@gmail.com">jeandavidkyao@gmail.com</a> — <a href="tel:+2250714039692">+225 07 14 03 96 92</a> — Côte d'Ivoire.</p>
     </LegalLayout>
   )
 }
