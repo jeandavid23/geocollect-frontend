@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Leaf, Loader2, MapPin, Shield } from 'lucide-react'
 import { useAuthStore, MOCK_USERS } from '../../store/authStore'
 
@@ -161,9 +161,16 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6 flex items-center justify-center gap-2 text-primary-200 text-xs">
-          <MapPin className="w-3.5 h-3.5" />
-          <span>Polygon Validator EUDR by JDK · © 2024 GeoCollect</span>
+        <div className="text-center mt-6 space-y-2">
+          <div className="flex items-center justify-center gap-2 text-primary-200 text-xs">
+            <MapPin className="w-3.5 h-3.5" />
+            <span>Polygon Validator EUDR by JDK · © {new Date().getFullYear()} GeoCollect</span>
+          </div>
+          <div className="flex items-center justify-center gap-3 text-primary-300 text-xs">
+            <Link to="/cgu" className="hover:text-white underline">CGU</Link>
+            <span>·</span>
+            <Link to="/confidentialite" className="hover:text-white underline">Confidentialité</Link>
+          </div>
         </div>
       </div>
     </div>

@@ -7,6 +7,8 @@ import Layout from './components/layout/Layout'
 
 // Auth
 import LoginPage from './pages/auth/LoginPage'
+import CguPage from './pages/legal/CguPage'
+import ConfidentialitePage from './pages/legal/ConfidentialitePage'
 
 // Admin
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
@@ -74,6 +76,9 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
+        {/* Pages juridiques publiques */}
+        <Route path="/cgu" element={<CguPage />} />
+        <Route path="/confidentialite" element={<ConfidentialitePage />} />
         <Route path="/" element={<RootRedirect />} />
 
         {/* Super Admin */}

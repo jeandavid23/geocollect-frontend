@@ -1,0 +1,2 @@
+# SPA React Router : les routes inconnues renvoient index.html (robots.txt, sitemap.xml et /assets sont servis tels quels car ce sont de vrais fichiers)
+/*    /index.html   200

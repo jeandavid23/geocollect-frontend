@@ -1,0 +1,15 @@
+# GeoCollect EUDR — https://sunny-pegasus-8ea076.netlify.app
+# Plateforme privée : seules les pages publiques (accueil, connexion, mentions légales) sont indexables.
+User-agent: *
+Allow: /$
+Allow: /login
+Allow: /cgu
+Allow: /confidentialite
+# Espaces privés (accessibles uniquement après connexion)
+Disallow: /admin
+Disallow: /coop
+Disallow: /agent
+Disallow: /account
+Disallow: /map
+
+Sitemap: https://sunny-pegasus-8ea076.netlify.app/sitemap.xml
