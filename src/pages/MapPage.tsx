@@ -11,6 +11,7 @@ import type { Parcel } from '../types'
 import LegacyParcelsLayer, { MapLegend, LEGACY_COLOR } from '../components/map/LegacyParcelsLayer'
 import LegacyImportModal from '../components/map/LegacyImportModal'
 import FitToData from '../components/map/FitToData'
+import GisWorkspace from '../components/gis/GisWorkspace'
 
 const { BaseLayer } = LayersControl
 
@@ -45,6 +46,9 @@ export default function MapPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null)
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number } | null>(null)
+  // Outils SIG (édition type QGIS) : coopérative, super admin et propriétaire (pas les agents)
+  const canGis = role === 'cooperative' || isAdmin
+  const [mode, setMode] = useState<'view' | 'gis'>('view')
 
   const filtered = useMemo(() => {
     return parcels.filter((p) => {
@@ -67,8 +71,15 @@ export default function MapPage() {
   return (
     <div className="flex flex-col h-screen">
       <div className="px-6 pt-6 pb-0">
-        <Header title="Carte Interactive" subtitle="Vue cartographique de toutes les parcelles" />
+        <Header title="Carte Interactive" subtitle={mode === 'gis' ? 'Outils SIG : sélection, table attributaire, édition des polygones, mesures' : 'Vue cartographique de toutes les parcelles'} />
+        {canGis && (
+          <div className="inline-flex mt-3 rounded-xl bg-gray-100 p-1 text-sm">
+            <button onClick={() => setMode('view')} className={`px-4 py-1.5 rounded-lg font-medium ${mode === 'view' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>Consultation</button>
+            <button onClick={() => setMode('gis')} className={`px-4 py-1.5 rounded-lg font-medium ${mode === 'gis' ? 'bg-white shadow text-primary-700' : 'text-gray-500'}`}>Outils SIG (édition)</button>
+          </div>
+        )}
       </div>
+      {mode === 'gis' ? <div className="flex-1 min-h-0 mt-3"><GisWorkspace /></div> : (<>
 
       {/* Toolbar */}
       <div className="px-6 py-3 flex flex-wrap gap-3 items-center">
@@ -276,6 +287,7 @@ export default function MapPage() {
           </span>
         </div>
       )}
+      </>)}
     </div>
   )
 }
