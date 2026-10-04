@@ -30,7 +30,7 @@ export default function AgentDashboardPage() {
     const label = d.toLocaleDateString('fr-FR', { weekday: 'short' })
     const dayStr = d.toDateString()
     const count = myParcels.filter((p) => new Date(p.createdAt).toDateString() === dayStr).length
-    return { day: label, parcelles: count || Math.floor(Math.random() * 8) + 1 }
+    return { day: label, parcelles: count }
   })
 
   const unsyncedCount = myParcels.filter((p) => !p.isSynced).length
