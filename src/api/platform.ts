@@ -17,6 +17,17 @@ export interface PlatformAdmin {
   parcels?: number
   hectares?: number
   cooperatives?: { id: string; name: string; region: string; is_active: boolean; n_agents: number }[]
+  usage?: ModuleUsage
+}
+
+/** Traitements des N derniers jours, par module : nombre de lancements et de polygones traités. */
+export type ModuleUsage = Partial<Record<ModuleId, { runs: number; items: number }>>
+
+export interface PlatformAlert {
+  level: 'error' | 'warning' | 'info'
+  kind: 'suspended' | 'expired' | 'expiring' | 'quota' | 'unassigned'
+  admin: string | null
+  message: string
 }
 
 export interface PlatformOverview {
@@ -25,6 +36,10 @@ export interface PlatformOverview {
     agents: number; producers: number; parcels: number; hectares: number; users: number
   }
   clients: PlatformAdmin[]
+  usage: ModuleUsage
+  usage_owner: ModuleUsage
+  usage_days: number
+  alerts: PlatformAlert[]
   modules: { id: ModuleId; label: string }[]
 }
 
@@ -51,6 +66,8 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   validator: 'Polygon Validator',
   registry: 'Registre (tableur)',
   legacy: 'Anciens polygones',
+  selfintersection: 'Self-intersection (nettoyage)',
+  gmr: 'Polygon & GMR (registre × polygones)',
 }
 export const ALL_MODULES = Object.keys(MODULE_LABELS) as ModuleId[]
 
@@ -65,6 +82,8 @@ export const platformApi = {
   deleteAdmin: (id: string) => api.delete(`/platform/admins/${id}/`),
   resetPassword: (id: string) =>
     api.post<{ username: string; new_password: string; full_name: string }>(`/auth/users/${id}/reset-password/`),
+  bulkModule: (module: ModuleId, grant: boolean) =>
+    api.post<{ module: ModuleId; grant: boolean; changed: number }>('/platform/modules/bulk/', { module, grant }),
   assignCooperative: (coopId: string, managedBy: string | null) =>
     api.post<{ id: string; managed_by: string | null; managed_by_name: string | null }>(
       `/platform/cooperatives/${coopId}/assign/`, { managed_by: managedBy }),

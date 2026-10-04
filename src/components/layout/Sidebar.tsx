@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
-  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2,
+  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2, Scissors, Link2,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
@@ -37,6 +37,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Rapports', to: '/coop/reports', icon: <FileBarChart className="w-5 h-5" />, roles: ['cooperative'] },
   { label: 'Analyse déforestation', to: '/coop/deforestation', icon: <TreePine className="w-5 h-5" />, roles: ['cooperative'], module: 'deforestation' },
   { label: 'Polygon Validator', to: '/coop/validator', icon: <ShieldCheck className="w-5 h-5" />, roles: ['cooperative'], module: 'validator' },
+  { label: 'Self-intersection', to: '/coop/selfintersection', icon: <Scissors className="w-5 h-5" />, roles: ['cooperative'], module: 'selfintersection' },
+  { label: 'Polygon & GMR', to: '/coop/gmr', icon: <Link2 className="w-5 h-5" />, roles: ['cooperative'], module: 'gmr' },
   // Agent
   { label: 'Tableau de bord', to: '/agent', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['agent'] },
   { label: 'Producteurs à mapper', to: '/agent/producers', icon: <Users className="w-5 h-5" />, roles: ['agent'] },

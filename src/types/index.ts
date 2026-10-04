@@ -3,7 +3,7 @@
 // owner = Super Super Admin (propriétaire de la plateforme) ; super_admin = client
 export type UserRole = 'owner' | 'super_admin' | 'cooperative' | 'agent'
 
-export type ModuleId = 'deforestation' | 'rdue' | 'validator' | 'registry' | 'legacy'
+export type ModuleId = 'deforestation' | 'rdue' | 'validator' | 'registry' | 'legacy' | 'selfintersection' | 'gmr'
 
 export interface LicenseSummary {
   organization: string

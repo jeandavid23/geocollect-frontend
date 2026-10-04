@@ -40,7 +40,16 @@ function trim(rows: CellValue[][]): CellValue[][] {
 
 /** Lit toutes les feuilles d'un classeur .xlsx / .xls / .csv / .ods. */
 export async function readWorkbook(file: File): Promise<ParsedWorkbook> {
-  const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellFormula: true, cellDates: true })
+  const buf = await file.arrayBuffer()
+  let wb: XLSX.WorkBook
+  if (/\.(csv|txt)$/i.test(file.name)) {
+    // CSV : SheetJS lit les octets en Latin-1 ; on décode en UTF-8 (accents, « N° »), sinon Windows-1252
+    let text = new TextDecoder('utf-8').decode(buf)
+    if (text.includes('\uFFFD')) text = new TextDecoder('windows-1252').decode(buf)
+    wb = XLSX.read(text.replace(/^\uFEFF/, ''), { type: 'string', cellFormula: true, cellDates: true })
+  } else {
+    wb = XLSX.read(buf, { type: 'array', cellFormula: true, cellDates: true })
+  }
   const sheets: WorkbookSheet[] = []
   for (const name of wb.SheetNames) {
     const ws = wb.Sheets[name]

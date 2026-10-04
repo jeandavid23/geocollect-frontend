@@ -38,7 +38,7 @@ interface Props {
 
 /** Choix des polygones à traiter : fichier, parcelles mappées ou anciens polygones de la coopérative. */
 export default function PolygonSourcePicker({ allowPoints, onPicked, picked }: Props) {
-  const { parcels, legacyParcels, isLoading } = useAppStore()
+  const { parcels, legacyParcels, producers, isLoading } = useAppStore()
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -78,14 +78,20 @@ export default function PolygonSourcePicker({ allowPoints, onPicked, picked }: P
     }
   }
 
-  const pickParcels = () => onPicked({
+  const pickParcels = () => {
+    const byId = new Map(producers.map((p) => [p.id, p]))
+    onPicked({
     kind: 'parcels', label: 'Parcelles mappées par les agents', skipped: 0,
     features: mapped.map((p) => ({
       id: p.fieldId, geometry: p.geometry as GeoJSON.Geometry,
-      properties: { FIELD_ID: p.fieldId, village: p.village, culture: p.culture },
+      properties: {
+        FIELD_ID: p.fieldId, PRODUCTEUR: byId.get(p.producerId)?.fullName ?? '', CODE_PRODUCTEUR: byId.get(p.producerId)?.fieldIdBase ?? '',
+        village: p.village, section: p.section, culture: p.culture,
+      },
       area_ha: p.areaHectares || null,
     })),
-  })
+    })
+  }
 
   const pickLegacy = () => onPicked({
     kind: 'legacy', label: 'Anciens polygones de la coopérative', skipped: 0,
