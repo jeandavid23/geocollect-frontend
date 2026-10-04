@@ -1,7 +1,10 @@
 import {
   Building2, Users, MapPin, UserCog, Leaf, TrendingUp,
   CheckCircle2, XCircle, Clock, BarChart3, Shield, Activity,
+  Plus, Map as MapIcon, Send, FileSpreadsheet, ScrollText, Globe2, Crown, KeyRound,
 } from 'lucide-react'
+import QuickActions from '../../components/ui/QuickActions'
+import { exportExcel } from '../../utils/featureExport'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { useLivePolling } from '../../hooks/useLivePolling'
 import Header from '../../components/layout/Header'
@@ -69,6 +72,14 @@ export default function AdminDashboardPage() {
   }))
   const pct = (n: number) => (parcels.length ? Math.round((n / parcels.length) * 100) : 0)
 
+  const exportCoops = () => exportExcel([{
+    name: 'Coopératives', rows: coopStats.map((s) => ({
+      Coopérative: s.coop.name, Région: s.coop.region, ...(isOwner ? { Client: s.coop.managedByName ?? 'Propriétaire' } : {}),
+      Statut: s.coop.isActive ? 'Active' : 'Désactivée', Agents: s.agents, Producteurs: s.producers,
+      Parcelles: s.parcels, Hectares: Math.round(s.ha * 100) / 100,
+    })),
+  }], `cooperatives_${new Date().toISOString().slice(0, 10)}.xlsx`)
+
   return (
     <div className="p-6 space-y-6">
       <Header
@@ -76,6 +87,19 @@ export default function AdminDashboardPage() {
         subtitle={isOwner ? 'Toutes les coopératives de tous les super admins' : 'Uniquement les coopératives que vous gérez'}
       />
       <LicenseCard />
+      <QuickActions actions={[
+        ...(isOwner ? [
+          { label: 'Plateforme', icon: <Globe2 className="w-4 h-4" />, to: '/owner', tone: 'purple' as const },
+          { label: 'Clients (super admins)', icon: <Crown className="w-4 h-4" />, to: '/owner/admins', tone: 'purple' as const },
+        ] : []),
+        { label: 'Nouvelle coopérative', icon: <Plus className="w-4 h-4" />, to: '/admin/cooperatives', tone: 'primary' },
+        { label: 'Agents mappeurs', icon: <UserCog className="w-4 h-4" />, to: '/admin/agents', tone: 'blue' },
+        { label: 'Comptes & mots de passe', icon: <KeyRound className="w-4 h-4" />, to: '/admin/accounts' },
+        { label: 'Carte des parcelles', icon: <MapIcon className="w-4 h-4" />, to: '/map', tone: 'green' },
+        { label: isOwner ? 'Annonce à tous' : 'Message à mes coopératives', icon: <Send className="w-4 h-4" />, message: isOwner ? 'all' : 'my_cooperatives', tone: 'amber' },
+        { label: 'Exporter Excel', icon: <FileSpreadsheet className="w-4 h-4" />, onClick: exportCoops, tone: 'green', hint: 'Chiffres par coopérative' },
+        { label: 'Journaux', icon: <ScrollText className="w-4 h-4" />, to: '/admin/logs' },
+      ]} />
 
       {/* Stats globales */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

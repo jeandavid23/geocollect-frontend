@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import * as XLSX from 'xlsx'
 import { TreePine, Play, Square, Download, FileSpreadsheet, RotateCcw, Search, AlertTriangle, Loader2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
+import api from '../../api/client'
 import PolygonSourcePicker, { type PickedSource } from '../../components/map/PolygonSourcePicker'
 import ResultsLayer, { escapeHtml, type ResultItem } from '../../components/map/ResultsLayer'
 import FitToData from '../../components/map/FitToData'
@@ -13,6 +14,8 @@ import {
 import { withRetry, apiErrorMessage } from '../../utils/retry'
 import { useHasModule } from '../../utils/modules'
 import { downloadBlob } from '../../utils/geoExport'
+import ReportExportBar from '../../components/ui/ReportExportBar'
+import type { Report } from '../../utils/report'
 
 const { BaseLayer } = LayersControl
 
@@ -123,6 +126,14 @@ export default function DeforestationPage() {
     setFailed(failedNow)
     setVersion((v) => v + 1)
     setRunning(false)
+    // Fin d'analyse : suivi d'utilisation + notification à la coopérative et à son super admin
+    if (done > 0) {
+      const count = (s: DefStatus) => indices.filter((i) => acc[i]?.status === s).length
+      api.post('/parcels/deforestation/done/', {
+        total: done, conforme: count('Conforme'), a_risque: count('A risque'), non_conforme: count('Non conforme'),
+        indetermine: count('Indetermine'), standard: opts.standard,
+      }).catch(() => {})
+    }
     if (cancelRef.current) setError(`Analyse interrompue : ${done} parcelle(s) traitée(s).`)
     else if (failedNow.length) setError(`${failedNow.length} parcelle(s) non analysée(s) : ${lastError} Cliquez sur « Relancer les échecs ».`)
   }
@@ -211,6 +222,34 @@ export default function DeforestationPage() {
     }
     downloadBlob(new Blob([JSON.stringify(fc)], { type: 'application/geo+json' }), 'analyse_deforestation.geojson')
   }
+
+  // Rapport complet, construit à la fin de chaque analyse (tous formats + enregistré dans « Rapports »)
+  const report = useMemo<Report | null>(() => {
+    if (running || !stats.total) return null
+    type Row = Report['tables'][number]['rows'][number]
+    const detail = features.map((f, i) => ({ identifiant: f.id, ...resultProps(results[i]), ...f.properties }) as Row)
+    return {
+      kind: 'deforestation', title: `Rapport d'analyse déforestation — ${opts.standard}`, source: picked?.label ?? '',
+      summary: [
+        ['Norme', opts.standard], ['Perte comptée après', meta?.cutoff ?? ''], ['Données', meta?.source ?? ''],
+        ['Tolérance (ha)', opts.tolerance_ha], ['Seuil « À risque » (%)', opts.alert_pct], ['Couvert forestier minimal (%)', opts.treecover_min],
+        ['Matrice RDUE', meta?.rdue ? 'Oui' : 'Non'],
+        ['Parcelles analysées', stats.total], ['Conformes', stats.byStatus['Conforme'] ?? 0], ['À risque', stats.byStatus['A risque'] ?? 0],
+        ['Non conformes', stats.byStatus['Non conforme'] ?? 0], ['Indéterminées', stats.byStatus['Indetermine'] ?? 0],
+        ['Taux de conformité (%)', rate], ['Surface totale (ha)', Math.round(stats.area * 100) / 100],
+        ['Surface déforestée (ha)', Math.round(stats.defor * 1000) / 1000],
+        ...(meta?.rdue ? Object.entries(stats.byRdue).map(([k, v]) => [`RDUE : ${k}`, v] as [string, number]) : []),
+      ],
+      tables: [
+        { name: 'Parcelles', rows: detail },
+        { name: 'Non conformes', rows: detail.filter((_, i) => results[i]?.status === 'Non conforme') },
+        { name: 'À risque', rows: detail.filter((_, i) => results[i]?.status === 'A risque') },
+      ],
+      features: features.map((f, i) => ({ geometry: f.geometry, properties: { identifiant: f.id, ...f.properties, ...resultProps(results[i]) } })),
+      nameField: 'identifiant',
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [version, running])
 
   const input = 'w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0
@@ -346,6 +385,8 @@ export default function DeforestationPage() {
               <button onClick={exportGeoJSON} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 font-medium"><Download className="w-4 h-4" /> GeoJSON</button>
             </div>
           </section>
+
+          <ReportExportBar report={report} />
 
           <section className="relative h-[460px] rounded-2xl overflow-hidden border border-gray-100">
             {zones && zones.features.length > 0 && (

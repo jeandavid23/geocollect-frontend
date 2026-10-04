@@ -34,12 +34,20 @@ export function exportKML(features: OutFeature[], filename: string, nameField?: 
   downloadBlob(new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' }), filename)
 }
 
+/**
+ * shp-write écrit les Polygon et les MultiPolygon dans deux couches du même nom : la seconde écrase la première
+ * (des polygones disparaissaient du .zip). Tout est donc converti en MultiPolygon → une seule couche complète.
+ */
+export function asMultiPolygon(g: GeoJSON.Geometry): GeoJSON.Geometry {
+  return g?.type === 'Polygon' ? { type: 'MultiPolygon', coordinates: [g.coordinates] } : g
+}
+
 export async function exportShapefile(features: OutFeature[], filename: string, layer: string) {
   // Shapefile : noms de champs limités à 10 caractères, valeurs texte
   const fc = {
     type: 'FeatureCollection',
     features: features.map((f) => ({
-      type: 'Feature', geometry: f.geometry,
+      type: 'Feature', geometry: asMultiPolygon(f.geometry),
       properties: Object.fromEntries(Object.entries(f.properties).map(([k, v]) => [k, v === null || v === undefined ? '' : typeof v === 'number' ? v : String(v)])),
     })),
   }

@@ -16,3 +16,11 @@ export const notificationsApi = {
   list: () => api.get<Paginated<ApiNotification> | ApiNotification[]>('/auth/notifications/'),
   markRead: () => api.post('/auth/notifications/read/'),
 }
+
+export interface MessageTarget { key: string; label: string }
+
+export const messagesApi = {
+  targets: () => api.get<MessageTarget[]>('/auth/notifications/targets/'),
+  send: (data: { target: string; title: string; message?: string; level?: 'info' | 'warning' | 'success' }) =>
+    api.post<{ sent: number }>('/auth/notifications/send/', data),
+}

@@ -82,6 +82,10 @@ ${placemarks}
 export async function toShapefileZip(parcels: Parcel[], producers: Producer[]): Promise<Blob> {
   const fc = parcelsToFeatureCollection(parcels, producers)
   if (fc.features.length === 0) throw new Error('Aucune parcelle avec une géométrie valide à exporter.')
+  // une seule couche : shp-write écrase la couche Polygon par la couche MultiPolygon du même nom
+  for (const f of fc.features as { geometry: GeoJSON.Geometry }[]) {
+    if (f.geometry?.type === 'Polygon') f.geometry = { type: 'MultiPolygon', coordinates: [f.geometry.coordinates] }
+  }
   const options = {
     outputType: 'blob',
     types: { polygon: 'parcelles_eudr' },

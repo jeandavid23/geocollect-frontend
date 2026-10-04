@@ -1,3 +1,4 @@
+import { saveImportReport, registryImportReport } from '../../utils/report'
 import { useMemo, useRef, useState } from 'react'
 import { X, Upload, Download, CheckCircle2, AlertTriangle, Save, FileSpreadsheet, BookOpen } from 'lucide-react'
 import {
@@ -179,6 +180,15 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
       type: remaining ? 'error' : 'success',
       title: remaining ? 'Import Excel incomplet' : 'Import Excel terminé',
       message: `${created} producteur(s) enregistré(s)${remaining ? `, ${remaining} en attente` : ''}${errs.length ? `, ${errs.length} ligne(s) refusée(s)` : ''}.`,
+    })
+    saveImportReport({
+      kind: 'import_registry', title: `Rapport d'import des producteurs — ${wb.fileName}`, source: wb.fileName,
+      summary: [['Lignes du fichier retenues', validRows.length], ['Producteurs enregistrés', created], ['Lignes en attente', remaining],
+        ['Lignes refusées', errs.length], ['Classeur enregistré dans le registre', saveRegistry ? (registrySaved || !lastError ? 'OUI' : 'NON') : 'NON']],
+      tables: [
+        { name: 'Lignes refusées', rows: errs.map((e) => ({ ligne_excel: e.excelRow, motif: e.message })) },
+        ...registryImportReport(wb.fileName, wb.sheets.map((s) => ({ name: s.name, data: s.values })), 'merge').tables,
+      ],
     })
     if (remaining) {
       setError(`${lastError} ${created} producteur(s) enregistré(s) ; ${remaining} ligne(s) non envoyée(s). Cliquez sur « Renvoyer » pour réessayer (sans doublon).`)

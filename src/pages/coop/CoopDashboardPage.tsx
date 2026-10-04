@@ -1,7 +1,9 @@
 import {
   Users, MapPin, Leaf, UserCog, CheckCircle2, XCircle, Clock,
   TrendingUp, BarChart3, Trophy, Map,
+  UserPlus, Upload, TreePine, ShieldCheck, FileBarChart, Send, BookOpen, Link2,
 } from 'lucide-react'
+import QuickActions from '../../components/ui/QuickActions'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -29,6 +31,18 @@ export default function CoopDashboardPage() {
         title="Tableau de bord Coopérative"
         subtitle={`Espace ${coopName} · Vue d'ensemble de vos activités`}
       />
+      <QuickActions actions={[
+        { label: 'Importer / ajouter des producteurs', icon: <Upload className="w-4 h-4" />, to: '/coop/producers', tone: 'primary' },
+        { label: 'Nouvel agent mappeur', icon: <UserPlus className="w-4 h-4" />, to: '/coop/agents', tone: 'blue' },
+        { label: 'Registre', icon: <BookOpen className="w-4 h-4" />, to: '/coop/registry', module: 'registry' },
+        { label: 'Analyse déforestation', icon: <TreePine className="w-4 h-4" />, to: '/coop/deforestation', module: 'deforestation', tone: 'green' },
+        { label: 'Polygon Validator', icon: <ShieldCheck className="w-4 h-4" />, to: '/coop/validator', module: 'validator', tone: 'green' },
+        { label: 'Polygon & GMR', icon: <Link2 className="w-4 h-4" />, to: '/coop/gmr', module: 'gmr', tone: 'green' },
+        { label: 'Rapports et exports', icon: <FileBarChart className="w-4 h-4" />, to: '/coop/reports', tone: 'purple' },
+        { label: 'Carte', icon: <Map className="w-4 h-4" />, to: '/map' },
+        { label: 'Message aux agents', icon: <Send className="w-4 h-4" />, message: 'agents', tone: 'amber' },
+        { label: 'Contacter mon super admin', icon: <Send className="w-4 h-4" />, message: 'manager' },
+      ]} />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">

@@ -2,7 +2,9 @@ import { useNavigate } from 'react-router-dom'
 import {
   MapPin, CheckCircle2, Wifi,
   WifiOff, TrendingUp, Play, RefreshCw, Calendar,
+  Users, Map as MapIcon, Send, ListChecks,
 } from 'lucide-react'
+import QuickActions from '../../components/ui/QuickActions'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useLivePolling } from '../../hooks/useLivePolling'
 import Header from '../../components/layout/Header'
@@ -41,6 +43,15 @@ export default function AgentDashboardPage() {
         title={`Bonjour, ${user?.fullName?.split(' ')[0]} 👋`}
         subtitle={format(new Date(), "EEEE d MMMM yyyy", { locale: fr })}
       />
+      <QuickActions actions={[
+        { label: 'Nouveau mapping', icon: <Play className="w-4 h-4" />, to: '/agent/mapping', tone: 'primary' },
+        { label: 'Producteurs à mapper', icon: <Users className="w-4 h-4" />, to: '/agent/producers', tone: 'blue' },
+        { label: 'Mes parcelles', icon: <ListChecks className="w-4 h-4" />, to: '/agent/parcels', tone: 'green' },
+        { label: 'Carte', icon: <MapIcon className="w-4 h-4" />, to: '/map' },
+        { label: 'Actualiser', icon: <RefreshCw className="w-4 h-4" />, hint: 'Recharger les données du serveur',
+          onClick: () => { useAppStore.getState().refreshData().then(() => useAppStore.getState().addNotification({ type: 'success', title: 'Données à jour', message: 'Producteurs et parcelles rechargés depuis le serveur.' })) } },
+        { label: 'Prévenir ma coopérative', icon: <Send className="w-4 h-4" />, message: 'cooperative', tone: 'amber', hint: 'Signaler un problème, une fin de zone…' },
+      ]} />
 
       {/* Offline alert */}
       {!isOnline && (

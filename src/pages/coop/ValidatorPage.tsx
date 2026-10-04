@@ -12,6 +12,8 @@ import {
 } from '../../api/validator'
 import { withRetry, apiErrorMessage } from '../../utils/retry'
 import { downloadBlob } from '../../utils/geoExport'
+import ReportExportBar from '../../components/ui/ReportExportBar'
+import type { Report } from '../../utils/report'
 
 const { BaseLayer } = LayersControl
 const PAGE = 100
@@ -143,6 +145,36 @@ export default function ValidatorPage() {
     downloadBlob(new Blob([JSON.stringify(fc)], { type: 'application/geo+json' }), status === 'kept' ? 'polygones_conserves.geojson' : 'polygones_supprimes.geojson')
   }
 
+  // Rapport complet (PDF, Excel, CSV, GeoJSON, KML, Shapefile) — enregistré dans « Rapports »
+  const report = useMemo<Report | null>(() => {
+    if (!out) return null
+    const s = out.summary
+    const rows = out.results.map((r) => ({ ...flat(r), ...propsOf(r) }) as Report['tables'][number]['rows'][number])
+    return {
+      kind: 'validator', title: 'Rapport Polygon Validator — chevauchements et géométries', source: picked?.label ?? '',
+      summary: [
+        ['Seuil de superposition (%)', s.threshold], ['Surface minimale (ha)', s.min_area_ha],
+        ['Polygones en entrée', s.initial_count], ['Conservés', s.final_count], ['Supprimés', s.deleted_count],
+        ['— superposition > seuil', s.over_threshold_removed], ['— doublons exacts', s.duplicates_removed],
+        ['— inclusions totales', s.containment_removed], ['— surfaces trop petites', s.small_removed],
+        ['— slivers', s.slivers_removed], ['— nuls / irréparables', s.null_removed],
+        ['Géométries corrigées', s.geometries_fixed], ['Superpositions ≤ seuil (annotées)', s.overlaps_detected],
+        ['Surface initiale (ha)', s.initial_area_ha], ['Surface finale (ha)', s.final_area_ha],
+        ...Object.entries(s.topology_errors).map(([k, v]) => [`Erreur d'origine : ${ERROR_LABEL[k] ?? k}`, v] as [string, number]),
+      ],
+      tables: [
+        { name: 'Tous les polygones', rows },
+        { name: 'Conservés', rows: rows.filter((_, i) => out.results[i].status === 'kept') },
+        { name: 'Supprimés', rows: rows.filter((_, i) => out.results[i].status === 'removed') },
+        { name: 'Superpositions', rows: rows.filter((_, i) => out.results[i].is_ovlp === 'OUI') },
+      ],
+      // couche géographique : les polygones conservés (corrigés), prêts à l'emploi
+      features: out.results.filter((r) => r.status === 'kept' && geomOf(r)).map((r) => ({ geometry: geomOf(r)!, properties: { ...propsOf(r), ...flat(r) } })),
+      nameField: 'identifiant',
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [out])
+
   const input = 'w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
   const toggle = (key: keyof ValidatorOptions, label: string) => (
     <label className="flex items-center gap-2 text-xs text-gray-700">
@@ -235,6 +267,8 @@ export default function ValidatorPage() {
               <button onClick={() => exportGeoJSON('removed')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 font-medium"><Download className="w-4 h-4" /> Supprimés</button>
             </div>
           </section>
+
+          <ReportExportBar report={report} />
 
           <section className="relative h-[460px] rounded-2xl overflow-hidden border border-gray-100">
             <MapContainer center={[7.54, -5.55]} zoom={7} className="h-full w-full" preferCanvas>

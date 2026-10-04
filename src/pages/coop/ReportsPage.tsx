@@ -9,6 +9,8 @@ import {
 import { analyzePolygon, correctPolygon, type PolygonAnalysis } from '../../utils/polygonCorrector'
 import { haversineDistance } from '../../utils/gpsUtils'
 import { parcelsApi } from '../../api/parcels'
+import SavedReports from '../../components/reports/SavedReports'
+import CoopDataReports from '../../components/reports/CoopDataReports'
 
 interface Report {
   id: string
@@ -194,7 +196,10 @@ export default function ReportsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <Header title="Rapports & Exports" subtitle="Polygones (GeoJSON, KML, SHP) et listes producteurs/parcelles" />
+      <Header title="Rapports & Exports" subtitle="Rapports de tous les traitements et imports · PDF, Excel, CSV, GeoJSON, KML, Shapefile" />
+
+      <SavedReports />
+      <CoopDataReports cooperativeId={user?.cooperativeId} />
 
       {isLoading && (
         <div className="bg-amber-50 text-amber-800 rounded-xl px-4 py-3 text-sm flex items-center gap-2">

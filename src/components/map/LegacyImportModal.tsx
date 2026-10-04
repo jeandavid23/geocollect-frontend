@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { X, Upload, Trash2, Layers, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { parseLegacyFiles, LEGACY_ACCEPT, type LegacyParseResult } from '../../utils/legacyImport'
+import { saveImportReport } from '../../utils/report'
 import { legacyApi, type LegacySource } from '../../api/legacy'
 import { useAppStore } from '../../store/appStore'
 import { LEGACY_COLOR } from './LegacyParcelsLayer'
@@ -79,8 +80,17 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
       addNotification({
         type: 'success',
         title: 'Anciens polygones importés',
-        message: `${created} polygone(s) depuis ${parsed.sourceName}.`,
+        message: `${created} polygone(s) depuis ${parsed.sourceName}. Rapport disponible dans « Rapports ».`,
       })
+      const ha = parsed.features.reduce((s, f) => s + (f.area_hectares ?? 0), 0)
+      saveImportReport({
+        kind: 'import_polygons', title: `Rapport d'import de polygones — ${parsed.sourceName}`, source: parsed.sourceName,
+        summary: [['Polygones lus dans le fichier', total], ['Polygones enregistrés', created], ['Entités ignorées (ni polygone ni point)', parsed.skipped],
+          ['Surface totale (ha)', Math.round(ha * 100) / 100]],
+        tables: [{ name: 'Polygones importés', rows: parsed.features.map((f, i) => ({ n: i + 1, nom: f.name, surface_ha: f.area_hectares, ...(f.properties as Record<string, string | number | null>) })) }],
+        features: parsed.features.map((f) => ({ geometry: f.geometry, properties: { nom: f.name, surface_ha: f.area_hectares, ...f.properties } })),
+        nameField: 'nom',
+      }, cooperativeId)
       setParsed(null)
     } catch (err) {
       setError(`${apiErrorMessage(err)}${created ? ` ${created} polygone(s) déjà enregistré(s) : relancez l'import, le fichier sera remplacé sans doublon.` : ''}`)

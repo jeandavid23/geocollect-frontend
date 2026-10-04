@@ -12,6 +12,8 @@ import { WorkbookEngine, isError } from '../../utils/spreadsheet/engine'
 import { readWorkbook, detectHeaderRow, headersOf } from '../../utils/excelImport'
 import { apiErrorMessage } from '../../utils/retry'
 import { exportGeoJSON, exportKML, exportShapefile, exportExcel, type OutFeature } from '../../utils/featureExport'
+import ReportExportBar from '../../components/ui/ReportExportBar'
+import type { Report } from '../../utils/report'
 
 const { BaseLayer } = LayersControl
 const PAGE = 100
@@ -177,7 +179,7 @@ export default function GmrPage() {
       stats: { matched: matched.length, no_match: noMatch.length, excel_total: index.size, excel_unmatched: unmatchedRows.length, duplicates, empty },
     })
     setFilter('matched'); setPage(0)
-    api.post('/parcels/gmr/log/', { count: picked.features.length }).catch(() => {})   // suivi d'utilisation
+    api.post('/parcels/gmr/log/', { count: picked.features.length, matched: matched.length, no_match: noMatch.length }).catch(() => {})   // suivi d'utilisation
   }
 
   const regRecord = (i: number) => Object.fromEntries((out?.columns ?? []).map((c, j) => [c.out, dataRows[i]?.cells[j] ?? '']))
@@ -205,6 +207,28 @@ export default function GmrPage() {
       { name: 'Registre sans polygone', rows: regOrphans() },
     ], 'rapport_polygon_gmr.xlsx')
   }
+
+  const report = useMemo<Report | null>(() => {
+    if (!out) return null
+    const s = out.stats
+    type Row = Report['tables'][number]['rows'][number]
+    return {
+      kind: 'gmr', title: 'Rapport Polygon & GMR — polygones ayant un registre', source: `${picked?.label ?? ''} × ${reg?.label ?? ''} (feuille « ${sheet?.name ?? ''} »)`,
+      summary: [
+        ['Champ polygone', polyField], ['Colonne du registre', headers[regCol] ?? ''], ['Casse ignorée', ignoreCase ? 'OUI' : 'NON'],
+        ['Polygones concordants (sortie)', s.matched], ['Polygones sans registre', s.no_match],
+        ['Clés uniques du registre', s.excel_total], ['Lignes du registre sans polygone', s.excel_unmatched],
+        ['Doublons de clé dans le registre', s.duplicates], ['Lignes du registre sans clé', s.empty],
+      ],
+      tables: [
+        { name: 'Polygones concordants', rows: matchedFeatures().map((f) => f.properties as Row) },
+        { name: 'Polygones sans registre', rows: noMatchFeatures().map((f) => f.properties as Row) },
+        { name: 'Registre sans polygone', rows: regOrphans() as Row[] },
+      ],
+      features: matchedFeatures(), nameField: polyField,
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [out])
 
   const mapItems = useMemo<ResultItem[]>(() => {
     if (!out || !picked) return []
@@ -341,6 +365,8 @@ export default function GmrPage() {
             <span className="text-gray-300 mx-1">|</span>
             <button onClick={() => exportGeoJSON(noMatchFeatures(), 'polygones_sans_registre.geojson')} disabled={!s.no_match} className={`${btn} disabled:opacity-40`}><Download className="w-4 h-4" /> Sans registre</button>
           </section>
+
+          <ReportExportBar report={report} />
 
           <section className="relative h-[460px] rounded-2xl overflow-hidden border border-gray-100">
             <MapContainer center={[7.54, -5.55]} zoom={7} className="h-full w-full" preferCanvas>

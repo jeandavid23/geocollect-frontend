@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell, CheckCheck, X } from 'lucide-react'
+import { Bell, CheckCheck, X, Send } from 'lucide-react'
 import { notificationsApi, type ApiNotification } from '../../api/notifications'
 import { useAuthStore } from '../../store/authStore'
+import { useAppStore } from '../../store/appStore'
+import MessageModal from '../ui/MessageModal'
 
 const TYPE_DOT: Record<string, string> = {
   success: 'bg-green-500', info: 'bg-blue-500', warning: 'bg-yellow-500', error: 'bg-red-500',
@@ -11,7 +13,10 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
   const token = useAuthStore((s) => s.token)
   const [items, setItems] = useState<ApiNotification[]>([])
   const [open, setOpen] = useState(false)
+  const [composing, setComposing] = useState(false)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const known = useRef<Set<string> | null>(null)
+  const addNotification = useAppStore((s) => s.addNotification)
 
   const isLive = !!token && !token.startsWith('mock')
 
@@ -20,6 +25,17 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
     try {
       const { data } = await notificationsApi.list()
       const list = Array.isArray(data) ? data : (data.results ?? [])
+      if (known.current === null) {
+        // première lecture (connexion) : un rappel s'il y a des notifications non lues
+        const unreadNow = list.filter((n) => !n.is_read)
+        if (unreadNow.length === 1) addNotification({ type: unreadNow[0].type, title: unreadNow[0].title, message: unreadNow[0].message })
+        else if (unreadNow.length > 1) addNotification({ type: 'info', title: `${unreadNow.length} notifications non lues`, message: 'Ouvrez la cloche « Notifications » pour les consulter.' })
+      } else {
+        // nouvelles notifications depuis la dernière lecture : affichées à l'écran
+        list.filter((n) => !n.is_read && !known.current!.has(n.id)).slice(0, 4).reverse()
+          .forEach((n) => addNotification({ type: n.type, title: n.title, message: n.message }))
+      }
+      known.current = new Set(list.map((n) => n.id))
       setItems(list)
     } catch { /* silencieux */ }
   }
@@ -27,7 +43,7 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
   useEffect(() => {
     load()
     if (isLive) {
-      timer.current = setInterval(load, 30000) // rafraîchit toutes les 30s
+      timer.current = setInterval(load, 20000) // rafraîchit toutes les 20 s
     }
     return () => { if (timer.current) clearInterval(timer.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,6 +79,9 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <p className="font-bold text-gray-900 text-sm">Notifications 🔔</p>
             <div className="flex items-center gap-2">
+              <button onClick={() => { setComposing(true); setOpen(false) }} className="text-xs text-primary-600 hover:text-primary-800 flex items-center gap-1">
+                <Send className="w-3.5 h-3.5" /> Message
+              </button>
               {items.length > 0 && (
                 <button onClick={markAllRead} className="text-xs text-primary-600 hover:text-primary-800 flex items-center gap-1">
                   <CheckCheck className="w-3.5 h-3.5" /> Tout lu
@@ -91,6 +110,7 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
           </div>
         </div>
       )}
+      <MessageModal open={composing} onClose={() => setComposing(false)} />
     </div>
   )
 }

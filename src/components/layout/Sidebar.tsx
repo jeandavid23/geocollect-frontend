@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Coopératives', to: '/admin/cooperatives', icon: <Building2 className="w-5 h-5" />, roles: ['super_admin', 'owner'] },
   { label: 'Agents Mappeurs', to: '/admin/agents', icon: <UserCog className="w-5 h-5" />, roles: ['super_admin', 'owner'] },
   { label: 'Comptes & Accès', to: '/admin/accounts', icon: <KeyRound className="w-5 h-5" />, roles: ['super_admin', 'owner'] },
+  { label: 'Rapports', to: '/admin/reports', icon: <FileBarChart className="w-5 h-5" />, roles: ['super_admin', 'owner'] },
   { label: 'Journaux', to: '/admin/logs', icon: <Activity className="w-5 h-5" />, roles: ['super_admin', 'owner'] },
   // Cooperative
   { label: 'Tableau de bord', to: '/coop', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['cooperative'] },

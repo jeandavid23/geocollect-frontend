@@ -11,6 +11,8 @@ import {
 } from '../../api/selfintersection'
 import { withRetry, apiErrorMessage } from '../../utils/retry'
 import { exportGeoJSON, exportKML, exportShapefile, exportExcel, type OutFeature } from '../../utils/featureExport'
+import ReportExportBar from '../../components/ui/ReportExportBar'
+import type { Report } from '../../utils/report'
 
 const { BaseLayer } = LayersControl
 const PAGE = 100
@@ -137,6 +139,37 @@ export default function SelfIntersectionPage() {
     ], 'rapport_self_intersection.xlsx')
   }
 
+  const report = useMemo<Report | null>(() => {
+    if (!out) return null
+    const s = out.summary
+    const flat = (r: SelfIntersectionResult) => ({
+      identifiant: r.id, partie: r.part + 1, statut: STATUS_LABEL[r.status], motif: r.reason ? reasonLabel(r.reason) : '',
+      Surface_Ha: r.area_ha, corrige: r.corrected ? 'OUI' : 'NON', trous_combles: r.holes_filled,
+      erreurs: r.errors.map((e) => ERROR_LABEL[e] ?? e).join(', '),
+    })
+    const rows = out.results.map((r) => ({ ...flat(r), ...propsOf(r) }) as Report['tables'][number]['rows'][number])
+    return {
+      kind: 'selfintersection', title: 'Rapport Self-intersection — nettoyage des polygones', source: picked?.label ?? '',
+      summary: [
+        ['Surface minimale (ha)', s.min_area_ha], ['Champ code (déduplication)', s.id_field || '—'],
+        ['Polygones en entrée', s.initial_count], ['Après éclatement', s.after_split_count], ['Conservés', s.final_count],
+        ['Supprimés', s.deleted_count], ['— surfaces trop petites', s.small_removed], ['— nuls / irréparables', s.null_removed],
+        ['Doublons de code retirés', s.dup_code_removed], ['Géométries réparées', s.geometries_fixed],
+        ['Polygones à trous comblés', s.holes_filled], ['Arrondis / dé-piqués', s.rounded_count],
+        ['Surface initiale (ha)', s.initial_area_ha], ['Surface finale (ha)', s.final_area_ha],
+        ...Object.entries(s.topology_errors).map(([k, v]) => [`Erreur d'origine : ${ERROR_LABEL[k] ?? k}`, v] as [string, number]),
+      ],
+      tables: [
+        { name: 'Tous les polygones', rows },
+        { name: 'Conservés', rows: rows.filter((_, i) => out.results[i].status === 'kept') },
+        { name: 'Supprimés', rows: rows.filter((_, i) => out.results[i].status === 'deleted') },
+        { name: 'Doublons de code', rows: rows.filter((_, i) => out.results[i].status === 'dup_code') },
+      ],
+      features: outFeatures('kept'), nameField: opts.id_field || undefined,
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [out])
+
   const input = 'w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
   const toggle = (key: keyof SelfIntersectionOptions, label: string) => (
     <label className="flex items-center gap-2 text-xs text-gray-700">
@@ -240,6 +273,8 @@ export default function SelfIntersectionPage() {
               <button onClick={() => exportGeoJSON(outFeatures('dup_code'), 'doublons_code.geojson')} className={btn}><Download className="w-4 h-4" /> Doublons</button>
             </div>
           </section>
+
+          <ReportExportBar report={report} />
 
           <section className="relative h-[460px] rounded-2xl overflow-hidden border border-gray-100">
             <MapContainer center={[7.54, -5.55]} zoom={7} className="h-full w-full" preferCanvas>

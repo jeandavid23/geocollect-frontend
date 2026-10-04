@@ -5,6 +5,7 @@ import Header from '../../components/layout/Header'
 import { platformApi, MODULE_LABELS, ALL_MODULES, type PlatformOverview, type ModuleUsage } from '../../api/platform'
 import type { ModuleId } from '../../types'
 import { exportExcel } from '../../utils/featureExport'
+import MessageModal from '../../components/ui/MessageModal'
 import { apiErrorMessage } from '../../utils/retry'
 
 /** Vue d'ensemble du propriétaire : toute la plateforme et chacun de ses clients. */
@@ -13,6 +14,7 @@ export default function PlatformPage() {
   const [error, setError] = useState('')
   const [bulkBusy, setBulkBusy] = useState('')
   const [bulkMsg, setBulkMsg] = useState('')
+  const [announce, setAnnounce] = useState(false)
 
   const load = useCallback(() => {
     platformApi.overview().then(({ data }) => setData(data)).catch((err) => setError(apiErrorMessage(err)))
@@ -73,6 +75,13 @@ export default function PlatformPage() {
   return (
     <div className="p-6 space-y-5">
       <Header title="Plateforme" subtitle="Super Super Admin — vue d'ensemble de tous vos clients" />
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => setAnnounce(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50 text-amber-800 text-sm font-medium hover:bg-amber-100"><Bell className="w-4 h-4" /> Envoyer une annonce</button>
+        <Link to="/owner/admins" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-50 text-purple-700 text-sm font-medium hover:bg-purple-100"><ShieldCheck className="w-4 h-4" /> Nouveau client</Link>
+        <Link to="/admin" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-50 text-primary-700 text-sm font-medium hover:bg-primary-100"><BarChart3 className="w-4 h-4" /> Tableau de bord de toutes les coopératives</Link>
+        <Link to="/admin/logs" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-50 text-gray-700 text-sm font-medium hover:bg-gray-100"><Info className="w-4 h-4" /> Journaux</Link>
+      </div>
+      <MessageModal open={announce} defaultTarget="all" onClose={() => setAnnounce(false)} />
 
       {error && <p className="flex items-start gap-2 text-sm text-red-700 bg-red-50 rounded-xl p-3"><AlertTriangle className="w-4 h-4 mt-0.5" /> {error}</p>}
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { saveImportReport, registryImportReport } from '../../utils/report'
 import * as XLSX from 'xlsx'
 import {
   Save, Undo2, Redo2, Upload, Download, Calculator as CalcIcon, FunctionSquare, Plus, Trash2,
@@ -503,7 +504,8 @@ export default function RegistryPage() {
     }
     setActive(0)
     setSel(selectCell(0, 0))
-    addNotification({ type: 'success', title: 'Classeur importé', message: `${incoming.length} feuille(s) depuis ${wb.fileName}.` })
+    addNotification({ type: 'success', title: 'Classeur importé', message: `${incoming.length} feuille(s) depuis ${wb.fileName}. Rapport disponible dans « Rapports ».` })
+    if (isLive) saveImportReport(registryImportReport(wb.fileName, incoming, mode))
   }
 
   const exportXlsx = () => {
