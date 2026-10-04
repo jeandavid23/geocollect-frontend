@@ -138,7 +138,7 @@ export default function ProducersPage() {
       birthYear: form.birthYear ? Number(form.birthYear) : undefined,
       isActive: true,
       createdAt: new Date().toISOString(),
-      assignedAgentId: 'agent-001',
+      assignedAgentId: undefined,
       parcelCount: 0,
       totalHectares: 0,
     })

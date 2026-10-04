@@ -15,18 +15,19 @@ import { useAppStore } from '../../store/appStore'
 export default function CoopDashboardPage() {
   useLivePolling()
   const user = useAuthStore((s) => s.user)
-  const { getCooperativeStats, parcels, agents } = useAppStore()
+  const { getCooperativeStats, parcels, agents, cooperatives } = useAppStore()
 
   const coopId = user?.cooperativeId ?? 'coop-001'
   const stats = getCooperativeStats(coopId)
   const coopParcels = parcels.filter((p) => p.cooperativeId === coopId)
   const coopAgents = agents.filter((a) => a.cooperativeId === coopId)
+  const coopName = cooperatives.find((c) => c.id === coopId)?.name ?? user?.fullName ?? 'votre coopérative'
 
   return (
     <div className="p-6 space-y-6">
       <Header
         title="Tableau de bord Coopérative"
-        subtitle={`Espace COOPACI BEOUMI · Vue d'ensemble de vos activités`}
+        subtitle={`Espace ${coopName} · Vue d'ensemble de vos activités`}
       />
 
       {/* KPIs */}

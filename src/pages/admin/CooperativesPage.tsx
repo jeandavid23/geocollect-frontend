@@ -229,7 +229,7 @@ export default function CooperativesPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la coopérative *</label>
                 <input value={form.name} onChange={(e) => setField('name', e.target.value)} required
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="COOPACI BEOUMI" />
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Ex. : COOP CACAO DU SUD" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

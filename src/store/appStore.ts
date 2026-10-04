@@ -68,6 +68,8 @@ interface AppStore {
   removeAgent: (id: string) => void
   toggleAgentActive: (id: string) => void
 
+  clearData: () => void
+
   // Sync
   syncAll: () => void
 
@@ -75,11 +77,15 @@ interface AppStore {
   getCooperativeStats: (cooperativeId: string) => DashboardStats
 }
 
+// Données de démonstration : uniquement en développement local. En production, rien n'est affiché
+// tant que le serveur n'a pas renvoyé les données du compte connecté (déjà cloisonnées).
+const DEMO = import.meta.env.DEV
+
 export const useAppStore = create<AppStore>((set, get) => ({
-  cooperatives: MOCK_COOPERATIVES,
-  producers: MOCK_PRODUCERS,
-  parcels: MOCK_PARCELS,
-  agents: MOCK_AGENTS,
+  cooperatives: DEMO ? MOCK_COOPERATIVES : [],
+  producers: DEMO ? MOCK_PRODUCERS : [],
+  parcels: DEMO ? MOCK_PARCELS : [],
+  agents: DEMO ? MOCK_AGENTS : [],
   legacyParcels: [],
 
   loadLegacyParcels: async () => {
@@ -134,6 +140,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set({ isLoading: false })
     }
   },
+
+  // Déconnexion : on efface les données du compte précédent (le suivant ne doit jamais les apercevoir)
+  clearData: () => set({ isLive: false, isLoading: false, lastSync: null, currentAgentId: null,
+    cooperatives: [], producers: [], parcels: [], agents: [], legacyParcels: [], mappingSession: null }),
 
   // Rafraîchit en arrière-plan sans vider l'écran (utilisé par le rafraîchissement automatique ~15 s)
   setPolling: (on) => set((st) => ({ pollersActive: Math.max(0, st.pollersActive + (on ? 1 : -1)) })),

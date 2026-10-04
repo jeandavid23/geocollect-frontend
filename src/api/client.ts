@@ -1,3 +1,4 @@
+import { useAppStore } from '../store/appStore'
 import axios from 'axios'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
@@ -30,6 +31,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && error.response?.data?.code === 'tenant_inactive') {
       try { sessionStorage.setItem('geocollect-logout-reason', String(error.response.data.detail || '')) } catch { /* indisponible */ }
       localStorage.removeItem('geocollect-auth')
+      useAppStore.getState().clearData()
       if (!window.location.pathname.startsWith('/login')) window.location.href = '/login'
       return Promise.reject(error)
     }

@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
@@ -54,16 +54,17 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const { user, logout } = useAuthStore()
   const { isOnline } = useAppStore()
-  const navigate = useNavigate()
 
   const role = user?.role ?? 'agent'
   const modules = user?.modules ?? null // null = tous
   const filtered = NAV_ITEMS.filter((item) =>
     item.roles.includes(role) && (!item.module || modules === null || modules.includes(item.module)))
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
+  const handleLogout = async () => {
+    useAppStore.getState().clearData()
+    await logout()
+    // rechargement complet : plus rien du compte précédent en mémoire pour le compte suivant
+    window.location.replace('/login')
   }
 
   return (

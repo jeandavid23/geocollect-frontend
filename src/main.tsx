@@ -4,8 +4,19 @@ import './index.css'
 import App from './App.tsx'
 
 // Build version (force un nom de bundle unique à chaque déploiement)
-const BUILD_VERSION = '2026-06-28-profil'
+const BUILD_VERSION = '2026-10-04-cloisonnement'
 console.info('GeoCollect EUDR', BUILD_VERSION)
+
+// Nouvelle version déployée : le nouveau service worker prend la main → on recharge une fois la page,
+// pour ne jamais rester sur l'ancienne version gardée en cache hors ligne.
+if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+  let reloaded = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return
+    reloaded = true
+    window.location.reload()
+  })
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
