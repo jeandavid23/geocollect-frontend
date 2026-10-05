@@ -12,6 +12,7 @@ interface AuthStore {
   error: string | null
   // Actions
   loginWithApi: (username: string, password: string) => Promise<void>
+  loginWithGoogle: (credential: string) => Promise<void>
   loginMock: (user: User, token: string) => void
   logout: () => Promise<void>
   updateUser: (updates: Partial<User>) => void
@@ -92,6 +93,18 @@ export const useAuthStore = create<AuthStore>()(
             || 'Identifiant ou mot de passe incorrect.'
           set({ error: msg, isLoading: false })
           // on relance l'erreur d'origine : la page de connexion a besoin du statut HTTP et du motif
+          throw err
+        }
+      },
+
+      loginWithGoogle: async (credential) => {
+        set({ isLoading: true, error: null })
+        try {
+          const { data } = await authApi.google(credential)
+          set({ user: mapApiUser(data.user as unknown as Record<string, unknown>), token: data.access, refreshToken: data.refresh, isAuthenticated: true, isLoading: false })
+        } catch (err: unknown) {
+          const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Connexion Google impossible.'
+          set({ error: msg, isLoading: false })
           throw err
         }
       },

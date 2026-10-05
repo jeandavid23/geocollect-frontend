@@ -11,6 +11,10 @@ export const authApi = {
   login: (username: string, password: string) =>
     api.post<LoginResponse>('/auth/login/', { username, password }),
 
+  // Connexion avec Google : jeton d'identité vérifié par le serveur, compte retrouvé par son e-mail
+  googleConfig: () => api.get<{ enabled: boolean; client_id: string }>('/auth/google/config/'),
+  google: (credential: string) => api.post<LoginResponse>('/auth/google/', { credential }),
+
   logout: (refresh: string) =>
     api.post('/auth/logout/', { refresh }),
 

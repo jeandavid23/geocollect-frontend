@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Leaf, Loader2, MapPin, Shield } from 'lucide-react'
 import { useAuthStore, MOCK_USERS } from '../../store/authStore'
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -15,8 +16,29 @@ export default function LoginPage() {
   // le motif n'est affiché qu'une fois : effacé après le premier affichage
   useEffect(() => { try { sessionStorage.removeItem('geocollect-logout-reason') } catch { /* indisponible */ } }, [])
 
-  const { loginWithApi, loginMock } = useAuthStore()
+  const { loginWithApi, loginWithGoogle, loginMock } = useAuthStore()
   const navigate = useNavigate()
+
+  const goHome = () => {
+    const currentRole = useAuthStore.getState().user?.role
+    if (currentRole === 'owner') navigate('/owner')
+    else if (currentRole === 'super_admin') navigate('/admin')
+    else if (currentRole === 'cooperative') navigate('/coop')
+    else navigate('/agent')
+  }
+
+  const handleGoogle = async (credential: string) => {
+    setError(''); setLoading(true)
+    try {
+      await loginWithGoogle(credential)
+      setLoading(false)
+      goHome()
+    } catch (err) {
+      const d = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setError(d || 'Connexion Google impossible. Réessayez.')
+      setLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,11 +75,7 @@ export default function LoginPage() {
     }
 
     setLoading(false)
-    const currentRole = useAuthStore.getState().user?.role
-    if (currentRole === 'owner') navigate('/owner')
-    else if (currentRole === 'super_admin') navigate('/admin')
-    else if (currentRole === 'cooperative') navigate('/coop')
-    else navigate('/agent')
+    goHome()
   }
 
   return (
@@ -148,6 +166,7 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+          <GoogleSignInButton onCredential={handleGoogle} disabled={loading} />
 
           {/* Comptes de démonstration : développement local uniquement (jamais affichés en ligne) */}
           {import.meta.env.DEV && <div className="mt-6 pt-6 border-t border-gray-100">
