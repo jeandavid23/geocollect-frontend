@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Search, X, ZoomIn, Plus, Download } from 'lucide-react'
+import { Search, X, ZoomIn, Plus, Download, Lock } from 'lucide-react'
 import type { GFeature } from './GisEngine'
 
 export interface Column { key: string; label: string; editable: boolean; numeric?: boolean }
@@ -72,7 +72,7 @@ export default function AttributeTable(props: Props) {
               {props.columns.map((c) => (
                 <th key={c.key} onClick={() => setSort((s) => (s?.key === c.key ? { key: c.key, dir: (s.dir * -1) as 1 | -1 } : { key: c.key, dir: 1 }))}
                   className="px-2 py-1.5 border-b border-r border-gray-200 text-left font-medium whitespace-nowrap cursor-pointer hover:bg-gray-200">
-                  {c.label}{sort?.key === c.key ? (sort.dir === 1 ? ' ▲' : ' ▼') : ''}{!c.editable && <span className="text-gray-400"> 🔒</span>}
+                  {c.label}{sort?.key === c.key ? (sort.dir === 1 ? ' ▲' : ' ▼') : ''}{!c.editable && <Lock className="inline w-3 h-3 ml-1 text-gray-400" aria-label="lecture seule" />}
                 </th>
               ))}
             </tr>

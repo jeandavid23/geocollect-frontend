@@ -219,7 +219,7 @@ export default function ReportsPage() {
       )}
 
       {/* Polygon Validator EUDR by JDK — analysis banner */}
-      <div className="bg-gradient-to-r from-primary-700 to-green-800 text-white rounded-2xl p-5 flex items-center justify-between">
+      <div className="bg-primary-800 text-white rounded-2xl p-5 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
             <ShieldCheck className="w-7 h-7" />
@@ -319,7 +319,7 @@ export default function ReportsPage() {
               {withIssues.length === 0 ? (
                 <div className="text-center py-10">
                   <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto" />
-                  <p className="font-semibold text-gray-800 mt-3">Toutes les géométries sont valides ✅</p>
+                  <p className="font-semibold text-gray-800 mt-3">Toutes les géométries sont valides.</p>
                   <p className="text-sm text-gray-500">Aucune auto-intersection ni anomalie détectée. Vous pouvez exporter.</p>
                 </div>
               ) : (

@@ -110,9 +110,9 @@ export default function CoopParcelsPage() {
           <Filter className="w-4 h-4 text-gray-400" />
           {[
             { value: 'all', label: 'Toutes' },
-            { value: 'compliant', label: '🟢' },
-            { value: 'non_compliant', label: '🔴' },
-            { value: 'pending', label: '🟡' },
+            { value: 'compliant', label: 'Conformes' },
+            { value: 'non_compliant', label: 'Non conformes' },
+            { value: 'pending', label: 'En attente' },
           ].map((f) => (
             <button key={f.value} onClick={() => setFilterStatus(f.value)}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
@@ -159,11 +159,11 @@ export default function CoopParcelsPage() {
                 <Popup>
                   <div className="min-w-48">
                     <p className="font-bold text-gray-800 text-sm font-mono">{parcel.fieldId}</p>
-                    <p className="text-xs text-gray-500 mt-1">👨‍🌾 {producerName(parcel.producerId)}</p>
-                    <p className="text-xs text-gray-500">🗺️ Agent : {agentName(parcel.agentId)}</p>
+                    <p className="text-xs text-gray-500 mt-1">Producteur : {producerName(parcel.producerId)}</p>
+                    <p className="text-xs text-gray-500">Agent : {agentName(parcel.agentId)}</p>
                     <div className="mt-2 space-y-0.5 text-xs text-gray-600">
-                      <p>📍 {parcel.village} · {parcel.section}</p>
-                      <p>🌿 {parcel.culture} · 📐 {parcel.areaHectares.toFixed(2)} ha</p>
+                      <p>{parcel.village} · {parcel.section}</p>
+                      <p>{parcel.culture} · {parcel.areaHectares.toFixed(2)} ha</p>
                     </div>
                     <div className={`mt-2 text-xs font-semibold px-2 py-1 rounded-lg ${
                       parcel.eudrStatus === 'compliant' ? 'bg-green-100 text-green-700' :

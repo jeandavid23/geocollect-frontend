@@ -170,15 +170,15 @@ export default function AdminDashboardPage() {
             <AreaChart data={dailyData}>
               <defs>
                 <linearGradient id="gradParcelles" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#16a34a" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#2c6741" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#2c6741" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />
-              <Area type="monotone" dataKey="parcelles" stroke="#16a34a" fill="url(#gradParcelles)" strokeWidth={2} name="Parcelles" />
+              <Area type="monotone" dataKey="parcelles" stroke="#2c6741" fill="url(#gradParcelles)" strokeWidth={2} name="Parcelles" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -226,7 +226,7 @@ export default function AdminDashboardPage() {
               <XAxis type="number" tick={{ fontSize: 11 }} />
               <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={90} />
               <Tooltip />
-              <Bar dataKey="parcelles" fill="#16a34a" radius={[0, 4, 4, 0]} name="Parcelles" />
+              <Bar dataKey="parcelles" fill="#2c6741" radius={[0, 4, 4, 0]} name="Parcelles" />
             </BarChart>
           </ResponsiveContainer>
           )}

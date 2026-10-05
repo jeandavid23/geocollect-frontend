@@ -15,7 +15,7 @@ export default defineConfig({
         name: 'GeoCollect EUDR',
         short_name: 'GeoCollect',
         description: "Collecte SIG et conformité EUDR pour coopératives cacao/café",
-        theme_color: '#16a34a',
+        theme_color: '#183a25',
         background_color: '#14532d',
         display: 'standalone',
         orientation: 'portrait',

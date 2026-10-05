@@ -40,7 +40,7 @@ export default function AgentDashboardPage() {
   return (
     <div className="p-6 space-y-6">
       <Header
-        title={`Bonjour, ${user?.fullName?.split(' ')[0]} 👋`}
+        title={`Bonjour, ${user?.fullName?.split(' ')[0]}`}
         subtitle={format(new Date(), "EEEE d MMMM yyyy", { locale: fr })}
       />
       <QuickActions actions={[
@@ -90,7 +90,7 @@ export default function AgentDashboardPage() {
       {/* Quick action */}
       <button
         onClick={() => navigate('/agent/mapping')}
-        className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-2xl p-6 flex items-center justify-between shadow-lg transition group"
+        className="w-full bg-primary-700 hover:bg-primary-800 text-white rounded-2xl p-6 flex items-center justify-between shadow-lg transition group"
       >
         <div className="text-left">
           <p className="text-lg font-bold">Commencer un Mapping</p>
@@ -143,7 +143,7 @@ export default function AgentDashboardPage() {
               <XAxis dataKey="day" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />
-              <Bar dataKey="parcelles" fill="#16a34a" radius={[4, 4, 0, 0]} name="Parcelles" />
+              <Bar dataKey="parcelles" fill="#2c6741" radius={[4, 4, 0, 0]} name="Parcelles" />
             </BarChart>
           </ResponsiveContainer>
         </div>

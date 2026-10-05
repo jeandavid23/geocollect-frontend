@@ -344,7 +344,7 @@ export default function MappingPage() {
         addParcel(mapParcel(raw))
         addNotification({
           type: 'success',
-          title: 'Parcelle enregistrée en base ✓',
+          title: 'Parcelle enregistrée',
           message: `${String(raw.field_id ?? '')} — stockée et partagée avec la coopérative.`,
         })
         setSaving(false)
@@ -523,7 +523,7 @@ export default function MappingPage() {
           </div>
 
           <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-800">
-            <p className="font-semibold mb-1">📍 Comment mapper ?</p>
+            <p className="font-semibold mb-1">Comment mapper ?</p>
             <p>Marchez le long des limites de la parcelle. À chaque coin, appuyez sur <strong>« Marquer ce point »</strong>. Le polygone se forme automatiquement. Minimum 3 points.</p>
           </div>
         </div>
@@ -738,7 +738,7 @@ export default function MappingPage() {
           )}
           {status === 'active' && autoTrack && (
             <div className="text-center text-sm text-primary-700 bg-primary-50 rounded-xl py-3">
-              📡 Suivi automatique actif — marchez le long des limites de la parcelle.
+              Suivi automatique actif — marchez le long des limites de la parcelle.
             </div>
           )}
 
@@ -781,7 +781,7 @@ export default function MappingPage() {
           </div>
           {hasOverlap ? (
             <p className="text-center text-xs text-red-600 font-medium">
-              ⛔ Chevauchement détecté — déplacez les sommets hors des parcelles existantes (en orange/rouge) pour continuer.
+              Chevauchement détecté — déplacez les sommets hors des parcelles existantes (en orange/rouge) pour continuer.
             </p>
           ) : points.length < 3 ? (
             <p className="text-center text-xs text-gray-400">
@@ -818,7 +818,7 @@ export default function MappingPage() {
             {validationResult.eudrScore}%
           </div>
           <p className="mt-3 font-bold text-lg">
-            {validationResult.isValid ? '🟢 Conforme EUDR' : '🔴 Non conforme EUDR'}
+            {validationResult.isValid ? 'Conforme EUDR' : 'Non conforme EUDR'}
           </p>
           <p className="text-sm text-gray-600 mt-1">{validationResult.summary}</p>
         </div>

@@ -82,7 +82,7 @@ export default function Sidebar() {
         {!collapsed && (
           <div className="overflow-hidden">
             <p className="font-bold text-sm leading-tight">GeoCollect</p>
-            <p className="text-primary-300 text-xs">EUDR Platform</p>
+            <p className="text-primary-300 text-xs">Traçabilité cacao · EUDR</p>
           </div>
         )}
       </div>

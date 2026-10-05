@@ -5,16 +5,17 @@ export default {
     extend: {
       colors: {
         primary: {
-          50:  '#f0fdf4',
-          100: '#dcfce7',
-          200: '#bbf7d0',
-          300: '#86efac',
-          400: '#4ade80',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-          800: '#166534',
-          900: '#14532d',
+          // vert forêt (feuille de cacaoyer), plus sobre que le vert Tailwind par défaut
+          50:  '#f1f6f2',
+          100: '#dfebe2',
+          200: '#bfd7c5',
+          300: '#93bb9e',
+          400: '#5f9870',
+          500: '#3d7b50',
+          600: '#2c6741',
+          700: '#235535',
+          800: '#1d452c',
+          900: '#183a25',
         },
         eudr: {
           green:  '#16a34a',
@@ -23,8 +24,14 @@ export default {
           blue:   '#2563eb',
         },
       },
+      // angles sobres : les classes rounded-xl / rounded-2xl existantes deviennent plus discrètes
+      borderRadius: {
+        xl: '0.5rem',
+        '2xl': '0.625rem',
+      },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['"Source Serif 4"', 'Georgia', 'serif'],
       },
     },
   },

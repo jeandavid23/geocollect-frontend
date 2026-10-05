@@ -1,6 +1,6 @@
 import {
   Users, MapPin, Leaf, UserCog, CheckCircle2, XCircle, Clock,
-  TrendingUp, BarChart3, Trophy, Map,
+  TrendingUp, BarChart3, Map,
   UserPlus, Upload, TreePine, ShieldCheck, FileBarChart, Send, BookOpen, Link2,
 } from 'lucide-react'
 import QuickActions from '../../components/ui/QuickActions'
@@ -131,15 +131,15 @@ export default function CoopDashboardPage() {
             <AreaChart data={stats.dailyProgress}>
               <defs>
                 <linearGradient id="gradDaily" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#16a34a" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#2c6741" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#2c6741" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} />
               <Tooltip />
-              <Area type="monotone" dataKey="parcels" stroke="#16a34a" fill="url(#gradDaily)" strokeWidth={2} name="Parcelles" />
+              <Area type="monotone" dataKey="parcels" stroke="#2c6741" fill="url(#gradDaily)" strokeWidth={2} name="Parcelles" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -147,8 +147,7 @@ export default function CoopDashboardPage() {
         {/* Top agents */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">Top Agents</h3>
-            <Trophy className="w-5 h-5 text-yellow-500" />
+            <h3 className="font-semibold text-gray-800">Agents les plus actifs</h3>
           </div>
           <div className="space-y-3">
             {coopAgents.map((agent, i) => (
@@ -221,9 +220,9 @@ export default function CoopDashboardPage() {
                       p.eudrStatus === 'non_compliant' ? 'bg-red-100 text-red-700' :
                       'bg-yellow-100 text-yellow-700'
                     }`}>
-                      {p.eudrStatus === 'compliant' ? '🟢 Conforme' :
-                       p.eudrStatus === 'non_compliant' ? '🔴 Non conforme' :
-                       '🟡 En attente'}
+                      {p.eudrStatus === 'compliant' ? 'Conforme' :
+                       p.eudrStatus === 'non_compliant' ? 'Non conforme' :
+                       'En attente'}
                     </span>
                   </td>
                 </tr>

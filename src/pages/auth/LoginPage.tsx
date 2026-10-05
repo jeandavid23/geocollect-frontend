@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Leaf, Loader2, MapPin, Shield } from 'lucide-react'
+import { Eye, EyeOff, Leaf, Loader2, Shield } from 'lucide-react'
 import { useAuthStore, MOCK_USERS } from '../../store/authStore'
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 
@@ -79,132 +79,126 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-green-900 flex items-center justify-center p-4">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-green-300 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-white lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(420px,1fr)]">
+      {/* Photo : producteur de cacao en Côte d'Ivoire */}
+      <aside className="relative h-56 sm:h-72 lg:h-auto lg:min-h-screen overflow-hidden bg-[#2b2118]">
+        <picture>
+          <source srcSet="/images/producteur-cacao.webp" type="image/webp" />
+          <img src="/images/producteur-cacao.jpg" alt="Producteur ivoirien étalant ses fèves de cacao au séchage"
+            className="absolute inset-0 h-full w-full object-cover object-[35%_center]" />
+        </picture>
+        {/* ombrage : haut (logo), bas et gauche (texte) — le producteur reste lisible à droite */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/45" />
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/55 via-black/15 to-transparent" />
 
-      <div className="relative w-full max-w-md">
-        {/* Logo card */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-2xl mb-4">
-            <Leaf className="w-10 h-10 text-primary-600" />
+        <div className="relative z-10 flex h-full flex-col justify-between p-6 sm:p-10 lg:p-14 text-white">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-primary-700"><Leaf className="h-5 w-5" /></span>
+            <span className="text-[15px] font-semibold tracking-wide">GeoCollect <span className="font-normal text-white/70">EUDR</span></span>
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
-            GeoCollect EUDR
-          </h1>
-          <p className="text-primary-200 mt-1 text-sm">
-            Plateforme WebSIG de collecte et de suivi EUDR
+
+          <div className="hidden lg:block max-w-xl [text-shadow:0_1px_12px_rgba(0,0,0,0.45)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e9c98b]">Côte d'Ivoire · filière cacao</p>
+            <h1 className="mt-4 font-serif text-[2.6rem] leading-[1.12] font-semibold">
+              La traçabilité du cacao, de la parcelle jusqu'à l'exportation.
+            </h1>
+            <p className="mt-5 text-[15px] leading-relaxed text-white/80 max-w-lg">
+              Cartographie GPS des parcelles par les agents de terrain, contrôle de conformité au règlement européen
+              contre la déforestation, et dossiers prêts pour les exportateurs.
+            </p>
+            <dl className="mt-9 grid grid-cols-3 gap-6 border-t border-white/20 pt-6 text-sm">
+              <div><dt className="text-white/60">Coopératives</dt><dd className="mt-1 font-medium">Registre et parcelles</dd></div>
+              <div><dt className="text-white/60">Agents</dt><dd className="mt-1 font-medium">Mapping GPS mobile</dd></div>
+              <div><dt className="text-white/60">Exportateurs</dt><dd className="mt-1 font-medium">Preuves de conformité</dd></div>
+            </dl>
+          </div>
+
+          <p className="text-[11px] text-white/55">
+            Photo : KokoDZ, <a href="https://commons.wikimedia.org/wiki/File:Cultivateur_de_cacao_01.jpg" target="_blank" rel="noreferrer" className="underline hover:text-white">Wikimedia Commons</a>, CC BY-SA 4.0
           </p>
         </div>
+      </aside>
 
-        {/* Login form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">
-            Connexion à votre espace
-          </h2>
+      {/* Formulaire */}
+      <main className="flex flex-col justify-between px-6 py-10 sm:px-12 lg:px-16 lg:py-14">
+        <div className="mx-auto w-full max-w-sm lg:mt-[12vh]">
+          <h2 className="font-serif text-3xl font-semibold text-gray-900">Connexion</h2>
+          <p className="mt-2 text-sm text-gray-500">Accédez à votre espace coopérative, administrateur ou agent de terrain.</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Identifiant
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin / coop / agent"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400 transition"
-                required
-              />
+              <label htmlFor="login-user" className="block text-sm font-medium text-gray-800 mb-1.5">Identifiant</label>
+              <input id="login-user" type="text" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)}
+                placeholder="Votre identifiant" required
+                className="w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-gray-900 placeholder-gray-400 shadow-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600" />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Mot de passe
-              </label>
+              <label htmlFor="login-pass" className="block text-sm font-medium text-gray-800 mb-1.5">Mot de passe</label>
               <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 pr-12 transition"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                <input id="login-pass" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password}
+                  onChange={(e) => setPassword(e.target.value)} required
+                  className="w-full rounded-md border border-gray-300 px-3.5 py-2.5 pr-11 text-gray-900 shadow-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                  {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 flex items-center gap-2">
-                <Shield className="w-4 h-4 flex-shrink-0" />
-                {error}
+              <div role="alert" className="flex items-start gap-2 rounded-md border-l-4 border-red-500 bg-red-50 px-3.5 py-2.5 text-sm text-red-800">
+                <Shield className="mt-0.5 h-4 w-4 flex-shrink-0" />{error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Connexion en cours...
-                </>
-              ) : (
-                'Se connecter'
-              )}
+            <button type="submit" disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary-700 py-2.5 font-semibold text-white shadow-sm transition hover:bg-primary-800 disabled:opacity-60">
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Connexion…</> : 'Se connecter'}
             </button>
           </form>
           <GoogleSignInButton onCredential={handleGoogle} disabled={loading} />
 
+          <p className="mt-6 text-xs leading-relaxed text-gray-500">
+            Mot de passe oublié ? Votre coopérative ou votre administrateur peut vous en attribuer un nouveau.
+          </p>
+
           {/* Comptes de démonstration : développement local uniquement (jamais affichés en ligne) */}
-          {import.meta.env.DEV && <div className="mt-6 pt-6 border-t border-gray-100">
-            <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">
-              Comptes de démonstration
-            </p>
-            <div className="space-y-2">
-              {[
-                { role: 'Super Admin', user: 'admin', pass: 'admin123', color: 'bg-purple-50 border-purple-200 text-purple-700' },
-                { role: 'Coopérative', user: 'coop', pass: 'coop123', color: 'bg-blue-50 border-blue-200 text-blue-700' },
-                { role: 'Agent Mappeur', user: 'agent', pass: 'agent123', color: 'bg-green-50 border-green-200 text-green-700' },
-              ].map(({ role, user, pass, color }) => (
-                <button
-                  key={user}
-                  onClick={() => { setUsername(user); setPassword(pass) }}
-                  className={`w-full text-left px-3 py-2 rounded-lg border text-xs font-medium transition hover:opacity-80 ${color}`}
-                >
-                  <span className="font-semibold">{role}</span>
-                  <span className="opacity-70 ml-2">— {user} / {pass}</span>
-                </button>
+          {import.meta.env.DEV && <div className="mt-6 border-t border-gray-100 pt-5">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Comptes de démonstration</p>
+            <div className="flex flex-wrap gap-2">
+              {[['admin', 'admin123'], ['coop', 'coop123'], ['agent', 'agent123']].map(([u, pw]) => (
+                <button key={u} type="button" onClick={() => { setUsername(u); setPassword(pw) }}
+                  className="rounded border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50">{u}</button>
               ))}
             </div>
           </div>}
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-6 space-y-2">
-          <div className="flex items-center justify-center gap-2 text-primary-200 text-xs">
-            <MapPin className="w-3.5 h-3.5" />
-            <span>Polygon Validator EUDR by JDK · © {new Date().getFullYear()} GeoCollect</span>
+        {/* Bandeau : les deux autres photos de la filière */}
+        <div className="mx-auto mt-12 w-full max-w-sm">
+          <div className="grid grid-cols-2 gap-3">
+            <figure>
+              <picture><source srcSet="/images/cabosses-soubre.webp" type="image/webp" />
+                <img src="/images/cabosses-soubre.jpg" alt="Cabosses de cacao récoltées à Soubré" loading="lazy" className="aspect-[4/3] w-full rounded object-cover" /></picture>
+              <figcaption className="mt-1.5 text-[11px] text-gray-500">Cabosses récoltées, Soubré</figcaption>
+            </figure>
+            <figure>
+              <picture><source srcSet="/images/feves-soubre.webp" type="image/webp" />
+                <img src="/images/feves-soubre.jpg" alt="Fèves de cacao au séchage à Soubré" loading="lazy" className="aspect-[4/3] w-full rounded object-cover" /></picture>
+              <figcaption className="mt-1.5 text-[11px] text-gray-500">Fèves au séchage, Soubré</figcaption>
+            </figure>
           </div>
-          <div className="flex items-center justify-center gap-3 text-primary-300 text-xs">
-            <Link to="/cgu" className="hover:text-white underline">CGU</Link>
-            <span>·</span>
-            <Link to="/confidentialite" className="hover:text-white underline">Confidentialité</Link>
+          <p className="mt-2 text-[10px] text-gray-400">Photos : Milequem Diarassouba, Wikimedia Commons, CC BY-SA 4.0</p>
+
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-5 text-xs text-gray-500">
+            <span>© {new Date().getFullYear()} GeoLab Service · Abidjan</span>
+            <span className="flex gap-4">
+              <Link to="/cgu" className="hover:text-gray-800">CGU</Link>
+              <Link to="/confidentialite" className="hover:text-gray-800">Confidentialité</Link>
+            </span>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

@@ -77,7 +77,7 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
       {open && (
         <div className="absolute bottom-0 left-full ml-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[1000] max-h-96 flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <p className="font-bold text-gray-900 text-sm">Notifications 🔔</p>
+            <p className="font-bold text-gray-900 text-sm">Notifications</p>
             <div className="flex items-center gap-2">
               <button onClick={() => { setComposing(true); setOpen(false) }} className="text-xs text-primary-600 hover:text-primary-800 flex items-center gap-1">
                 <Send className="w-3.5 h-3.5" /> Message

@@ -104,9 +104,9 @@ export default function MapPage() {
           <Filter className="w-4 h-4 text-gray-400" />
           {[
             { value: 'all', label: 'Toutes' },
-            { value: 'compliant', label: '🟢 Conformes' },
-            { value: 'non_compliant', label: '🔴 Non conformes' },
-            { value: 'pending', label: '🟡 En attente' },
+            { value: 'compliant', label: 'Conformes' },
+            { value: 'non_compliant', label: 'Non conformes' },
+            { value: 'pending', label: 'En attente' },
           ].map((f) => (
             <button
               key={f.value}
@@ -218,17 +218,17 @@ export default function MapPage() {
                       <p className="font-bold text-gray-800 text-sm font-mono">{parcel.fieldId}</p>
                       <p className="text-xs text-gray-500 mt-1">{producer?.fullName}</p>
                       <div className="mt-2 space-y-0.5 text-xs text-gray-600">
-                        <p>📍 {parcel.village} · {parcel.section}</p>
-                        <p>🌿 {parcel.culture}</p>
-                        <p>📐 {parcel.areaHectares.toFixed(2)} ha</p>
+                        <p>{parcel.village} · {parcel.section}</p>
+                        <p>{parcel.culture}</p>
+                        <p>{parcel.areaHectares.toFixed(2)} ha</p>
                       </div>
                       <div className={`mt-2 text-xs font-semibold px-2 py-1 rounded-lg ${
                         parcel.eudrStatus === 'compliant' ? 'bg-green-100 text-green-700' :
                         parcel.eudrStatus === 'non_compliant' ? 'bg-red-100 text-red-700' :
                         'bg-yellow-100 text-yellow-700'
                       }`}>
-                        {parcel.eudrStatus === 'compliant' ? '✅ Conforme EUDR' :
-                         parcel.eudrStatus === 'non_compliant' ? '❌ Non conforme' :
+                        {parcel.eudrStatus === 'compliant' ? 'Conforme EUDR' :
+                         parcel.eudrStatus === 'non_compliant' ? 'Non conforme' :
                          '⏳ En attente'} · {parcel.eudrScore ?? '—'}%
                       </div>
                     </div>
@@ -281,9 +281,9 @@ export default function MapPage() {
             selectedParcel.eudrStatus === 'non_compliant' ? 'bg-red-100 text-red-700' :
             'bg-yellow-100 text-yellow-700'
           }`}>
-            {selectedParcel.eudrStatus === 'compliant' ? '🟢 Conforme EUDR' :
-             selectedParcel.eudrStatus === 'non_compliant' ? '🔴 Non conforme EUDR' :
-             '🟡 En attente de validation'}
+            {selectedParcel.eudrStatus === 'compliant' ? 'Conforme EUDR' :
+             selectedParcel.eudrStatus === 'non_compliant' ? 'Non conforme EUDR' :
+             'En attente de validation'}
           </span>
         </div>
       )}

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Zap } from 'lucide-react'
 import MessageModal from './MessageModal'
 import { useAuthStore } from '../../store/authStore'
 import type { ModuleId } from '../../types'
@@ -16,13 +15,11 @@ export interface QuickAction {
   hint?: string
 }
 
+// Boutons neutres ; seule l'action « primary » (la principale) est en couleur
+const NEUTRAL = 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
 const TONE: Record<NonNullable<QuickAction['tone']>, string> = {
-  primary: 'bg-primary-50 text-primary-700 hover:bg-primary-100',
-  green: 'bg-green-50 text-green-700 hover:bg-green-100',
-  blue: 'bg-blue-50 text-blue-700 hover:bg-blue-100',
-  amber: 'bg-amber-50 text-amber-800 hover:bg-amber-100',
-  purple: 'bg-purple-50 text-purple-700 hover:bg-purple-100',
-  gray: 'bg-gray-50 text-gray-700 hover:bg-gray-100',
+  primary: 'bg-primary-700 border border-primary-700 text-white hover:bg-primary-800',
+  green: NEUTRAL, blue: NEUTRAL, amber: NEUTRAL, purple: NEUTRAL, gray: NEUTRAL,
 }
 
 /** Barre d'actions rapides des tableaux de bord. */
@@ -34,7 +31,7 @@ export default function QuickActions({ actions, title = 'Actions rapides' }: { a
 
   return (
     <section className="bg-white rounded-2xl border border-gray-100 p-4">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-amber-500" /> {title}</p>
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">{title}</p>
       <div className="flex flex-wrap gap-2">
         {shown.map((a) => (
           <button key={a.label} title={a.hint}

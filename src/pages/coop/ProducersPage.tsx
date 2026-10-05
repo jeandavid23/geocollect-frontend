@@ -109,7 +109,7 @@ export default function ProducersPage() {
         })
         const created = mapProducer(data as Record<string, unknown>)
         addProducer(created)
-        addNotification({ type: 'success', title: 'Producteur enregistré en base ✓', message: `${created.fullName} — ${created.fieldIdBase}` })
+        addNotification({ type: 'success', title: 'Producteur enregistré', message: `${created.fullName} — ${created.fieldIdBase}` })
         setForm(EMPTY_FORM)
         setShowForm(false)
         return
