@@ -1,7 +1,7 @@
 import {
   Users, MapPin, Leaf, UserCog, CheckCircle2, XCircle, Clock,
   TrendingUp, BarChart3, Map,
-  UserPlus, Upload, TreePine, ShieldCheck, FileBarChart, Send, BookOpen, Link2,
+  UserPlus, Upload, Package, TreePine, ShieldCheck, FileBarChart, Send, BookOpen, Link2,
 } from 'lucide-react'
 import QuickActions from '../../components/ui/QuickActions'
 import {
@@ -38,6 +38,7 @@ export default function CoopDashboardPage() {
         { label: 'Analyse déforestation', icon: <TreePine className="w-4 h-4" />, to: '/coop/deforestation', module: 'deforestation', tone: 'green' },
         { label: 'Polygon Validator', icon: <ShieldCheck className="w-4 h-4" />, to: '/coop/validator', module: 'validator', tone: 'green' },
         { label: 'Polygon & GMR', icon: <Link2 className="w-4 h-4" />, to: '/coop/gmr', module: 'gmr', tone: 'green' },
+        { label: 'Nouvelle fiche de lot', icon: <Package className="w-4 h-4" />, to: '/coop/lots', module: 'lots' },
         { label: 'Export TRACES (EUDR)', icon: <FileBarChart className="w-4 h-4" />, to: '/coop/reports#traces', hint: 'Fichier GeoJSON pour la déclaration de diligence raisonnable' },
         { label: 'Rapports et exports', icon: <FileBarChart className="w-4 h-4" />, to: '/coop/reports', tone: 'purple' },
         { label: 'Carte', icon: <Map className="w-4 h-4" />, to: '/map' },

@@ -68,6 +68,7 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   legacy: 'Anciens polygones',
   selfintersection: 'Self-intersection (nettoyage)',
   gmr: 'Polygon & GMR (registre × polygones)',
+  lots: 'Fiches de lot',
 }
 export const ALL_MODULES = Object.keys(MODULE_LABELS) as ModuleId[]
 

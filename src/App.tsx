@@ -35,6 +35,7 @@ const DeforestationPage = lazy(() => import('./pages/coop/DeforestationPage'))
 const ValidatorPage = lazy(() => import('./pages/coop/ValidatorPage'))
 const SelfIntersectionPage = lazy(() => import('./pages/coop/SelfIntersectionPage'))
 const GmrPage = lazy(() => import('./pages/coop/GmrPage'))
+const LotsPage = lazy(() => import('./pages/coop/LotsPage'))
 const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'))
 // Le registre embarque le moteur de formules : chargé seulement à l'ouverture de la page
 const RegistryPage = lazy(() => import('./pages/coop/RegistryPage'))
@@ -150,6 +151,7 @@ export default function App() {
           <Route path="/coop/validator" element={<RequireModule module="validator"><ValidatorPage /></RequireModule>} />
           <Route path="/coop/selfintersection" element={<RequireModule module="selfintersection"><SelfIntersectionPage /></RequireModule>} />
           <Route path="/coop/gmr" element={<RequireModule module="gmr"><GmrPage /></RequireModule>} />
+          <Route path="/coop/lots" element={<RequireModule module="lots"><LotsPage /></RequireModule>} />
           <Route path="/coop/registry" element={<RequireModule module="registry"><Suspense fallback={<p className="p-6 text-gray-500">Chargement du registre…</p>}><RegistryPage /></Suspense></RequireModule>} />
         </Route>
 
