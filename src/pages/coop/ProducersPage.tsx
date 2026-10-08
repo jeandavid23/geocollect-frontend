@@ -8,6 +8,7 @@ import { generateFieldIdBase, getNextProducerIndex } from '../../utils/fieldId'
 import { apiErrorMessage } from '../../utils/retry'
 import ProducerEditPanel from '../../components/producers/ProducerEditPanel'
 import ProducerImportModal from '../../components/producers/ProducerImportModal'
+import PurgeBaseModal from '../../components/producers/PurgeBaseModal'
 import ProducerRecodeModal from '../../components/producers/ProducerRecodeModal'
 import { producersApi } from '../../api/producers'
 import { mapProducer } from '../../api/mappers'
@@ -40,6 +41,7 @@ export default function ProducersPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [showImport, setShowImport] = useState(false)
   const [showRecode, setShowRecode] = useState(false)
+  const [showPurge, setShowPurge] = useState(false)
 
   // Entêtes des fichiers Excel importés (dans l'ordre du fichier) : colonnes de la vue « Fichier Excel »
   const excelHeaders = useMemo(() => {
@@ -225,6 +227,12 @@ export default function ProducersPage() {
             <Trash2 className="w-4 h-4" /> Supprimer la sélection ({checked.size})
           </button>
         )}
+        {coopProducers.length > 0 && (
+          <button onClick={() => setShowPurge(true)} title="Supprimer toute la base producteurs (et le registre si vous le souhaitez)"
+            className="flex items-center gap-2 border border-red-200 text-red-700 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-medium">
+            <Trash2 className="w-4 h-4" /> Supprimer la base
+          </button>
+        )}
         {excelHeaders.length > 0 && (
           <button onClick={() => setShowRecode(true)} title="Reprendre le code producteur du registre (sans générer de code)"
             className="flex items-center gap-2 border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl text-sm font-medium">
@@ -351,6 +359,7 @@ export default function ProducersPage() {
         </div>
       </div>}
 
+      {showPurge && <PurgeBaseModal cooperativeId={coopId} from="producers" onClose={() => setShowPurge(false)} onDone={() => setChecked(new Set())} />}
       {showRecode && <ProducerRecodeModal cooperativeId={coopId} onClose={() => setShowRecode(false)} />}
       {showImport && <ProducerImportModal cooperativeId={coopId} onClose={() => setShowImport(false)} />}
 

@@ -24,6 +24,7 @@ import { registryApi, type CellValue, type RegistrySheetDTO, type TableDef } fro
 import { useAppStore } from '../../store/appStore'
 import { useAuthStore } from '../../store/authStore'
 import ProducerImportModal from '../../components/producers/ProducerImportModal'
+import PurgeBaseModal from '../../components/producers/PurgeBaseModal'
 
 interface SheetState { key: string; id?: string; name: string; data: CellValue[][]; colWidths: number[]; formats: Record<string, CellFormat>; tables: TableDef[] }
 interface SavedState { name: string; data: CellValue[][]; colWidths: number[]; formats: Record<string, CellFormat>; tables: TableDef[]; position: number }
@@ -73,6 +74,7 @@ export default function RegistryPage() {
   const coopId = useAuthStore((s) => s.user?.cooperativeId) ?? ''
   // Registre = base producteurs : après chaque import (ou à la demande), mise à jour des producteurs et croisement avec les polygones
   const [producerSync, setProducerSync] = useState<ParsedWorkbook | null>(null)
+  const [showPurge, setShowPurge] = useState(false)
   const [sheets, setSheets] = useState<SheetState[]>([])
   const [active, setActive] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -628,6 +630,9 @@ export default function RegistryPage() {
         })} disabled={!sheets.length || !isLive} className={btn} title="Créer / mettre à jour les producteurs à partir du registre et les croiser avec les polygones">
           <Users className="w-4 h-4" /> Base producteurs
         </button>
+        <button onClick={() => setShowPurge(true)} disabled={!isLive} className={`${btn} text-red-700`} title="Vider le registre (et la base producteurs si vous le souhaitez)">
+          <Trash2 className="w-4 h-4" /> Supprimer la base
+        </button>
         {sep}
         <button onClick={() => insertRows(false)} className={btn} title="Insérer des lignes au-dessus"><ArrowUpToLine className="w-4 h-4" /> Ligne</button>
         <button onClick={() => insertRows(true)} className={btn} title="Insérer des lignes en dessous"><ArrowDownToLine className="w-4 h-4" /> Ligne</button>
@@ -760,6 +765,7 @@ export default function RegistryPage() {
           </div>
         </div>
       )}
+      {showPurge && <PurgeBaseModal cooperativeId={coopId} from="registry" onClose={() => setShowPurge(false)} onDone={() => { deletedIds.current = []; load() }} />}
       {producerSync && (
         <ProducerImportModal cooperativeId={coopId} initialWorkbook={producerSync} fromRegistry onClose={() => setProducerSync(null)} />
       )}

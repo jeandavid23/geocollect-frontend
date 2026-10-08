@@ -54,6 +54,9 @@ export const producersApi = {
   match: (codeField?: string | null, cooperative?: string) => api.post<MatchStats>('/producers/match/', { code_field: codeField ?? null, cooperative }, { timeout: 180000 }),
   recodeInfo: (cooperative?: string) => api.get<{ columns: { name: string; filled: number }[]; suggested: string | null; preview: RecodeReport | null }>('/producers/recode/', { params: cooperative ? { cooperative } : undefined }),
   recode: (column: string, apply: boolean, cooperative?: string) => api.post<RecodeReport & { applied: boolean; match?: MatchStats }>('/producers/recode/', { column, apply, cooperative }, { timeout: 180000 }),
+  purgeInfo: (cooperative?: string) => api.get<{ cooperative: string; producers: number; protected: number; registry_sheets: number }>('/producers/purge/', { params: cooperative ? { cooperative } : undefined }),
+  purge: (body: { registry: boolean; producers: boolean; confirm: string }, cooperative?: string) =>
+    api.post<{ registry_sheets: number; deleted: number; protected: number; protected_codes: string[] }>('/producers/purge/', { ...body, cooperative }, { timeout: 180000 }),
   matchStatus: (cooperative?: string) => api.get<MatchStats>('/producers/match/', { params: cooperative ? { cooperative } : undefined }),
   list: () => fetchAll('/producers/'),
   create: (data: CreateProducerPayload) => api.post('/producers/', data),
