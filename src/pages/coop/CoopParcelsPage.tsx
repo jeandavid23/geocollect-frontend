@@ -1,6 +1,8 @@
+import { apiErrorMessage } from '../../utils/retry'
+import { parcelsApi } from '../../api/parcels'
 import { useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Polygon, Popup, LayersControl, useMap } from 'react-leaflet'
-import { Search, Filter, X, MapPin, Layers, Eye, EyeOff } from 'lucide-react'
+import { Search, Filter, X, MapPin, Layers, Eye, EyeOff , Trash2 } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import { useLivePolling } from '../../hooks/useLivePolling'
 import Header from '../../components/layout/Header'
@@ -40,6 +42,20 @@ export default function CoopParcelsPage() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterAgent, setFilterAgent] = useState('all')
   const [selected, setSelected] = useState<Parcel | null>(null)
+  const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  const removeParcelsNow = async (ids: string[]) => {
+    if (!ids.length || !window.confirm(`Supprimer définitivement ${ids.length} parcelle(s) mappée(s) ? Le producteur repassera « à mapper » s'il n'a plus aucun polygone.`)) return
+    setDeleting(true)
+    try {
+      if (useAppStore.getState().isLive) await parcelsApi.bulkDelete(ids)
+      useAppStore.getState().removeParcels(ids)
+      useAppStore.getState().addNotification({ type: 'success', title: `${ids.length} parcelle(s) supprimée(s)`, message: 'Suppression enregistrée.' })
+      setChecked(new Set()); setSelected(null)
+    } catch (err) {
+      useAppStore.getState().addNotification({ type: 'error', title: 'Suppression impossible', message: apiErrorMessage(err) })
+    } finally { setDeleting(false) }
+  }
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number } | null>(null)
 
   const coopParcels = parcels.filter((p) => p.cooperativeId === coopId)
@@ -182,11 +198,21 @@ export default function CoopParcelsPage() {
       {showLegacyImport && <LegacyImportModal onClose={() => setShowLegacyImport(false)} />}
 
       {/* Table with agent info */}
+      {checked.size > 0 && (
+        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50/60 px-4 py-2.5 text-sm">
+          <span>{checked.size} parcelle(s) sélectionnée(s)</span>
+          <button onClick={() => removeParcelsNow([...checked])} disabled={deleting} className="flex items-center gap-2 rounded-lg border border-red-300 bg-white px-3 py-1.5 font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">
+            <Trash2 className="w-4 h-4" /> Supprimer la sélection
+          </button>
+        </div>
+      )}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 text-xs text-gray-500 uppercase">
+                <th className="px-3 py-3"><input type="checkbox" aria-label="Tout sélectionner" checked={filtered.length > 0 && filtered.every((p) => checked.has(p.id))}
+                  onChange={(e) => setChecked(e.target.checked ? new Set(filtered.map((p) => p.id)) : new Set())} /></th>
                 <th className="text-left px-5 py-3 font-medium">FIELD ID</th>
                 <th className="text-left px-5 py-3 font-medium">Producteur</th>
                 <th className="text-left px-5 py-3 font-medium">Agent mappeur</th>
@@ -199,7 +225,8 @@ export default function CoopParcelsPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50 transition">
+                <tr key={p.id} className={`hover:bg-gray-50 transition ${checked.has(p.id) ? 'bg-primary-50/60' : ''}`}>
+                  <td className="px-3 py-3"><input type="checkbox" checked={checked.has(p.id)} onChange={() => setChecked((c) => { const n = new Set(c); if (n.has(p.id)) n.delete(p.id); else n.add(p.id); return n })} /></td>
                   <td className="px-5 py-3 text-sm font-mono text-gray-700">{p.fieldId}</td>
                   <td className="px-5 py-3 text-sm text-gray-700">{producerName(p.producerId)}</td>
                   <td className="px-5 py-3 text-sm text-gray-600">{agentName(p.agentId)}</td>
@@ -215,14 +242,17 @@ export default function CoopParcelsPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3">
-                    <button onClick={() => focusParcel(p)} className="text-xs text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5" /> Localiser
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => focusParcel(p)} className="text-xs text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5" /> Localiser
+                      </button>
+                      <button onClick={() => removeParcelsNow([p.id])} disabled={deleting} title="Supprimer la parcelle" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="px-5 py-10 text-center text-sm text-gray-400">Aucune parcelle trouvée.</td></tr>
+                <tr><td colSpan={9} className="px-5 py-10 text-center text-sm text-gray-400">Aucune parcelle trouvée.</td></tr>
               )}
             </tbody>
           </table>

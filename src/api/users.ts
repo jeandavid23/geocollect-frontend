@@ -26,6 +26,7 @@ export const usersApi = {
     ),
 
   // Active / désactive un compte
+  remove: (id: string) => api.delete(`/auth/users/${id}/`),
   toggleActive: (id: string) =>
     api.post<{ is_active: boolean }>(`/auth/users/${id}/toggle/`),
 }

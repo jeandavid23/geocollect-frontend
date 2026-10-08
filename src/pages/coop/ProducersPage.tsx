@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Search, Plus, MapPin, X, Save, FileSpreadsheet } from 'lucide-react'
+import { Search, Plus, MapPin, X, Save, FileSpreadsheet, Trash2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 import type { Producer } from '../../types'
 import { generateFieldIdBase, getNextProducerIndex } from '../../utils/fieldId'
+import { apiErrorMessage } from '../../utils/retry'
+import ProducerEditPanel from '../../components/producers/ProducerEditPanel'
 import ProducerImportModal from '../../components/producers/ProducerImportModal'
 import { producersApi } from '../../api/producers'
 import { mapProducer } from '../../api/mappers'
@@ -30,6 +32,9 @@ export default function ProducersPage() {
   const [search, setSearch] = useState('')
   const [filterSection, setFilterSection] = useState('all')
   const [selected, setSelected] = useState<Producer | null>(null)
+  const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [mapFilter, setMapFilter] = useState<'all' | 'todo' | 'done'>('all')
+  const [deleting, setDeleting] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [showImport, setShowImport] = useState(false)
@@ -43,6 +48,34 @@ export default function ProducersPage() {
   const [view, setView] = useState<'excel' | 'standard'>('excel')
   const showExcel = view === 'excel' && excelHeaders.length > 0
 
+  // polygones d'un producteur = parcelles mappées (à jour en direct) + anciens polygones rattachés par son code
+  const mappedCount = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const pc of parcels) m.set(pc.producerId, (m.get(pc.producerId) ?? 0) + 1)
+    return m
+  }, [parcels])
+  const polys = (p: Producer) => (mappedCount.get(p.id) ?? 0) + (p.legacyPolygonCount ?? 0)
+  const toggle = (id: string) => setChecked((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n })
+
+  const deleteChecked = async () => {
+    const ids = [...checked]
+    if (!ids.length || !window.confirm(`Supprimer ${ids.length} producteur(s) ? Ceux qui ont des parcelles mappées ou une fiche de lot seront conservés.`)) return
+    setDeleting(true)
+    try {
+      if (isLive) {
+        const { data } = await producersApi.bulkDelete(ids)
+        addNotification({ type: data.protected ? 'warning' : 'success', title: `${data.deleted} producteur(s) supprimé(s)`,
+          message: data.protected ? `${data.protected} conservé(s) (parcelles mappées ou fiche de lot) : ${data.protected_codes.slice(0, 5).join(', ')}${data.protected > 5 ? '…' : ''}` : 'Suppression terminée.' })
+        useAppStore.getState().refreshData()
+      } else {
+        useAppStore.getState().removeProducers(ids)
+      }
+      setChecked(new Set())
+    } catch (err) {
+      addNotification({ type: 'error', title: 'Suppression impossible', message: apiErrorMessage(err) })
+    } finally { setDeleting(false) }
+  }
+
   const sections = [...new Set(coopProducers.map((p) => p.section))]
   const filtered = coopProducers.filter((p) => {
     const matchSearch = !search ||
@@ -51,7 +84,9 @@ export default function ProducersPage() {
       p.fieldIdBase.toLowerCase().includes(search.toLowerCase()) ||
       Object.values(p.extraData ?? {}).some((v) => String(v).toLowerCase().includes(search.toLowerCase()))
     const matchSection = filterSection === 'all' || p.section === filterSection
-    return matchSearch && matchSection
+    const n = polys(p)
+    const matchMap = mapFilter === 'all' || (mapFilter === 'todo' ? n === 0 : n > 0)
+    return matchSearch && matchSection && matchMap
   })
 
   // Pagination : 100 lignes par page (des milliers de producteurs après un import Excel)
@@ -176,6 +211,18 @@ export default function ProducersPage() {
             <button onClick={() => setView('standard')} className={`px-3 py-2.5 ${view === 'standard' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>Vue standard</button>
           </div>
         )}
+        <select value={mapFilter} onChange={(e) => { setMapFilter(e.target.value as 'all' | 'todo' | 'done'); setPage(0) }}
+          className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm" title="Producteurs avec ou sans polygone">
+          <option value="all">Tous les producteurs</option>
+          <option value="todo">À mapper (sans polygone)</option>
+          <option value="done">Cartographiés</option>
+        </select>
+        {checked.size > 0 && (
+          <button onClick={deleteChecked} disabled={deleting}
+            className="flex items-center gap-2 border border-red-200 text-red-700 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+            <Trash2 className="w-4 h-4" /> Supprimer la sélection ({checked.size})
+          </button>
+        )}
         <button
           onClick={() => setShowImport(true)}
           className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
@@ -197,20 +244,25 @@ export default function ProducersPage() {
             <table className="text-sm">
               <thead className="sticky top-0 z-[1]">
                 <tr className="bg-green-50 text-xs text-green-900">
-                  <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">FIELD ID</th>
+                  <th className="px-3 py-3"><input type="checkbox" aria-label="Tout sélectionner (page)" checked={pageRows.length > 0 && pageRows.every((p) => checked.has(p.id))}
+                    onChange={(e) => setChecked((c) => { const n = new Set(c); pageRows.forEach((p) => (e.target.checked ? n.add(p.id) : n.delete(p.id))); return n })} /></th>
+                  <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Code producteur</th>
                   {excelHeaders.map((h) => <th key={h} className="text-left px-4 py-3 font-semibold whitespace-nowrap">{h}</th>)}
-                  <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Parcelles mappées</th>
+                  <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Polygones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {pageRows.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelected(p)}>
+                  <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${checked.has(p.id) ? 'bg-primary-50/60' : ''}`} onClick={() => setSelected(p)}>
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={checked.has(p.id)} onChange={() => toggle(p.id)} /></td>
                     <td className="px-4 py-2 font-mono text-xs text-gray-700 whitespace-nowrap">{p.fieldIdBase}</td>
                     {excelHeaders.map((h) => {
                       const v = p.extraData?.[h]
                       return <td key={h} className={`px-4 py-2 whitespace-nowrap ${typeof v === 'number' ? 'text-right' : ''} text-gray-700`}>{v === undefined || v === null ? '' : String(v)}</td>
                     })}
-                    <td className="px-4 py-2 text-center">{parcelsByProducer.get(p.id)?.n ?? 0}</td>
+                    <td className="px-4 py-2 whitespace-nowrap">{polys(p) > 0
+                      ? <span className="text-gray-800">{polys(p)}</span>
+                      : <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">À mapper</span>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -229,11 +281,13 @@ export default function ProducersPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 text-xs text-gray-500 uppercase">
+                <th className="px-3 py-3"><input type="checkbox" aria-label="Tout sélectionner (page)" checked={pageRows.length > 0 && pageRows.every((p) => checked.has(p.id))}
+                  onChange={(e) => setChecked((c) => { const n = new Set(c); pageRows.forEach((p) => (e.target.checked ? n.add(p.id) : n.delete(p.id))); return n })} /></th>
                 <th className="text-left px-5 py-3 font-medium">Producteur</th>
-                <th className="text-left px-5 py-3 font-medium">FIELD ID Base</th>
+                <th className="text-left px-5 py-3 font-medium">Code producteur</th>
                 <th className="text-left px-5 py-3 font-medium">Village</th>
                 <th className="text-left px-5 py-3 font-medium">Section</th>
-                <th className="text-left px-5 py-3 font-medium">Parcelles</th>
+                <th className="text-left px-5 py-3 font-medium">Polygones</th>
                 <th className="text-left px-5 py-3 font-medium">Superficie</th>
                 <th className="text-left px-5 py-3 font-medium">Actions</th>
               </tr>
@@ -243,7 +297,8 @@ export default function ProducersPage() {
                 const stat = parcelsByProducer.get(p.id)
                 const totalHa = stat?.ha ?? 0
                 return (
-                  <tr key={p.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => setSelected(p)}>
+                  <tr key={p.id} className={`hover:bg-gray-50 transition cursor-pointer ${checked.has(p.id) ? 'bg-primary-50/60' : ''}`} onClick={() => setSelected(p)}>
+                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={checked.has(p.id)} onChange={() => toggle(p.id)} /></td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -262,11 +317,11 @@ export default function ProducersPage() {
                     <td className="px-5 py-3">
                       <span className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-lg font-medium">{p.section}</span>
                     </td>
-                    <td className="px-5 py-3 text-sm font-medium text-gray-800">{stat?.n ?? 0}</td>
+                    <td className="px-5 py-3 text-sm font-medium text-gray-800">{polys(p) > 0 ? polys(p) : <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">À mapper</span>}</td>
                     <td className="px-5 py-3 text-sm font-medium text-gray-800">{totalHa.toFixed(2)} ha</td>
                     <td className="px-5 py-3">
                       <button className="text-xs text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5" /> Voir les parcelles
+                        <MapPin className="w-3.5 h-3.5" /> Modifier / supprimer
                       </button>
                     </td>
                   </tr>
@@ -274,7 +329,7 @@ export default function ProducersPage() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-sm text-gray-400">
+                  <td colSpan={8} className="px-5 py-10 text-center text-sm text-gray-400">
                     Aucun producteur trouvé. Cliquez sur « Nouveau producteur » pour en ajouter un.
                   </td>
                 </tr>
@@ -429,87 +484,9 @@ export default function ProducersPage() {
         </div>
       )}
 
-      {/* Detail panel */}
+      {/* Fiche producteur : modification (tout champ peut être vidé) et suppression */}
       {selected && (
-        <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-2xl border-l border-gray-100 z-50 flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h3 className="font-bold text-gray-900">Fiche Producteur</h3>
-            <button onClick={() => setSelected(null)} className="p-1 hover:bg-gray-100 rounded-lg">
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            <div className="text-center">
-              <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black ${
-                selected.gender === 'F' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'
-              }`}>
-                {selected.firstName.charAt(0)}
-              </div>
-              <p className="font-bold text-gray-900 mt-2">{selected.fullName}</p>
-              <p className="text-xs font-mono text-gray-500">{selected.fieldIdBase}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: 'Village', value: selected.village },
-                { label: 'Section', value: selected.section },
-                { label: 'Région', value: selected.region },
-                { label: 'Pays', value: selected.country },
-                { label: 'Genre', value: selected.gender === 'F' ? 'Femme' : 'Homme' },
-                { label: 'Naissance', value: selected.birthYear?.toString() ?? '—' },
-              ].map(({ label, value }) => (
-                <div key={label} className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400">{label}</p>
-                  <p className="text-sm font-semibold text-gray-800">{value}</p>
-                </div>
-              ))}
-            </div>
-            {selected.extraData && Object.keys(selected.extraData).length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs text-gray-500 font-medium uppercase">Données du fichier Excel</p>
-                <div className="border border-gray-100 rounded-xl divide-y divide-gray-50">
-                  {Object.entries(selected.extraData).map(([k, v]) => (
-                    <div key={k} className="flex justify-between gap-3 px-3 py-1.5 text-xs">
-                      <span className="text-gray-500">{k}</span>
-                      <span className="font-medium text-gray-800 text-right break-all">{String(v)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-primary-50 rounded-xl p-3 text-center">
-                <p className="text-2xl font-black text-primary-700">{parcels.filter((p) => p.producerId === selected.id).length}</p>
-                <p className="text-xs text-primary-600">Parcelles</p>
-              </div>
-              <div className="bg-green-50 rounded-xl p-3 text-center">
-                <p className="text-2xl font-black text-green-700">
-                  {parcels.filter((p) => p.producerId === selected.id).reduce((s, p) => s + p.areaHectares, 0).toFixed(1)}
-                </p>
-                <p className="text-xs text-green-600">Hectares</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs text-gray-500 font-medium uppercase">Parcelles</p>
-              {parcels
-                .filter((p) => p.producerId === selected.id)
-                .map((p) => (
-                  <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
-                    <span className="font-mono text-gray-700">{p.fieldId}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500">{p.areaHectares.toFixed(2)} ha</span>
-                      <span className={`w-2 h-2 rounded-full ${
-                        p.eudrStatus === 'compliant' ? 'bg-green-500' :
-                        p.eudrStatus === 'non_compliant' ? 'bg-red-500' : 'bg-yellow-500'
-                      }`} />
-                    </div>
-                  </div>
-                ))}
-              {parcels.filter((p) => p.producerId === selected.id).length === 0 && (
-                <p className="text-xs text-gray-400 italic">Aucune parcelle enregistrée.</p>
-              )}
-            </div>
-          </div>
-        </div>
+        <ProducerEditPanel key={selected.id} producer={selected} polygonCount={polys(selected)} onClose={() => setSelected(null)} />
       )}
     </div>
   )

@@ -82,6 +82,10 @@ export function mapProducer(p: Any): Producer {
     assignedAgentId: p.assigned_agent ? s(p.assigned_agent) : undefined,
     parcelCount: n(p.parcel_count),
     totalHectares: n(p.total_hectares),
+    legacyPolygonCount: n(p.legacy_polygon_count),
+    polygonCount: n(p.polygon_count),
+    // ancien serveur sans ce champ : « à mapper » si aucune parcelle mappée
+    toMap: p.to_map === undefined ? n(p.parcel_count) === 0 : p.to_map === true,
     extraData: (p.extra_data && typeof p.extra_data === 'object') ? p.extra_data as Record<string, unknown> : undefined,
   }
 }

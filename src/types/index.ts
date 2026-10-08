@@ -118,6 +118,9 @@ export interface Producer {
   assignedAgentId?: string
   parcelCount?: number
   totalHectares?: number
+  legacyPolygonCount?: number   // anciens polygones rattachés par le code du registre
+  polygonCount?: number         // parcelles mappées + anciens polygones
+  toMap?: boolean               // aucun polygone : à cartographier par les agents
   // Toutes les colonnes du fichier Excel importé, sous leur entête d'origine
   extraData?: Record<string, unknown>
 }

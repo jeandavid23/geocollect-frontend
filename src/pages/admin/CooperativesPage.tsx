@@ -1,4 +1,4 @@
-import { Search, Plus, Eye, Users, Leaf, X, Save, Loader2 } from 'lucide-react'
+import { Search, Plus, Eye, Users, Leaf, X, Save, Loader2 , Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { platformApi, type PlatformAdmin } from '../../api/platform'
@@ -197,6 +197,22 @@ export default function CooperativesPage() {
                   className="flex-1 flex items-center justify-center gap-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 py-2 rounded-xl text-xs font-medium transition"
                 >
                   <Users className="w-3.5 h-3.5" /> Agents
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!window.confirm(`Supprimer la coopérative « ${c.name} » ? (refusé si elle contient des producteurs ou des parcelles)`)) return
+                    try {
+                      await cooperativesApi.remove(c.id)
+                      useAppStore.setState((st) => ({ cooperatives: st.cooperatives.filter((x) => x.id !== c.id) }))
+                      useAppStore.getState().addNotification({ type: 'success', title: 'Coopérative supprimée', message: c.name })
+                    } catch (err) {
+                      useAppStore.getState().addNotification({ type: 'error', title: 'Suppression impossible', message: apiErrorMessage(err) })
+                    }
+                  }}
+                  title="Supprimer la coopérative"
+                  className="flex items-center justify-center border border-red-200 text-red-600 hover:bg-red-50 px-3 rounded-xl"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

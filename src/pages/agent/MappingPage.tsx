@@ -93,8 +93,11 @@ export default function MappingPage() {
   const simRef = useRef<[number, number]>(BEOUMI_CENTER)
   const retriedRef = useRef(false)
 
-  // L'agent voit TOUS les producteurs de sa coopérative à mapper
-  const myProducers = producers.filter((p) => p.cooperativeId === coopId)
+  // Producteurs « à mapper » (registre sans polygone) en premier, puis les autres (2e ou 3e parcelle)
+  const myProducers = useMemo(() => {
+    const list = producers.filter((p) => p.cooperativeId === coopId)
+    return [...list.filter((p) => p.toMap), ...list.filter((p) => !p.toMap)]
+  }, [producers, coopId])
   // Choix du producteur : recherche + 100 premiers résultats (des milliers de producteurs possibles)
   const [producerSearch, setProducerSearch] = useState('')
   const parcelCounts = useMemo(() => {
@@ -449,14 +452,14 @@ export default function MappingPage() {
               }`}
             >
               <div>
-                <p className="font-semibold text-gray-800">{p.fullName}</p>
+                <p className="font-semibold text-gray-800">{p.fullName}{p.toMap && (parcelCounts.get(p.id) ?? 0) === 0 && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">À mapper</span>}</p>
                 <p className="text-sm text-gray-500 font-mono">{p.fieldIdBase}</p>
                 <p className="text-xs text-gray-400">{p.village} · {p.section}</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-sm font-bold text-gray-700">{parcelCounts.get(p.id) ?? 0}</p>
-                  <p className="text-xs text-gray-400">parcelles</p>
+                  <p className="text-sm font-bold text-gray-700">{(parcelCounts.get(p.id) ?? 0) + (p.legacyPolygonCount ?? 0)}</p>
+                  <p className="text-xs text-gray-400">polygones</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>

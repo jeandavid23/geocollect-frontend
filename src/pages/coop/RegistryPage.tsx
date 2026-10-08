@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { saveImportReport, registryImportReport } from '../../utils/report'
 import * as XLSX from 'xlsx'
 import {
+  Users,
   Save, Undo2, Redo2, Upload, Download, Calculator as CalcIcon, FunctionSquare, Plus, Trash2,
   ArrowDownToLine, ArrowUpToLine, Columns3, ArrowDownAZ, ArrowUpAZ, Search, ChevronsDown, Pin, Loader2, BookOpen,
 } from 'lucide-react'
@@ -21,6 +22,8 @@ import { readWorkbook, type ParsedWorkbook } from '../../utils/excelImport'
 import { downloadBlob } from '../../utils/geoExport'
 import { registryApi, type CellValue, type RegistrySheetDTO, type TableDef } from '../../api/registry'
 import { useAppStore } from '../../store/appStore'
+import { useAuthStore } from '../../store/authStore'
+import ProducerImportModal from '../../components/producers/ProducerImportModal'
 
 interface SheetState { key: string; id?: string; name: string; data: CellValue[][]; colWidths: number[]; formats: Record<string, CellFormat>; tables: TableDef[] }
 interface SavedState { name: string; data: CellValue[][]; colWidths: number[]; formats: Record<string, CellFormat>; tables: TableDef[]; position: number }
@@ -67,6 +70,9 @@ function mapFormulas(sheets: SheetState[], fn: (formula: string, sheetName: stri
 
 export default function RegistryPage() {
   const { isLive, addNotification } = useAppStore()
+  const coopId = useAuthStore((s) => s.user?.cooperativeId) ?? ''
+  // Registre = base producteurs : après chaque import (ou à la demande), mise à jour des producteurs et croisement avec les polygones
+  const [producerSync, setProducerSync] = useState<ParsedWorkbook | null>(null)
   const [sheets, setSheets] = useState<SheetState[]>([])
   const [active, setActive] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -504,7 +510,8 @@ export default function RegistryPage() {
     }
     setActive(0)
     setSel(selectCell(0, 0))
-    addNotification({ type: 'success', title: 'Classeur importé', message: `${incoming.length} feuille(s) depuis ${wb.fileName}. Rapport disponible dans « Rapports ».` })
+    addNotification({ type: 'success', title: 'Classeur importé', message: `${incoming.length} feuille(s) depuis ${wb.fileName}. Mise à jour de la base producteurs…` })
+    if (isLive) setProducerSync(wb)
     if (isLive) saveImportReport(registryImportReport(wb.fileName, incoming, mode))
   }
 
@@ -610,6 +617,17 @@ export default function RegistryPage() {
         <input ref={fileRef} type="file" accept=".xlsx,.xls,.xlsm,.csv,.ods" onChange={onImportFile} className="hidden" />
         <button onClick={() => fileRef.current?.click()} className={btn}><Upload className="w-4 h-4" /> Importer Excel</button>
         <button onClick={exportXlsx} className={btn}><Download className="w-4 h-4" /> Exporter Excel</button>
+        <button onClick={() => setProducerSync({
+          fileName: 'Registre de la coopérative',
+          sheets: sheets.map((s) => ({ name: s.name, data: s.data, colWidths: s.colWidths,
+            values: s.data.map((row, r) => row.map((cell, c) => {
+              if (typeof cell !== 'string' || !cell.startsWith('=')) return cell
+              const v = engine.getValue(s.name, r, c)
+              return isError(v) ? null : (v as CellValue)
+            })) })),
+        })} disabled={!sheets.length || !isLive} className={btn} title="Créer / mettre à jour les producteurs à partir du registre et les croiser avec les polygones">
+          <Users className="w-4 h-4" /> Base producteurs
+        </button>
         {sep}
         <button onClick={() => insertRows(false)} className={btn} title="Insérer des lignes au-dessus"><ArrowUpToLine className="w-4 h-4" /> Ligne</button>
         <button onClick={() => insertRows(true)} className={btn} title="Insérer des lignes en dessous"><ArrowDownToLine className="w-4 h-4" /> Ligne</button>
@@ -741,6 +759,9 @@ export default function RegistryPage() {
             <button onClick={() => setPendingImport(null)} className="w-full py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-xl">Annuler</button>
           </div>
         </div>
+      )}
+      {producerSync && (
+        <ProducerImportModal cooperativeId={coopId} initialWorkbook={producerSync} fromRegistry onClose={() => setProducerSync(null)} />
       )}
     </div>
   )

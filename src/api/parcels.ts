@@ -9,6 +9,7 @@ interface PaginatedResponse<T> {
 }
 
 export const parcelsApi = {
+  bulkDelete: (ids: string[]) => api.post<{ deleted: number }>('/parcels/bulk-delete/', { ids }, { timeout: 120000 }),
   list: (params?: Record<string, string>) =>
     api.get<PaginatedResponse<Parcel>>('/parcels/', { params }),
 

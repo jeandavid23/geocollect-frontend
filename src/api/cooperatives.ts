@@ -28,6 +28,7 @@ export interface CreatedAccount {
 
 export const cooperativesApi = {
   list: () => fetchAll('/cooperatives/'),
+  remove: (id: string) => api.delete(`/cooperatives/${id}/`),
   create: (data: CreateCooperativePayload) =>
     api.post<CreatedAccount>('/cooperatives/', data),
 }

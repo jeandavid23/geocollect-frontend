@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell, CheckCheck, X, Send } from 'lucide-react'
+import { Bell, CheckCheck, X, Send , Trash2 } from 'lucide-react'
 import { notificationsApi, type ApiNotification } from '../../api/notifications'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
@@ -83,6 +83,12 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
                 <Send className="w-3.5 h-3.5" /> Message
               </button>
               {items.length > 0 && (
+                <button onClick={async () => { if (!window.confirm('Effacer toutes vos notifications ?')) return; try { await notificationsApi.clear() } catch { /* ignore */ } setItems([]) }}
+                  className="text-xs text-gray-500 hover:text-red-600 flex items-center gap-1" title="Effacer toutes les notifications">
+                  <Trash2 className="w-3.5 h-3.5" /> Effacer
+                </button>
+              )}
+              {items.length > 0 && (
                 <button onClick={markAllRead} className="text-xs text-primary-600 hover:text-primary-800 flex items-center gap-1">
                   <CheckCheck className="w-3.5 h-3.5" /> Tout lu
                 </button>
@@ -96,7 +102,9 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
             {items.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-gray-400">Aucune notification</p>
             ) : items.map((n) => (
-              <div key={n.id} className={`px-4 py-3 flex gap-3 ${n.is_read ? '' : 'bg-primary-50/40'}`}>
+              <div key={n.id} className={`group relative px-4 py-3 pr-9 flex gap-3 ${n.is_read ? '' : 'bg-primary-50/40'}`}>
+                <button onClick={async () => { try { await notificationsApi.clear(n.id) } catch { /* ignore */ } setItems((l) => l.filter((x) => x.id !== n.id)) }}
+                  className="absolute right-3 top-3 hidden text-gray-300 hover:text-red-600 group-hover:block" title="Effacer"><X className="h-3.5 w-3.5" /></button>
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${TYPE_DOT[n.type] ?? 'bg-gray-400'}`} />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-800">{n.title}</p>

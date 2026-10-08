@@ -80,7 +80,7 @@ export async function readWorkbook(file: File): Promise<ParsedWorkbook> {
 
 // ─── Correspondance entêtes → champs du producteur ─────────────────────────
 
-export type FieldKind = 'text' | 'int' | 'decimal' | 'gender' | 'farmType' | 'fullName'
+export type FieldKind = 'text' | 'int' | 'decimal' | 'gender' | 'farmType' | 'fullName' | 'code'
 
 export interface ProducerField {
   key: string
@@ -91,6 +91,10 @@ export interface ProducerField {
 }
 
 export const PRODUCER_FIELDS: ProducerField[] = [
+  // Code du registre : devient l'identifiant du producteur (jamais régénéré) et sert au croisement avec les polygones
+  { key: 'producerCode', label: 'Code producteur (registre)', api: 'code', kind: 'code',
+    aliases: ['code producteur', 'code planteur', 'code du producteur', 'code agriculteur', 'code membre', 'code parcelle',
+      'code', 'id producteur', 'matricule', 'numero producteur', 'n producteur', 'field id', 'fieldid', 'field_id', 'code prod', 'codeproducteur'] },
   { key: 'lastName', label: 'Nom', api: 'last_name', kind: 'text',
     aliases: ['nom', 'nom producteur', 'nom du producteur', 'nom planteur', 'last name', 'lastname', 'surname', 'nom de famille'] },
   { key: 'firstName', label: 'Prénom(s)', api: 'first_name', kind: 'text',
@@ -111,7 +115,7 @@ export const PRODUCER_FIELDS: ProducerField[] = [
     aliases: ['district', 'departement', 'sous prefecture', 'province', 'etat'] },
   { key: 'region', label: 'Région', api: 'region', kind: 'text', aliases: ['region'] },
   { key: 'nationalFarmId', label: "Code / ID d'exploitation", api: 'national_farm_id', kind: 'text',
-    aliases: ['code planteur', 'code producteur', 'code', 'id producteur', 'matricule', 'code exploitation', 'national farm id', 'id exploitation', 'numero producteur'] },
+    aliases: ['code exploitation', 'national farm id', 'id exploitation', 'identifiant national', 'code national'] },
   { key: 'totalAreaHa', label: 'Superficie totale (ha)', api: 'total_area_ha', kind: 'decimal',
     aliases: ['superficie', 'superficie ha', 'superficie totale', 'surface', 'surface ha', 'hectares', 'ha', 'superficie declaree', 'area'] },
   { key: 'farmType', label: "Type d'exploitation", api: 'farm_type', kind: 'farmType', aliases: ['type exploitation', 'type d exploitation', 'farm type'] },
@@ -238,6 +242,10 @@ export function buildProducerRows(
           p.gender = g.startsWith('f') || g === 'femme' || g === 'feminin' ? 'F' : 'M'
           break
         }
+        case 'code':
+          // tel quel (12.0 → « 12 ») : jamais transformé ni régénéré
+          p.code = typeof v === 'number' && Number.isInteger(v) ? String(v) : text(v)
+          break
         case 'farmType':
           p.farm_type = /grand|large/i.test(text(v)) ? 'large' : 'small'
           break

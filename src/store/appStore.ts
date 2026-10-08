@@ -61,6 +61,8 @@ interface AppStore {
   addProducer: (producer: Producer) => void
   addProducers: (list: Producer[]) => void // import Excel : un seul changement d'état pour des milliers de lignes
   updateProducer: (id: string, updates: Partial<Producer>) => void
+  removeProducers: (ids: string[]) => void
+  removeParcels: (ids: string[]) => void
 
   addCooperative: (coop: Cooperative) => void
   updateCooperative: (id: string, updates: Partial<Cooperative>) => void
@@ -215,6 +217,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   addProducers: (list) =>
     set((state) => ({ producers: [...list, ...state.producers] })),
+
+  removeParcels: (ids) => set((state) => { const s = new Set(ids); return { parcels: state.parcels.filter((p) => !s.has(p.id)) } }),
+
+  removeProducers: (ids) => set((state) => { const s = new Set(ids); return { producers: state.producers.filter((p) => !s.has(p.id)) } }),
 
   updateProducer: (id, updates) =>
     set((state) => ({

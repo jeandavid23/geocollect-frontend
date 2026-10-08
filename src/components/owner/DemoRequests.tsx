@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Inbox, Phone, Mail } from 'lucide-react'
+import { Inbox, Phone, Mail , Trash2 } from 'lucide-react'
 import api from '../../api/client'
 
 interface Demo { id: string; full_name: string; organization: string; profile: string; phone: string; email: string; producers: number | null; plan: string; message: string; status: string; created_at: string }
@@ -38,6 +38,8 @@ export default function DemoRequests() {
               <select value={d.status} onChange={(e) => setStatus(d, e.target.value)} className="rounded-md border border-gray-300 px-2 py-1 text-xs">
                 {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
+              <button onClick={async () => { if (!window.confirm(`Supprimer la demande de ${d.organization} ?`)) return; await api.delete(`/contact/demo/${d.id}/`); setItems((l) => (l ?? []).filter((x) => x.id !== d.id)) }}
+                title="Supprimer la demande" className="text-gray-300 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
         </div>

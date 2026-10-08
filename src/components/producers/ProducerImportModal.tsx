@@ -1,12 +1,12 @@
 import { saveImportReport, registryImportReport } from '../../utils/report'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { X, Upload, Download, CheckCircle2, AlertTriangle, Save, FileSpreadsheet, BookOpen } from 'lucide-react'
 import {
   readWorkbook, detectHeaderRow, headersOf, autoMapping, buildProducerRows, buildProducerTemplate,
   PRODUCER_FIELDS, type ParsedWorkbook,
 } from '../../utils/excelImport'
 import { downloadBlob } from '../../utils/geoExport'
-import { producersApi } from '../../api/producers'
+import { producersApi, type MatchStats } from '../../api/producers'
 import { registryApi } from '../../api/registry'
 import { mapProducer, firstText } from '../../api/mappers'
 import { useAppStore } from '../../store/appStore'
@@ -17,11 +17,14 @@ import type { Producer } from '../../types'
 interface Props {
   cooperativeId: string
   onClose: () => void
+  // ouvert depuis le Registre : classeur déjà lu et déjà enregistré dans le registre
+  initialWorkbook?: ParsedWorkbook
+  fromRegistry?: boolean
 }
 
 const CHUNK = 1000
 
-export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
+export default function ProducerImportModal({ cooperativeId, onClose, initialWorkbook, fromRegistry }: Props) {
   const { producers, addProducers, addNotification, isLive } = useAppStore()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -30,7 +33,9 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
   const [headerRow, setHeaderRow] = useState(0)
   const [mapping, setMapping] = useState<string[]>([])
   const [defaults, setDefaults] = useState({ section: '', region: '' })
-  const [saveRegistry, setSaveRegistry] = useState(true)
+  const [saveRegistry, setSaveRegistry] = useState(!fromRegistry)
+  const [matchResult, setMatchResult] = useState<MatchStats | null>(null)
+  const [updatedCount, setUpdatedCount] = useState(0)
   const [registryMode, setRegistryMode] = useState<'replace' | 'merge'>('merge')
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState('')
@@ -41,7 +46,19 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
   const [savedRows, setSavedRows] = useState<Set<number>>(new Set()) // lignes déjà enregistrées (reprise sans doublon)
   const [registrySaved, setRegistrySaved] = useState(false) // import déjà envoyé : évite un doublon en recliquant
 
+  // classeur transmis par le Registre : ouvert directement sur la feuille la plus remplie
+  useEffect(() => {
+    if (!initialWorkbook) return
+    const withData = initialWorkbook.sheets.map((s, i) => [i, s.values.length] as const).filter(([, n]) => n > 1)
+    if (!withData.length) return
+    const [bestIdx] = withData.reduce((a, b) => (b[1] > a[1] ? b : a))
+    setWb(initialWorkbook)
+    selectSheet(initialWorkbook, bestIdx)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialWorkbook])
+
   const sheet = wb?.sheets[sheetIdx]
+  const hasCodeColumn = mapping.includes('producerCode')
   const headers = useMemo(() => (sheet ? headersOf(sheet.values, headerRow) : []), [sheet, headerRow])
 
   const selectSheet = (w: ParsedWorkbook, idx: number) => {
@@ -128,6 +145,7 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
 
     // ─── Mode connecté : lots de 1000, 3 tentatives par lot, on continue si un lot échoue ──
     let created = 0
+    let updated = 0
     const saved = new Set(savedRows)
     const errs: { excelRow: number; message: string }[] = []
     let lastError = ''
@@ -136,9 +154,11 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
       const chunk = pendingRows.slice(start, start + CHUNK)
       const label = `Enregistrement des producteurs… ${Math.min(start + CHUNK, total)}/${total}`
       setProgress(label)
+      const last = start + CHUNK >= total
       try {
         const { data } = await withRetry(
-          () => producersApi.bulk(chunk.map((r) => r.payload)),
+          // croisement registre ↔ polygones une seule fois, au dernier lot
+          () => producersApi.bulk(chunk.map((r) => r.payload), undefined, { use_codes: hasCodeColumn, relink: last }),
           3,
           (n) => setProgress(`${label} (nouvelle tentative ${n}/2)`),
         )
@@ -149,12 +169,15 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
         }
         addProducers(data.created.map((p) => mapProducer(p)))
         created += data.created.length
+        updated += data.updated ?? 0
+        if (data.match) setMatchResult(data.match)
         const rejectedIdx = new Set(data.errors.map((e) => e.index))
         chunk.forEach((r, i) => { if (!rejectedIdx.has(i)) saved.add(r.excelRow) })
         for (const e of data.errors) {
           const msg = Object.entries(e.errors).map(([k, v]) => `${k} : ${Array.isArray(v) ? v.join(', ') : String(v)}`).join(' · ')
-          errs.push({ excelRow: chunk[e.index]?.excelRow ?? 0, message: msg })
-          saved.add(chunk[e.index]?.excelRow ?? -1) // ligne refusée : inutile de la renvoyer telle quelle
+          const row = e.index === null ? undefined : chunk[e.index]
+          errs.push({ excelRow: row?.excelRow ?? 0, message: msg })
+          if (row) saved.add(row.excelRow) // ligne refusée : inutile de la renvoyer telle quelle
         }
       } catch (err) {
         lastError = apiErrorMessage(err)
@@ -179,11 +202,14 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
     addNotification({
       type: remaining ? 'error' : 'success',
       title: remaining ? 'Import Excel incomplet' : 'Import Excel terminé',
-      message: `${created} producteur(s) enregistré(s)${remaining ? `, ${remaining} en attente` : ''}${errs.length ? `, ${errs.length} ligne(s) refusée(s)` : ''}.`,
+      message: `${created} nouveau(x) producteur(s), ${updated} mis à jour${remaining ? `, ${remaining} en attente` : ''}${errs.length ? `, ${errs.length} ligne(s) refusée(s)` : ''}.`,
     })
+    setUpdatedCount(updated)
+    // les producteurs mis à jour et les liens avec les polygones ont changé : rechargement depuis le serveur
+    useAppStore.getState().refreshData()
     saveImportReport({
       kind: 'import_registry', title: `Rapport d'import des producteurs — ${wb.fileName}`, source: wb.fileName,
-      summary: [['Lignes du fichier retenues', validRows.length], ['Producteurs enregistrés', created], ['Lignes en attente', remaining],
+      summary: [['Lignes du fichier retenues', validRows.length], ['Nouveaux producteurs', created], ['Producteurs mis à jour', updated], ['Lignes en attente', remaining],
         ['Lignes refusées', errs.length], ['Classeur enregistré dans le registre', saveRegistry ? (registrySaved || !lastError ? 'OUI' : 'NON') : 'NON']],
       tables: [
         { name: 'Lignes refusées', rows: errs.map((e) => ({ ligne_excel: e.excelRow, motif: e.message })) },
@@ -196,7 +222,6 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
     }
     if (lastError) { setError(lastError); setDone(true); return }
     setDone(true)
-    if (!errs.length) onClose()
   }
 
   const input = 'px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
@@ -293,6 +318,22 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
                 {rows.length > 200 && <p className="text-xs text-gray-400 mt-1">Aperçu des 200 premières lignes sur {rows.length} (toutes seront enregistrées).</p>}
               </div>
 
+              {/* Code producteur : identifiant du producteur et clé du croisement avec les polygones */}
+              <div className={`rounded-xl border p-3 ${hasCodeColumn ? 'border-primary-200 bg-primary-50/50' : 'border-amber-200 bg-amber-50'}`}>
+                <label className="block text-sm font-medium text-gray-800">Colonne du code producteur
+                  <select value={mapping.indexOf('producerCode')} onChange={(e) => { const c = Number(e.target.value); setMapping((m) => m.map((f, i) => (i === c ? 'producerCode' : f === 'producerCode' ? '' : f))) }}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm">
+                    <option value={-1}>— Aucune (un code sera généré) —</option>
+                    {headers.map((h, c) => <option key={h + c} value={c}>{h}</option>)}
+                  </select>
+                </label>
+                <p className="mt-1.5 text-xs text-gray-600">
+                  {hasCodeColumn
+                    ? 'Le code du registre devient l\'identifiant du producteur, tel quel (aucun autre code n\'est généré). Un code déjà connu met le producteur à jour au lieu de créer un doublon. Les polygones portant ce code sont rattachés au producteur ; ceux sans polygone partent chez les agents « à mapper ».'
+                    : 'Sans colonne de code, GeoCollect génère un identifiant et le croisement avec les anciens polygones n\'est pas possible.'}
+                </p>
+              </div>
+
               {/* 4. Correspondance facultative avec les champs GeoCollect */}
               <details className="border border-gray-100 rounded-xl">
                 <summary className="cursor-pointer px-3 py-2 text-sm text-gray-700">
@@ -354,6 +395,20 @@ export default function ProducerImportModal({ cooperativeId, onClose }: Props) {
                 <button onClick={onClose} className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50">
                   {rejected.length ? 'Fermer' : 'Annuler'}
                 </button>
+                {done && matchResult && (
+                  <div className="w-full rounded-xl border border-primary-200 bg-primary-50/60 p-4 text-sm">
+                    <p className="font-semibold text-gray-900">Base producteurs à jour · {updatedCount} producteur(s) mis à jour</p>
+                    <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-gray-700 sm:grid-cols-3">
+                      <p>Producteurs : <b>{matchResult.producers.toLocaleString('fr-FR')}</b></p>
+                      <p>Avec polygone(s) : <b>{matchResult.mapped_producers.toLocaleString('fr-FR')}</b></p>
+                      <p className="text-amber-800">À mapper par les agents : <b>{matchResult.to_map.toLocaleString('fr-FR')}</b></p>
+                      <p>1 polygone : <b>{matchResult.polygons_per_producer['1']}</b> · 2 : <b>{matchResult.polygons_per_producer['2']}</b> · 3 et + : <b>{matchResult.polygons_per_producer['3+']}</b></p>
+                      <p>Polygones rattachés : <b>{matchResult.linked_polygons}</b> / {matchResult.legacy_polygons}</p>
+                      {matchResult.orphan_polygons > 0 && <p className="text-amber-800">Polygones sans producteur : <b>{matchResult.orphan_polygons}</b></p>}
+                    </div>
+                    {matchResult.code_field && <p className="mt-2 text-xs text-gray-500">Code lu dans l'attribut « {matchResult.code_field} » des anciens polygones.</p>}
+                  </div>
+                )}
                 <button onClick={doImport} disabled={busy || done || !pendingRows.length}
                   className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl">
                   <Save className="w-4 h-4" /> {busy ? (progress || 'Import…')

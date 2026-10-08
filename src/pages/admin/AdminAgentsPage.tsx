@@ -1,5 +1,7 @@
+import { apiErrorMessage } from '../../utils/retry'
+import { agentsApi } from '../../api/agents'
 import { useState } from 'react'
-import { Search, MapPin, Phone, Mail, X, Building2, Activity } from 'lucide-react'
+import { Search, MapPin, Phone, Mail, X, Building2, Activity , Trash2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import { useAppStore } from '../../store/appStore'
 import type { Agent } from '../../types'
@@ -151,6 +153,22 @@ export default function AdminAgentsPage() {
                 </div>
               </div>
             )})()}
+            <button
+              onClick={async () => {
+                if (!window.confirm(`Supprimer l'agent ${selected.fullName} et son compte de connexion ? Ses parcelles mappées sont conservées.`)) return
+                try {
+                  await agentsApi.remove(selected.id)
+                  useAppStore.getState().removeAgent(selected.id)
+                  useAppStore.getState().addNotification({ type: 'success', title: 'Agent supprimé', message: selected.fullName })
+                  setSelected(null)
+                } catch (err) {
+                  useAppStore.getState().addNotification({ type: 'error', title: 'Suppression impossible', message: apiErrorMessage(err) })
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 border border-red-200 text-red-700 hover:bg-red-50 py-2.5 rounded-xl text-sm font-medium"
+            >
+              <Trash2 className="w-4 h-4" /> Supprimer l'agent
+            </button>
           </div>
         </div>
       )}

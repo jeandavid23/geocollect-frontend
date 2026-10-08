@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../../utils/retry'
 import { useState } from 'react'
 import { Plus, X, Save, Trash2, MapPin, Phone, Mail, Power, Loader2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
@@ -109,10 +110,16 @@ export default function CoopAgentsPage() {
     }
   }
 
-  const handleDelete = (agent: Agent) => {
-    removeAgent(agent.id)
-    addNotification({ type: 'info', title: 'Agent retiré', message: `${agent.fullName} ne fait plus partie de la coopérative.` })
-    setConfirmDelete(null)
+  const handleDelete = async (agent: Agent) => {
+    try {
+      if (useAppStore.getState().isLive) await agentsApi.remove(agent.id)   // compte de connexion supprimé aussi
+      removeAgent(agent.id)
+      addNotification({ type: 'info', title: 'Agent supprimé', message: `${agent.fullName} : compte supprimé, ses parcelles mappées sont conservées.` })
+    } catch (err) {
+      addNotification({ type: 'error', title: 'Suppression impossible', message: apiErrorMessage(err) })
+    } finally {
+      setConfirmDelete(null)
+    }
   }
 
   return (

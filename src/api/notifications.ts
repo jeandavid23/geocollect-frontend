@@ -15,6 +15,7 @@ interface Paginated<T> { results?: T[] }
 export const notificationsApi = {
   list: () => api.get<Paginated<ApiNotification> | ApiNotification[]>('/auth/notifications/'),
   markRead: () => api.post('/auth/notifications/read/'),
+  clear: (id?: string) => api.delete('/auth/notifications/clear/', { params: id ? { id } : undefined }),
 }
 
 export interface MessageTarget { key: string; label: string }

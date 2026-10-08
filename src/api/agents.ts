@@ -22,6 +22,7 @@ export interface CreatedAgentAccount {
 
 export const agentsApi = {
   list: () => fetchAll('/agents/'),
+  remove: (id: string) => api.delete(`/agents/${id}/`),
   create: (data: CreateAgentPayload) =>
     api.post<CreatedAgentAccount>('/agents/', data),
 }

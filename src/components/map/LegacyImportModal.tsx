@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { X, Upload, Trash2, Layers, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { parseLegacyFiles, LEGACY_ACCEPT, type LegacyParseResult } from '../../utils/legacyImport'
 import { saveImportReport } from '../../utils/report'
+import { producersApi } from '../../api/producers'
 import { legacyApi, type LegacySource } from '../../api/legacy'
 import { useAppStore } from '../../store/appStore'
 import { LEGACY_COLOR } from './LegacyParcelsLayer'
@@ -26,6 +27,7 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
   const [busy, setBusy] = useState(false)
   const [sources, setSources] = useState<LegacySource[]>([])
   const [progress, setProgress] = useState('')
+  const [codeField, setCodeField] = useState('')
 
   const refreshSources = async () => {
     try {
@@ -45,6 +47,10 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
       const result = await parseLegacyFiles(files)
       if (!result.features.length) throw new Error('Aucun polygone trouvé dans ce fichier.')
       setParsed(result)
+      const keys = Object.keys(result.features[0]?.properties ?? {})
+      const norm = (k: string) => k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+      const pref = ['code producteur', 'code planteur', 'code parcelle', 'field id', 'fieldid', 'field_id', 'code', 'matricule', 'id producteur']
+      setCodeField(pref.map((p) => keys.find((k) => norm(k) === p)).find(Boolean) ?? keys.find((k) => norm(k).includes('code')) ?? '')
     } catch (err) {
       setError(errorMessage(err))
     } finally {
@@ -68,11 +74,20 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
         const label = `Enregistrement… ${Math.min(start + CHUNK, total)}/${total}`
         setProgress(label)
         const { data } = await withRetry(
-          () => legacyApi.import(parsed.sourceName, chunk, start === 0, cooperativeId, start === 0),
+          () => legacyApi.import(parsed.sourceName, chunk, start === 0, cooperativeId, start === 0, codeField),
           3,
           (n) => setProgress(`${label} (nouvelle tentative ${n}/2)`),
         )
         created += data.created
+      }
+      // croisement complet registre ↔ polygones (producteurs avec polygones / à mapper)
+      if (codeField) {
+        setProgress('Croisement avec le registre des producteurs…')
+        try {
+          const { data: m } = await producersApi.match(codeField, cooperativeId)
+          addNotification({ type: 'success', title: 'Croisement avec le registre',
+            message: `${m.linked_polygons} polygone(s) rattaché(s) · ${m.mapped_producers} producteur(s) cartographié(s) · ${m.to_map} à mapper par les agents${m.orphan_polygons ? ` · ${m.orphan_polygons} polygone(s) sans producteur` : ''}.` })
+        } catch { /* le croisement pourra être relancé depuis le Registre */ }
       }
       setProgress('Chargement sur la carte…')
       await loadLegacyParcels()
@@ -188,6 +203,13 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
                 </table>
               </div>
               {parsed.features.length > 100 && <p className="text-xs text-gray-400">Aperçu des 100 premiers.</p>}
+              <label className="block text-sm text-gray-700">Attribut du code producteur / code parcelle
+                <select value={codeField} onChange={(e) => setCodeField(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm">
+                  <option value="">— Aucun (pas de croisement avec le registre) —</option>
+                  {attrKeys.map((k) => <option key={k} value={k}>{k}</option>)}
+                </select>
+                <span className="mt-1 block text-xs text-gray-500">Chaque polygone est rattaché au producteur du registre qui a ce code (2 ou 3 polygones possibles par producteur, suffixes « -P2 » acceptés). Les producteurs sans polygone partent chez les agents « à mapper ».</span>
+              </label>
               <button
                 onClick={doImport}
                 disabled={busy}

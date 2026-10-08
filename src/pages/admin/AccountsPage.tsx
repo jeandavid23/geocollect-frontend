@@ -1,5 +1,6 @@
+import { apiErrorMessage } from '../../utils/retry'
 import { useEffect, useState } from 'react'
-import { Search, KeyRound, RefreshCw, ShieldCheck, Loader2, AlertTriangle, Power } from 'lucide-react'
+import { Search, KeyRound, RefreshCw, ShieldCheck, Loader2, AlertTriangle, Power , Trash2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import CredentialsModal from '../../components/ui/CredentialsModal'
 import { usersApi, type ApiUser } from '../../api/users'
@@ -147,6 +148,15 @@ export default function AccountsPage() {
                         {canManage(u) && (
                           <button onClick={() => handleToggle(u)} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 font-medium">
                             <Power className="w-3.5 h-3.5" /> {u.is_active ? 'Désactiver' : 'Activer'}
+                          </button>
+                        )}
+                        {canManage(u) && (
+                          <button onClick={async () => {
+                            if (!window.confirm(`Supprimer définitivement le compte « ${u.full_name} » (${u.username}) ?`)) return
+                            try { await usersApi.remove(u.id); load() }
+                            catch (err) { alert(apiErrorMessage(err)) }
+                          }} className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 font-medium">
+                            <Trash2 className="w-3.5 h-3.5" /> Supprimer
                           </button>
                         )}
                       </div>

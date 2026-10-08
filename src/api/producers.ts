@@ -15,6 +15,7 @@ export interface CreateProducerPayload {
   assigned_agent?: string
   // Champs GMR facultatifs
   national_farm_id?: string
+  code?: string            // code du producteur TEL QUE DANS LE REGISTRE (devient son identifiant)
   district?: string
   total_area_ha?: number
   farm_type?: 'small' | 'large'
@@ -32,16 +33,31 @@ export interface CreateProducerPayload {
   extra_data?: Record<string, unknown>
 }
 
+export interface MatchStats {
+  code_field: string | null; producers: number; mapped_producers: number; to_map: number
+  polygons_per_producer: { '1': number; '2': number; '3+': number }
+  legacy_polygons: number; linked_polygons: number; orphan_polygons: number; polygons_without_code: number
+  fields?: string[]; suggested_field?: string | null; suggested_matches?: number
+}
+
 export interface BulkImportResult {
   created: Record<string, unknown>[]
-  errors: { index: number; errors: Record<string, unknown> }[]
+  updated?: number
+  errors: { index: number | null; errors: Record<string, unknown> }[]
+  match?: MatchStats | null
 }
 
 export const producersApi = {
+  update: (id: string, data: Record<string, unknown>) => api.patch<Record<string, unknown>>(`/producers/${id}/`, data),
+  remove: (id: string) => api.delete(`/producers/${id}/`),
+  bulkDelete: (ids: string[]) => api.post<{ deleted: number; protected: number; protected_codes: string[] }>('/producers/bulk-delete/', { ids }, { timeout: 120000 }),
+  match: (codeField?: string | null, cooperative?: string) => api.post<MatchStats>('/producers/match/', { code_field: codeField ?? null, cooperative }, { timeout: 180000 }),
+  matchStatus: (cooperative?: string) => api.get<MatchStats>('/producers/match/', { params: cooperative ? { cooperative } : undefined }),
   list: () => fetchAll('/producers/'),
   create: (data: CreateProducerPayload) => api.post('/producers/', data),
-  bulk: (producers: CreateProducerPayload[], cooperative?: string) =>
-    api.post<BulkImportResult>('/producers/bulk/', { producers, cooperative }, {
+  // use_codes : le fichier a une colonne « code producteur » (aucun code généré) ; relink : croisement avec les polygones
+  bulk: (producers: CreateProducerPayload[], cooperative?: string, opts: { use_codes?: boolean; relink?: boolean } = {}) =>
+    api.post<BulkImportResult>('/producers/bulk/', { producers, cooperative, ...opts }, {
       // un statut 400 renvoie quand même le détail des lignes rejetées
       validateStatus: (s) => s === 201 || (s === 400),
       timeout: 120000,

@@ -12,7 +12,8 @@ export default function AgentProducersPage() {
   const coopId = user?.cooperativeId ?? 'coop-001'
 
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<'all' | 'todo' | 'done'>('all')
+  // par défaut : les producteurs du registre qui n'ont encore aucun polygone
+  const [filter, setFilter] = useState<'all' | 'todo' | 'done'>('todo')
 
   const coopProducers = producers.filter((p) => p.cooperativeId === coopId)
   // Parcelles par producteur, calculées une fois (des milliers de producteurs possibles)
@@ -21,7 +22,9 @@ export default function AgentProducersPage() {
     for (const pc of parcels) m.set(pc.producerId, (m.get(pc.producerId) ?? 0) + 1)
     return m
   }, [parcels])
-  const parcelCount = (pid: string) => counts.get(pid) ?? 0
+  // polygones = parcelles mappées (à jour en direct) + anciens polygones rattachés par le code du registre
+  const legacyCount = useMemo(() => new Map(producers.map((p) => [p.id, p.legacyPolygonCount ?? 0])), [producers])
+  const parcelCount = (pid: string) => (counts.get(pid) ?? 0) + (legacyCount.get(pid) ?? 0)
   const LIMIT = 200
 
   const filtered = coopProducers.filter((p) => {
