@@ -52,6 +52,8 @@ export const producersApi = {
   remove: (id: string) => api.delete(`/producers/${id}/`),
   bulkDelete: (ids: string[]) => api.post<{ deleted: number; protected: number; protected_codes: string[] }>('/producers/bulk-delete/', { ids }, { timeout: 120000 }),
   match: (codeField?: string | null, cooperative?: string) => api.post<MatchStats>('/producers/match/', { code_field: codeField ?? null, cooperative }, { timeout: 180000 }),
+  recodeInfo: (cooperative?: string) => api.get<{ columns: { name: string; filled: number }[]; suggested: string | null; preview: RecodeReport | null }>('/producers/recode/', { params: cooperative ? { cooperative } : undefined }),
+  recode: (column: string, apply: boolean, cooperative?: string) => api.post<RecodeReport & { applied: boolean; match?: MatchStats }>('/producers/recode/', { column, apply, cooperative }, { timeout: 180000 }),
   matchStatus: (cooperative?: string) => api.get<MatchStats>('/producers/match/', { params: cooperative ? { cooperative } : undefined }),
   list: () => fetchAll('/producers/'),
   create: (data: CreateProducerPayload) => api.post('/producers/', data),
@@ -62,4 +64,9 @@ export const producersApi = {
       validateStatus: (s) => s === 201 || (s === 400),
       timeout: 120000,
     }),
+}
+
+export interface RecodeReport {
+  producers: number; recoded: number; unchanged: number; without_code: number
+  duplicates: number; duplicate_codes: string[]; conflicts: number; sample: { avant: string; apres: string }[]
 }

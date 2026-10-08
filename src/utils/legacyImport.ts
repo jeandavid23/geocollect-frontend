@@ -13,6 +13,7 @@ export interface LegacyParseResult {
   sourceName: string
   features: LegacyFeaturePayload[]
   skipped: number // entités non polygonales (points, lignes) ignorées
+  warning?: string // ex. Shapefile sans .dbf : pas de table attributaire (donc pas de code producteur)
 }
 
 export const LEGACY_ACCEPT = '.kml,.kmz,.gpkg,.zip,.shp,.dbf,.prj,.cpg,.shx,.geojson,.json'
@@ -130,7 +131,10 @@ export async function parseLegacyFiles(files: File[]): Promise<LegacyParseResult
       prj: prj ? await prj.text() : undefined,
       cpg: cpg ? await cpg.text() : undefined,
     } as never)
-    return fromGeoJSON(collectionItems(fc), shpFile.name)
+    const res = fromGeoJSON(collectionItems(fc), shpFile.name)
+    if (!dbf) res.warning = `Le fichier ${shpFile.name.replace(/\.shp$/i, '.dbf')} n'a pas été sélectionné : la table attributaire (codes producteurs, noms…) est absente. Sélectionnez ensemble les fichiers .shp, .dbf et .prj (ou un .zip qui les contient).`
+    if (!prj) res.warning = `${res.warning ? res.warning + ' ' : ''}Sans le fichier .prj, les coordonnées sont supposées en WGS 84 (degrés).`
+    return res
   }
 
   const file = files[0]

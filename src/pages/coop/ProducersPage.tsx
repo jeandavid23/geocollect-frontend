@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Search, Plus, MapPin, X, Save, FileSpreadsheet, Trash2 } from 'lucide-react'
+import { Search, Plus, MapPin, X, Save, FileSpreadsheet, Trash2, Hash } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
@@ -8,6 +8,7 @@ import { generateFieldIdBase, getNextProducerIndex } from '../../utils/fieldId'
 import { apiErrorMessage } from '../../utils/retry'
 import ProducerEditPanel from '../../components/producers/ProducerEditPanel'
 import ProducerImportModal from '../../components/producers/ProducerImportModal'
+import ProducerRecodeModal from '../../components/producers/ProducerRecodeModal'
 import { producersApi } from '../../api/producers'
 import { mapProducer } from '../../api/mappers'
 
@@ -38,6 +39,7 @@ export default function ProducersPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [showImport, setShowImport] = useState(false)
+  const [showRecode, setShowRecode] = useState(false)
 
   // Entêtes des fichiers Excel importés (dans l'ordre du fichier) : colonnes de la vue « Fichier Excel »
   const excelHeaders = useMemo(() => {
@@ -223,6 +225,12 @@ export default function ProducersPage() {
             <Trash2 className="w-4 h-4" /> Supprimer la sélection ({checked.size})
           </button>
         )}
+        {excelHeaders.length > 0 && (
+          <button onClick={() => setShowRecode(true)} title="Reprendre le code producteur du registre (sans générer de code)"
+            className="flex items-center gap-2 border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl text-sm font-medium">
+            <Hash className="w-4 h-4" /> Codes du registre
+          </button>
+        )}
         <button
           onClick={() => setShowImport(true)}
           className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
@@ -343,6 +351,7 @@ export default function ProducersPage() {
         </div>
       </div>}
 
+      {showRecode && <ProducerRecodeModal cooperativeId={coopId} onClose={() => setShowRecode(false)} />}
       {showImport && <ProducerImportModal cooperativeId={coopId} onClose={() => setShowImport(false)} />}
 
       {/* ─── New producer form modal ─────────────────────────────────────── */}

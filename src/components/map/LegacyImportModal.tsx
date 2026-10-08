@@ -177,6 +177,11 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
                 <span className="text-gray-600">{totalHa.toFixed(2)} ha au total</span>
                 {parsed.skipped > 0 && <span className="text-amber-600">{parsed.skipped} point(s)/ligne(s) ignoré(s)</span>}
               </div>
+              {(parsed.warning || attrKeys.length === 0) && (
+                <p className="text-xs text-red-800 bg-red-50 border-l-4 border-red-500 rounded p-2">
+                  {parsed.warning ?? 'Ces polygones n\'ont aucun attribut : impossible de les rattacher aux producteurs du registre par leur code.'}
+                </p>
+              )}
               {alreadyImported && (
                 <p className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2">
                   « {parsed.sourceName} » a déjà été importé : ses anciens polygones seront remplacés.

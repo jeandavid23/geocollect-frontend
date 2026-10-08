@@ -94,7 +94,8 @@ export const PRODUCER_FIELDS: ProducerField[] = [
   // Code du registre : devient l'identifiant du producteur (jamais régénéré) et sert au croisement avec les polygones
   { key: 'producerCode', label: 'Code producteur (registre)', api: 'code', kind: 'code',
     aliases: ['code producteur', 'code planteur', 'code du producteur', 'code agriculteur', 'code membre', 'code parcelle',
-      'code', 'id producteur', 'matricule', 'numero producteur', 'n producteur', 'field id', 'fieldid', 'field_id', 'code prod', 'codeproducteur'] },
+      'code', 'id producteur', 'matricule', 'numero producteur', 'n producteur', 'field id', 'fieldid', 'field_id', 'code prod', 'codeproducteur',
+      'identifiant interne unique', 'identifiant interne unique d exploitation agricole', 'identifiant interne'] },
   { key: 'lastName', label: 'Nom', api: 'last_name', kind: 'text',
     aliases: ['nom', 'nom producteur', 'nom du producteur', 'nom planteur', 'last name', 'lastname', 'surname', 'nom de famille'] },
   { key: 'firstName', label: 'Prénom(s)', api: 'first_name', kind: 'text',
