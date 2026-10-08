@@ -96,10 +96,10 @@ export default function Sidebar() {
               to={item.to}
               end={item.to === '/admin' || item.to === '/coop' || item.to === '/agent' || item.to === '/owner'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                `relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
                   isActive
-                    ? 'bg-primary-600 text-white shadow'
-                    : 'text-primary-200 hover:bg-primary-800 hover:text-white'
+                    ? 'bg-white/10 text-white before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-[#e9c98b]'
+                    : 'text-primary-200 hover:bg-white/5 hover:text-white'
                 }`
               }
             >

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Leaf, Loader2, Shield } from 'lucide-react'
+import { Eye, EyeOff, Leaf, Loader2, Shield, ShieldCheck, MapPinned, Lock } from 'lucide-react'
 import { useAuthStore, MOCK_USERS } from '../../store/authStore'
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
+import HeroSlideshow from '../../components/auth/HeroSlideshow'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -81,47 +82,26 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-white lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(420px,1fr)]">
       {/* Photo : producteur de cacao en Côte d'Ivoire */}
-      <aside className="relative h-56 sm:h-72 lg:h-auto lg:min-h-screen overflow-hidden bg-[#2b2118]">
-        <picture>
-          <source srcSet="/images/producteur-cacao.webp" type="image/webp" />
-          <img src="/images/producteur-cacao.jpg" alt="Producteur ivoirien étalant ses fèves de cacao au séchage"
-            className="absolute inset-0 h-full w-full object-cover object-[35%_center]" />
-        </picture>
-        {/* ombrage : haut (logo), bas et gauche (texte) — le producteur reste lisible à droite */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/45" />
-        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/55 via-black/15 to-transparent" />
-
-        <div className="relative z-10 flex h-full flex-col justify-between p-6 sm:p-10 lg:p-14 text-white">
-          <div className="flex items-center gap-2.5">
+      {/* Diaporama : le parcours du cacao en Côte d'Ivoire */}
+      <aside className="relative h-64 sm:h-80 lg:h-auto lg:min-h-screen overflow-hidden bg-[#2b2118]">
+        <HeroSlideshow headline={
+          <>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70 animate-fade-up">Côte d'Ivoire · filière cacao</p>
+            <h1 className="mt-4 font-serif text-[2.6rem] leading-[1.12] font-semibold animate-fade-up [animation-delay:120ms]">
+              La traçabilité du cacao, de la parcelle jusqu'à l'exportation.
+            </h1>
+          </>
+        }>
+          <div className="flex items-center gap-2.5 animate-fade-up">
             <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-primary-700"><Leaf className="h-5 w-5" /></span>
             <span className="text-[15px] font-semibold tracking-wide">GeoCollect <span className="font-normal text-white/70">EUDR</span></span>
           </div>
-
-          <div className="hidden lg:block max-w-xl [text-shadow:0_1px_12px_rgba(0,0,0,0.45)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e9c98b]">Côte d'Ivoire · filière cacao</p>
-            <h1 className="mt-4 font-serif text-[2.6rem] leading-[1.12] font-semibold">
-              La traçabilité du cacao, de la parcelle jusqu'à l'exportation.
-            </h1>
-            <p className="mt-5 text-[15px] leading-relaxed text-white/80 max-w-lg">
-              Cartographie GPS des parcelles par les agents de terrain, contrôle de conformité au règlement européen
-              contre la déforestation, et dossiers prêts pour les exportateurs.
-            </p>
-            <dl className="mt-9 grid grid-cols-3 gap-6 border-t border-white/20 pt-6 text-sm">
-              <div><dt className="text-white/60">Coopératives</dt><dd className="mt-1 font-medium">Registre et parcelles</dd></div>
-              <div><dt className="text-white/60">Agents</dt><dd className="mt-1 font-medium">Mapping GPS mobile</dd></div>
-              <div><dt className="text-white/60">Exportateurs</dt><dd className="mt-1 font-medium">Preuves de conformité</dd></div>
-            </dl>
-          </div>
-
-          <p className="text-[11px] text-white/55">
-            Photo : KokoDZ, <a href="https://commons.wikimedia.org/wiki/File:Cultivateur_de_cacao_01.jpg" target="_blank" rel="noreferrer" className="underline hover:text-white">Wikimedia Commons</a>, CC BY-SA 4.0
-          </p>
-        </div>
+        </HeroSlideshow>
       </aside>
 
       {/* Formulaire */}
       <main className="flex flex-col justify-between px-6 py-10 sm:px-12 lg:px-16 lg:py-14">
-        <div className="mx-auto w-full max-w-sm lg:mt-[12vh]">
+        <div className="mx-auto w-full max-w-sm lg:mt-[12vh] animate-fade-up [animation-delay:200ms]">
           <h2 className="font-serif text-3xl font-semibold text-gray-900">Connexion</h2>
           <p className="mt-2 text-sm text-gray-500">Accédez à votre espace coopérative, administrateur ou agent de terrain.</p>
 
@@ -174,23 +154,18 @@ export default function LoginPage() {
           </div>}
         </div>
 
-        {/* Bandeau : les deux autres photos de la filière */}
-        <div className="mx-auto mt-12 w-full max-w-sm">
-          <div className="grid grid-cols-2 gap-3">
-            <figure>
-              <picture><source srcSet="/images/cabosses-soubre.webp" type="image/webp" />
-                <img src="/images/cabosses-soubre.jpg" alt="Cabosses de cacao récoltées à Soubré" loading="lazy" className="aspect-[4/3] w-full rounded object-cover" /></picture>
-              <figcaption className="mt-1.5 text-[11px] text-gray-500">Cabosses récoltées, Soubré</figcaption>
-            </figure>
-            <figure>
-              <picture><source srcSet="/images/feves-soubre.webp" type="image/webp" />
-                <img src="/images/feves-soubre.jpg" alt="Fèves de cacao au séchage à Soubré" loading="lazy" className="aspect-[4/3] w-full rounded object-cover" /></picture>
-              <figcaption className="mt-1.5 text-[11px] text-gray-500">Fèves au séchage, Soubré</figcaption>
-            </figure>
-          </div>
-          <p className="mt-2 text-[10px] text-gray-400">Photos : Milequem Diarassouba, Wikimedia Commons, CC BY-SA 4.0</p>
-
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-5 text-xs text-gray-500">
+        <div className="mx-auto mt-12 w-full max-w-sm animate-fade-up [animation-delay:350ms]">
+          <ul className="space-y-3 text-sm text-gray-600">
+            {[
+              [MapPinned, 'Parcelles relevées au GPS, contrôlées avant export'],
+              [ShieldCheck, 'Pensé pour le règlement (UE) 2023/1115 contre la déforestation'],
+              [Lock, 'Chaque coopérative ne voit que ses propres données'],
+            ].map(([Icon, t]) => {
+              const I = Icon as typeof Lock
+              return <li key={t as string} className="flex items-start gap-3"><I className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary-600" />{t as string}</li>
+            })}
+          </ul>
+          <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-5 text-xs text-gray-500">
             <span>© {new Date().getFullYear()} GeoLab Service · Abidjan</span>
             <span className="flex gap-4">
               <Link to="/cgu" className="hover:text-gray-800">CGU</Link>
