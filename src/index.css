@@ -126,3 +126,39 @@ body {
   .mo-draw { stroke-dashoffset: 0; } .mo-fill { opacity: .22; } .mo-pop, .mo-slide-in, .mo-fade, .mo-stamp { opacity: 1; transform: none; }
   .mo-grow-y, .mo-grow-y-bar, .mo-word > span { transform: none; } .mo-progress-bar { width: 100%; } .mo-scan, .mo-scan-line { display: none; }
 }
+
+/* ─── Logo et textes animés (MotionText) ───────────────────────────────────── */
+.mo-mask { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .1em; margin-bottom: -.1em; }
+.mo-rise { display: inline-block; transform: translateY(108%); animation: mo-rise .85s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes mo-rise { to { transform: none; } }
+.mo-blur { opacity: 0; filter: blur(8px); transform: translateY(6px); animation: mo-blur .8s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes mo-blur { to { opacity: 1; filter: none; transform: none; } }
+.mo-soft { opacity: 0; transform: translateY(5px); animation: mo-soft .55s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes mo-soft { to { opacity: 1; transform: none; } }
+.mo-underline { transform: scaleX(0); transform-origin: left; animation: mo-underline .7s cubic-bezier(.6,.1,.3,1) forwards; }
+@keyframes mo-underline { to { transform: scaleX(1); } }
+
+.mo-logo-box { opacity: 0; transform: scale(.55) rotate(-12deg); animation: mo-logo-box .7s cubic-bezier(.3,1.5,.5,1) forwards; }
+@keyframes mo-logo-box { to { opacity: 1; transform: none; } }
+.mo-leaf-fill { opacity: 0; animation: mo-leaf-fill .7s ease-out forwards; }
+@keyframes mo-leaf-fill { to { opacity: .2; } }
+.mo-leaf { transform-origin: 20% 90%; transition: transform .4s; }
+.group:hover .mo-leaf { animation: mo-sway 1.6s ease-in-out infinite; }
+@keyframes mo-sway { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-9deg); } 70% { transform: rotate(6deg); } }
+
+/* compteur d'étape « 01 / 05 » : le numéro glisse */
+.mo-tick { display: inline-block; animation: mo-tick .5s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes mo-tick { from { opacity: 0; transform: translateY(-70%); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .mo-rise, .mo-blur, .mo-soft, .mo-underline, .mo-logo-box, .mo-leaf-fill, .mo-tick, .group:hover .mo-leaf { animation: none !important; }
+  .mo-rise, .mo-blur, .mo-soft, .mo-underline, .mo-logo-box, .mo-tick { opacity: 1; transform: none; filter: none; }
+  .mo-leaf-fill { opacity: .2; }
+}
+/* champs du formulaire : arrivée en cascade */
+.mo-stagger > * { opacity: 0; transform: translateY(6px); animation: mo-soft .55s cubic-bezier(.2,.8,.2,1) forwards; }
+.mo-stagger > *:nth-child(1) { animation-delay: 1s; }
+.mo-stagger > *:nth-child(2) { animation-delay: 1.12s; }
+.mo-stagger > *:nth-child(3) { animation-delay: 1.24s; }
+.mo-stagger > *:nth-child(4) { animation-delay: 1.36s; }
+@media (prefers-reduced-motion: reduce) { .mo-stagger > * { animation: none !important; opacity: 1; transform: none; } }

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Leaf, Loader2, Shield, ShieldCheck, MapPinned, Lock } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Shield, ShieldCheck, MapPinned, Lock } from 'lucide-react'
 import { useAuthStore, MOCK_USERS } from '../../store/authStore'
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 import HeroSlideshow from '../../components/auth/HeroSlideshow'
+import { AnimatedLogo, SplitText } from '../../components/auth/MotionText'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -86,28 +87,25 @@ export default function LoginPage() {
       <aside className="relative h-64 sm:h-80 lg:h-auto lg:min-h-screen overflow-hidden bg-[#2b2118]">
         <HeroSlideshow headline={
           <>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70 animate-fade-up">Côte d'Ivoire · filière cacao</p>
-            <h1 className="mt-4 font-serif text-[2.6rem] leading-[1.12] font-semibold" aria-label="La traçabilité du cacao, de la parcelle jusqu'à l'exportation.">
-              {"La traçabilité du cacao, de la parcelle jusqu'à l'exportation.".split(' ').map((w, i) => (
-                <span key={i}><span className="mo-word" aria-hidden="true"><span style={{ animationDelay: `${150 + i * 70}ms` }}>{w}</span></span>{' '}</span>
-              ))}
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+              <SplitText text="Côte d'Ivoire · filière cacao" by="char" delay={500} step={22} variant="soft" />
+            </p>
+            <h1 className="mt-4 font-serif text-[2.6rem] leading-[1.12] font-semibold">
+              <SplitText text="La traçabilité du cacao, de la parcelle jusqu'à l'exportation." delay={900} step={75} variant="rise" highlight={['cacao']} />
             </h1>
           </>
         }>
-          <div className="flex items-center gap-2.5 animate-fade-up">
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-primary-700"><Leaf className="h-5 w-5" /></span>
-            <span className="text-[15px] font-semibold tracking-wide">GeoCollect <span className="font-normal text-white/70">EUDR</span></span>
-          </div>
+          <AnimatedLogo />
         </HeroSlideshow>
       </aside>
 
       {/* Formulaire */}
       <main className="flex flex-col justify-between px-6 py-10 sm:px-12 lg:px-16 lg:py-14">
-        <div className="mx-auto w-full max-w-sm lg:mt-[12vh] animate-fade-up [animation-delay:200ms]">
-          <h2 className="font-serif text-3xl font-semibold text-gray-900">Connexion</h2>
-          <p className="mt-2 text-sm text-gray-500">Accédez à votre espace coopérative, administrateur ou agent de terrain.</p>
+        <div className="mx-auto w-full max-w-sm lg:mt-[12vh]">
+          <h2 className="font-serif text-3xl font-semibold text-gray-900"><SplitText text="Connexion" by="char" delay={350} step={40} variant="rise" /></h2>
+          <p className="mt-2 text-sm text-gray-500"><SplitText text="Accédez à votre espace coopérative, administrateur ou agent de terrain." delay={700} step={28} variant="blur" /></p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5 mo-stagger">
             <div>
               <label htmlFor="login-user" className="block text-sm font-medium text-gray-800 mb-1.5">Identifiant</label>
               <input id="login-user" type="text" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)}
@@ -128,7 +126,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div role="alert" className="flex items-start gap-2 rounded-md border-l-4 border-red-500 bg-red-50 px-3.5 py-2.5 text-sm text-red-800">
+              <div role="alert" style={{ animationDelay: '0s' }} className="flex items-start gap-2 rounded-md border-l-4 border-red-500 bg-red-50 px-3.5 py-2.5 text-sm text-red-800">
                 <Shield className="mt-0.5 h-4 w-4 flex-shrink-0" />{error}
               </div>
             )}
@@ -162,9 +160,9 @@ export default function LoginPage() {
               [MapPinned, 'Parcelles relevées au GPS, contrôlées avant export'],
               [ShieldCheck, 'Pensé pour le règlement (UE) 2023/1115 contre la déforestation'],
               [Lock, 'Chaque coopérative ne voit que ses propres données'],
-            ].map(([Icon, t]) => {
+            ].map(([Icon, t], i) => {
               const I = Icon as typeof Lock
-              return <li key={t as string} className="flex items-start gap-3"><I className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary-600" />{t as string}</li>
+              return <li key={t as string} className="mo-soft flex items-start gap-3" style={{ animationDelay: `${1600 + i * 150}ms` }}><I className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary-600" />{t as string}</li>
             })}
           </ul>
           <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-5 text-xs text-gray-500">

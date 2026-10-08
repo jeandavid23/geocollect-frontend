@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import SlideMotion from './SlideMotion'
+import { SplitText } from './MotionText'
 
 // Le parcours du cacao en Côte d'Ivoire, de la plantation au sac prêt pour l'export.
 // Photos réelles (Wikimedia Commons, CC BY-SA 4.0) : l'auteur doit rester cité.
@@ -84,11 +85,14 @@ export default function HeroSlideshow({ children, headline }: { children?: React
         {/* Étape en cours */}
         <div className="hidden lg:block mt-auto max-w-xl [text-shadow:0_1px_12px_rgba(0,0,0,0.45)]">
           {headline}
-          <div key={`${index}-${cycle}`} className="mt-8 min-h-[92px] border-l-2 border-[#e9c98b]/70 pl-4 animate-fade-up">
+          <div key={`${index}-${cycle}`} className="mt-8 min-h-[92px] border-l-2 border-[#e9c98b]/70 pl-4">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e9c98b]">
-              {String(index + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')} · {s.step} · {s.place}
+              <span className="mo-mask"><span className="mo-tick">{String(index + 1).padStart(2, '0')}</span></span> / {String(SLIDES.length).padStart(2, '0')} ·{' '}
+              <SplitText text={`${s.step} · ${s.place}`} by="char" delay={150} step={18} variant="soft" />
             </p>
-            <p className="mt-3 text-[15px] leading-relaxed text-white/85">{s.text}</p>
+            <p className="mt-3 text-[15px] leading-relaxed text-white/85">
+              <SplitText text={s.text} delay={450} step={35} variant="blur" />
+            </p>
           </div>
         </div>
 
