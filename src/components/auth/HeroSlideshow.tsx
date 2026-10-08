@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import SlideMotion from './SlideMotion'
 
 // Le parcours du cacao en Côte d'Ivoire, de la plantation au sac prêt pour l'export.
 // Photos réelles (Wikimedia Commons, CC BY-SA 4.0) : l'auteur doit rester cité.
@@ -72,11 +73,16 @@ export default function HeroSlideshow({ children, headline }: { children?: React
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/45" />
       <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/55 via-black/10 to-transparent" />
 
-      <div className="relative z-10 flex h-full flex-col justify-between p-6 sm:p-10 lg:p-14 text-white">
+      {/* scène animée de l'étape (grands écrans) */}
+      <div key={`scene-${index}-${cycle}`} className="absolute right-8 top-10 z-10 hidden xl:block 2xl:right-14 2xl:top-14">
+        <SlideMotion index={index} />
+      </div>
+
+      <div className="relative z-10 flex h-full flex-col p-6 sm:p-10 lg:p-14 text-white">
         {children}
 
         {/* Étape en cours */}
-        <div className="hidden lg:block max-w-xl [text-shadow:0_1px_12px_rgba(0,0,0,0.45)]">
+        <div className="hidden lg:block mt-auto max-w-xl [text-shadow:0_1px_12px_rgba(0,0,0,0.45)]">
           {headline}
           <div key={`${index}-${cycle}`} className="mt-8 min-h-[92px] border-l-2 border-[#e9c98b]/70 pl-4 animate-fade-up">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e9c98b]">
@@ -86,7 +92,7 @@ export default function HeroSlideshow({ children, headline }: { children?: React
           </div>
         </div>
 
-        <div>
+        <div className="mt-auto lg:mt-8">
           <p key={`m-${index}`} className="lg:hidden mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#e9c98b] animate-fade-up">
             {s.step} · {s.place}
           </p>

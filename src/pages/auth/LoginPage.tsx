@@ -87,8 +87,10 @@ export default function LoginPage() {
         <HeroSlideshow headline={
           <>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70 animate-fade-up">Côte d'Ivoire · filière cacao</p>
-            <h1 className="mt-4 font-serif text-[2.6rem] leading-[1.12] font-semibold animate-fade-up [animation-delay:120ms]">
-              La traçabilité du cacao, de la parcelle jusqu'à l'exportation.
+            <h1 className="mt-4 font-serif text-[2.6rem] leading-[1.12] font-semibold" aria-label="La traçabilité du cacao, de la parcelle jusqu'à l'exportation.">
+              {"La traçabilité du cacao, de la parcelle jusqu'à l'exportation.".split(' ').map((w, i) => (
+                <span key={i}><span className="mo-word" aria-hidden="true"><span style={{ animationDelay: `${150 + i * 70}ms` }}>{w}</span></span>{' '}</span>
+              ))}
             </h1>
           </>
         }>
