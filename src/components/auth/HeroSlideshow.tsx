@@ -49,20 +49,22 @@ export default function HeroSlideshow({ children, headline }: { children?: React
     return () => clearTimeout(t)
   }, [index, paused, cycle, go])
 
-  // précharge la photo suivante
+  // photos montées au fil du défilement : la photo affichée + la suivante (réseau mobile : pas 1,3 Mo d'un coup)
+  const [seen, setSeen] = useState<Set<number>>(() => new Set([0]))
   useEffect(() => {
-    const next = SLIDES[(index + 1) % SLIDES.length]
-    const im = new Image(); im.src = `/images/${next.img}.webp`
+    const t = setTimeout(() => setSeen((s) => new Set([...s, index, (index + 1) % SLIDES.length])), index === 0 ? 2500 : 0)
+    setSeen((s) => (s.has(index) ? s : new Set([...s, index])))
+    return () => clearTimeout(t)
   }, [index])
 
   const s = SLIDES[index]
   return (
     <div className="absolute inset-0" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      {SLIDES.map((sl, i) => (
+      {SLIDES.map((sl, i) => !seen.has(i) ? null : (
         <picture key={sl.img}>
           <source srcSet={`/images/${sl.img}.webp`} type="image/webp" />
           <img src={`/images/${sl.img}.jpg`} alt={i === index ? `${sl.step} — ${sl.place}` : ''} aria-hidden={i !== index}
-            loading={i < 2 ? 'eager' : 'lazy'}
+            fetchPriority={i === 0 ? 'high' : 'low'}
             style={{ objectPosition: sl.pos }}
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[1200ms] ease-out
               ${i === index ? 'opacity-100' : 'opacity-0'}

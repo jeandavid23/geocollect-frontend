@@ -38,6 +38,7 @@ export default function CoopDashboardPage() {
         { label: 'Analyse déforestation', icon: <TreePine className="w-4 h-4" />, to: '/coop/deforestation', module: 'deforestation', tone: 'green' },
         { label: 'Polygon Validator', icon: <ShieldCheck className="w-4 h-4" />, to: '/coop/validator', module: 'validator', tone: 'green' },
         { label: 'Polygon & GMR', icon: <Link2 className="w-4 h-4" />, to: '/coop/gmr', module: 'gmr', tone: 'green' },
+        { label: 'Export TRACES (EUDR)', icon: <FileBarChart className="w-4 h-4" />, to: '/coop/reports#traces', hint: 'Fichier GeoJSON pour la déclaration de diligence raisonnable' },
         { label: 'Rapports et exports', icon: <FileBarChart className="w-4 h-4" />, to: '/coop/reports', tone: 'purple' },
         { label: 'Carte', icon: <Map className="w-4 h-4" />, to: '/map' },
         { label: 'Message aux agents', icon: <Send className="w-4 h-4" />, message: 'agents', tone: 'amber' },

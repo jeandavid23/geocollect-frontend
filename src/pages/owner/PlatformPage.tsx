@@ -6,6 +6,7 @@ import { platformApi, MODULE_LABELS, ALL_MODULES, type PlatformOverview, type Mo
 import type { ModuleId } from '../../types'
 import { exportExcel } from '../../utils/featureExport'
 import MessageModal from '../../components/ui/MessageModal'
+import DemoRequests from '../../components/owner/DemoRequests'
 import { apiErrorMessage } from '../../utils/retry'
 
 /** Vue d'ensemble du propriétaire : toute la plateforme et chacun de ses clients. */
@@ -95,6 +96,8 @@ export default function PlatformPage() {
           </div>
         ))}
       </section>
+
+      <DemoRequests />
 
       {data && (
         <section className="bg-white rounded-2xl border border-gray-100 p-5">

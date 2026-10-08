@@ -8,49 +8,60 @@ import Layout from './components/layout/Layout'
 
 // Auth
 import LoginPage from './pages/auth/LoginPage'
-import CguPage from './pages/legal/CguPage'
-import ConfidentialitePage from './pages/legal/ConfidentialitePage'
+const CguPage = lazy(() => import('./pages/legal/CguPage'))
+const ConfidentialitePage = lazy(() => import('./pages/legal/ConfidentialitePage'))
 
 // Admin
-import AdminDashboardPage from './pages/admin/AdminDashboardPage'
-import CooperativesPage from './pages/admin/CooperativesPage'
-import AdminAgentsPage from './pages/admin/AdminAgentsPage'
-import AccountsPage from './pages/admin/AccountsPage'
-import LogsPage from './pages/admin/LogsPage'
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
+const CooperativesPage = lazy(() => import('./pages/admin/CooperativesPage'))
+const AdminAgentsPage = lazy(() => import('./pages/admin/AdminAgentsPage'))
+const AccountsPage = lazy(() => import('./pages/admin/AccountsPage'))
+const LogsPage = lazy(() => import('./pages/admin/LogsPage'))
 
 // Propriétaire de la plateforme (Super Super Admin)
-import PlatformPage from './pages/owner/PlatformPage'
-import SuperAdminsPage from './pages/owner/SuperAdminsPage'
+const PlatformPage = lazy(() => import('./pages/owner/PlatformPage'))
+const SuperAdminsPage = lazy(() => import('./pages/owner/SuperAdminsPage'))
 
 // Shared account
-import AccountPage from './pages/account/AccountPage'
+const AccountPage = lazy(() => import('./pages/account/AccountPage'))
 
 // Cooperative
-import CoopDashboardPage from './pages/coop/CoopDashboardPage'
-import ProducersPage from './pages/coop/ProducersPage'
-import CoopParcelsPage from './pages/coop/CoopParcelsPage'
-import CoopAgentsPage from './pages/coop/CoopAgentsPage'
-import ReportsPage from './pages/coop/ReportsPage'
-import DeforestationPage from './pages/coop/DeforestationPage'
-import ValidatorPage from './pages/coop/ValidatorPage'
-import SelfIntersectionPage from './pages/coop/SelfIntersectionPage'
-import GmrPage from './pages/coop/GmrPage'
-import AdminReportsPage from './pages/admin/AdminReportsPage'
+const CoopDashboardPage = lazy(() => import('./pages/coop/CoopDashboardPage'))
+const ProducersPage = lazy(() => import('./pages/coop/ProducersPage'))
+const CoopParcelsPage = lazy(() => import('./pages/coop/CoopParcelsPage'))
+const CoopAgentsPage = lazy(() => import('./pages/coop/CoopAgentsPage'))
+const ReportsPage = lazy(() => import('./pages/coop/ReportsPage'))
+const DeforestationPage = lazy(() => import('./pages/coop/DeforestationPage'))
+const ValidatorPage = lazy(() => import('./pages/coop/ValidatorPage'))
+const SelfIntersectionPage = lazy(() => import('./pages/coop/SelfIntersectionPage'))
+const GmrPage = lazy(() => import('./pages/coop/GmrPage'))
+const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'))
 // Le registre embarque le moteur de formules : chargé seulement à l'ouverture de la page
 const RegistryPage = lazy(() => import('./pages/coop/RegistryPage'))
 
 // Agent
-import AgentDashboardPage from './pages/agent/AgentDashboardPage'
-import MappingPage from './pages/agent/MappingPage'
-import AgentParcelsPage from './pages/agent/AgentParcelsPage'
-import AgentProducersPage from './pages/agent/AgentProducersPage'
+const AgentDashboardPage = lazy(() => import('./pages/agent/AgentDashboardPage'))
+const MappingPage = lazy(() => import('./pages/agent/MappingPage'))
+const AgentParcelsPage = lazy(() => import('./pages/agent/AgentParcelsPage'))
+const AgentProducersPage = lazy(() => import('./pages/agent/AgentProducersPage'))
 
 // Shared
-import MapPage from './pages/MapPage'
+const MapPage = lazy(() => import('./pages/MapPage'))
+
+function PageLoader() {
+  return (
+    <div className="flex h-[60vh] items-center justify-center" role="status" aria-label="Chargement">
+      <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary-200 border-t-primary-700" />
+    </div>
+  )
+}
+
+const LandingPage = lazy(() => import('./pages/public/LandingPage'))
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuthStore()
-  if (!isAuthenticated) return <Navigate to="/login" replace />
+  // visiteur : page de présentation publique (offre, tarifs, demande de démo)
+  if (!isAuthenticated) return <LandingPage />
   if (user?.role === 'owner') return <Navigate to="/owner" replace />
   if (user?.role === 'super_admin') return <Navigate to="/admin" replace />
   if (user?.role === 'cooperative') return <Navigate to="/coop" replace />
@@ -84,6 +95,8 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      {/* chaque page est chargée à l'ouverture (premier affichage plus rapide sur réseau mobile) */}
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
@@ -170,6 +183,7 @@ export default function App() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }
