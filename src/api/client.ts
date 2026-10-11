@@ -1,5 +1,6 @@
 import { useAppStore } from '../store/appStore'
 import axios from 'axios'
+import { AUTH_KEY, authStorage, readAuth, writeAuthToken } from '../store/authStorage'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
@@ -10,15 +11,8 @@ export const api = axios.create({
 
 // Attach JWT token to every request
 api.interceptors.request.use((config) => {
-  const stored = localStorage.getItem('geocollect-auth')
-  if (stored) {
-    try {
-      const { state } = JSON.parse(stored)
-      if (state?.token) {
-        config.headers.Authorization = `Bearer ${state.token}`
-      }
-    } catch {}
-  }
+  const token = readAuth()?.state?.token
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
@@ -30,9 +24,15 @@ api.interceptors.response.use(
     // Organisation suspendue, abonnement expiré ou coopérative désactivée : déconnexion avec le motif
     if (error.response?.status === 401 && error.response?.data?.code === 'tenant_inactive') {
       try { sessionStorage.setItem('geocollect-logout-reason', String(error.response.data.detail || '')) } catch { /* indisponible */ }
-      localStorage.removeItem('geocollect-auth')
+      authStorage.removeItem(AUTH_KEY)
       useAppStore.getState().clearData()
       if (!window.location.pathname.startsWith('/login')) window.location.href = '/login'
+      return Promise.reject(error)
+    }
+    // Mot de passe provisoire / double authentification à activer : le profil à jour affiche l'écran à compléter
+    const gate = error.response?.status === 403 ? error.response?.data?.code : null
+    if (gate === 'password_change_required' || gate === 'mfa_setup_required') {
+      import('../store/authStore').then(({ useAuthStore }) => useAuthStore.getState().refreshMe())
       return Promise.reject(error)
     }
     // Connexion / rafraîchissement refusés : c'est un mauvais identifiant, pas un jeton expiré.
@@ -41,16 +41,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry && !isAuthCall) {
       original._retry = true
       try {
-        const stored = localStorage.getItem('geocollect-auth')
-        if (stored && JSON.parse(stored)?.state?.refreshToken) {
-          const { state } = JSON.parse(stored)
-          const { data } = await axios.post(`${BASE_URL}/auth/token/refresh/`, {
-            refresh: state?.refreshToken,
-          })
-          // Update token in localStorage
-          const parsed = JSON.parse(stored)
-          parsed.state.token = data.access
-          localStorage.setItem('geocollect-auth', JSON.stringify(parsed))
+        const refresh = readAuth()?.state?.refreshToken
+        if (refresh) {
+          const { data } = await axios.post(`${BASE_URL}/auth/token/refresh/`, { refresh })
+          writeAuthToken(data.access)
           original.headers.Authorization = `Bearer ${data.access}`
           return api(original)
         }

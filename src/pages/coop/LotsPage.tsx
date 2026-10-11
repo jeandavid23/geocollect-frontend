@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { confirmDialog } from '../../components/ui/dialog'
 import { Plus, Package, Trash2, FileText, FileCheck2, FileSpreadsheet, AlertTriangle, CheckCircle2, Search, ArrowLeft, Loader2, Truck } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import { useAppStore } from '../../store/appStore'
@@ -128,7 +129,7 @@ function Detail({ lot, onBack, onEdit, onChanged }: { lot: Lot; onBack: () => vo
     } finally { setBusy('') }
   }
   const remove = async () => {
-    if (!window.confirm(`Supprimer le lot ${lot.code} ?`)) return
+    if (!(await confirmDialog({ tone: 'danger', title: `Supprimer le lot ${lot.code} ?`, confirmLabel: 'Supprimer' }))) return
     await lotsApi.remove(lot.id); onChanged(null)
   }
   const excel = () => exportExcel([

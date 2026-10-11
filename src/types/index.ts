@@ -32,6 +32,10 @@ export interface User {
   modules?: ModuleId[] | null
   // Licence du super admin (son abonnement)
   license?: LicenseSummary | null
+  // Sécurité : mot de passe provisoire à changer ; double authentification active / obligatoire pour ce rôle
+  mustChangePassword?: boolean
+  mfaEnabled?: boolean
+  mfaRequired?: boolean
 }
 
 export interface AuthState {

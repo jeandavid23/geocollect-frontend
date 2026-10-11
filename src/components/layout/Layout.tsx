@@ -3,10 +3,12 @@ import { Menu, Leaf } from 'lucide-react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Toaster from './Toaster'
+import { useIdleLogout } from '../../hooks/useIdleLogout'
 
 export default function Layout() {
   const { pathname } = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  useIdleLogout()
   useEffect(() => { setMenuOpen(false) }, [pathname])
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">

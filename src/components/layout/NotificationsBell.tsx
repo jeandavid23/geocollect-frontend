@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { confirmDialog } from '../ui/dialog'
 import { Bell, CheckCheck, X, Send , Trash2 } from 'lucide-react'
 import { notificationsApi, type ApiNotification } from '../../api/notifications'
 import { useAuthStore } from '../../store/authStore'
@@ -83,7 +84,7 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
                 <Send className="w-3.5 h-3.5" /> Message
               </button>
               {items.length > 0 && (
-                <button onClick={async () => { if (!window.confirm('Effacer toutes vos notifications ?')) return; try { await notificationsApi.clear() } catch { /* ignore */ } setItems([]) }}
+                <button onClick={async () => { if (!(await confirmDialog({ tone: 'danger', title: 'Effacer toutes vos notifications ?', confirmLabel: 'Tout effacer' }))) return; try { await notificationsApi.clear() } catch { /* ignore */ } setItems([]) }}
                   className="text-xs text-gray-500 hover:text-red-600 flex items-center gap-1" title="Effacer toutes les notifications">
                   <Trash2 className="w-3.5 h-3.5" /> Effacer
                 </button>

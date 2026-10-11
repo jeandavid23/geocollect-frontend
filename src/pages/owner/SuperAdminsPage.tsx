@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { confirmDialog } from '../../components/ui/dialog'
 import { confirmAccountDeletion } from '../../utils/confirmDeletion'
 import {
   Plus, X, Save, Loader2, ShieldCheck, ShieldOff, KeyRound, Trash2, Pencil, Building2, AlertTriangle, Search,
@@ -110,7 +111,7 @@ export default function SuperAdminsPage() {
 
   const toggleActive = async (a: PlatformAdmin) => {
     const suspend = a.is_active
-    if (suspend && !confirm(`Suspendre « ${a.license.organization || a.full_name} » ?\n\nLe super admin, toutes ses coopératives et tous ses agents ne pourront plus se connecter (effet sous une minute).`)) return
+    if (suspend && !(await confirmDialog({ tone: 'danger', title: `Suspendre « ${a.license.organization || a.full_name} » ?`, message: `Le super admin, toutes ses coopératives et tous ses agents ne pourront plus se connecter (effet sous une minute).`, confirmLabel: 'Suspendre' }))) return
     setBusyId(a.id)
     try {
       await platformApi.updateAdmin(a.id, { is_active: !a.is_active })
@@ -122,7 +123,7 @@ export default function SuperAdminsPage() {
   }
 
   const resetPassword = async (a: PlatformAdmin) => {
-    if (!confirm(`Générer un nouveau mot de passe pour ${a.full_name} ? L'ancien ne fonctionnera plus.`)) return
+    if (!(await confirmDialog({ title: 'Nouveau mot de passe ?', message: `Un mot de passe provisoire sera généré pour ${a.full_name} ; l'ancien ne fonctionnera plus.`, confirmLabel: 'Générer' }))) return
     setBusyId(a.id)
     try {
       const { data } = await platformApi.resetPassword(a.id)

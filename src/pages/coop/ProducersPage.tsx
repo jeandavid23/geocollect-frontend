@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { confirmDialog } from '../../components/ui/dialog'
 import { useSearchParams } from 'react-router-dom'
 import { Search, Plus, MapPin, X, Save, FileSpreadsheet, Trash2, Hash } from 'lucide-react'
 import Header from '../../components/layout/Header'
@@ -65,7 +66,7 @@ export default function ProducersPage() {
 
   const deleteChecked = async () => {
     const ids = [...checked]
-    if (!ids.length || !window.confirm(`Supprimer ${ids.length} producteur(s) ? Ceux qui ont des parcelles mappées ou une fiche de lot seront conservés.`)) return
+    if (!ids.length || !(await confirmDialog({ tone: 'danger', title: `Supprimer ${ids.length} producteur(s) ?`, message: 'Ceux qui ont des parcelles mappées ou une fiche de lot sont conservés.', confirmLabel: 'Supprimer' }))) return
     setDeleting(true)
     try {
       if (isLive) {

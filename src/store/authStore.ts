@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { AUTH_KEY, authStorage, setRemembered } from './authStorage'
 import type { User } from '../types'
 import { authApi } from '../api/auth'
 
@@ -11,8 +12,10 @@ interface AuthStore {
   isLoading: boolean
   error: string | null
   // Actions
-  loginWithApi: (username: string, password: string) => Promise<void>
-  loginWithGoogle: (credential: string) => Promise<void>
+  // renvoie { mfaToken } si la double authentification est active (2e étape : verifyMfa)
+  loginWithApi: (username: string, password: string, remember?: boolean) => Promise<{ mfaToken?: string }>
+  loginWithGoogle: (credential: string, remember?: boolean) => Promise<{ mfaToken?: string }>
+  verifyMfa: (mfaToken: string, code: string) => Promise<void>
   loginMock: (user: User, token: string) => void
   logout: () => Promise<void>
   updateUser: (updates: Partial<User>) => void
@@ -63,6 +66,9 @@ function mapApiUser(apiUser: Record<string, unknown>): User {
     cooperativeId: apiUser.cooperative_id ? String(apiUser.cooperative_id) : undefined,
     modules: (apiUser.modules as User['modules']) ?? null,
     license: (apiUser.license as User['license']) ?? null,
+    mustChangePassword: Boolean(apiUser.must_change_password),
+    mfaEnabled: Boolean(apiUser.mfa_enabled),
+    mfaRequired: Boolean(apiUser.mfa_required),
   }
 }
 
@@ -76,10 +82,12 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: false,
       error: null,
 
-      loginWithApi: async (username, password) => {
+      loginWithApi: async (username, password, remember = true) => {
         set({ isLoading: true, error: null })
+        setRemembered(remember)
         try {
           const { data } = await authApi.login(username, password)
+          if (data.mfa_required && data.mfa_token) { set({ isLoading: false }); return { mfaToken: data.mfa_token } }
           const user = mapApiUser(data.user as unknown as Record<string, unknown>)
           set({
             user,
@@ -88,6 +96,7 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: true,
             isLoading: false,
           })
+          return {}
         } catch (err: unknown) {
           const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
             || 'Identifiant ou mot de passe incorrect.'
@@ -97,16 +106,24 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      loginWithGoogle: async (credential) => {
+      loginWithGoogle: async (credential, remember = true) => {
         set({ isLoading: true, error: null })
+        setRemembered(remember)
         try {
           const { data } = await authApi.google(credential)
+          if (data.mfa_required && data.mfa_token) { set({ isLoading: false }); return { mfaToken: data.mfa_token } }
           set({ user: mapApiUser(data.user as unknown as Record<string, unknown>), token: data.access, refreshToken: data.refresh, isAuthenticated: true, isLoading: false })
+          return {}
         } catch (err: unknown) {
           const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Connexion Google impossible.'
           set({ error: msg, isLoading: false })
           throw err
         }
+      },
+
+      verifyMfa: async (mfaToken, code) => {
+        const { data } = await authApi.mfaVerify(mfaToken, code)
+        set({ user: mapApiUser(data.user as unknown as Record<string, unknown>), token: data.access, refreshToken: data.refresh, isAuthenticated: true, isLoading: false, error: null })
       },
 
       loginMock: (user, token) => set({ user, token, isAuthenticated: true }),
@@ -135,6 +152,6 @@ export const useAuthStore = create<AuthStore>()(
         } catch { /* hors ligne : on garde le profil connu */ }
       },
     }),
-    { name: 'geocollect-auth' }
+    { name: AUTH_KEY, storage: createJSONStorage(() => authStorage) }
   )
 )

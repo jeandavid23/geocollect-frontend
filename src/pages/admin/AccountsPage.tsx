@@ -1,9 +1,11 @@
 import { apiErrorMessage } from '../../utils/retry'
+import { confirmDialog, alertDialog } from '../../components/ui/dialog'
 import { useEffect, useState } from 'react'
 import { Search, KeyRound, RefreshCw, ShieldCheck, Loader2, AlertTriangle, Power , Trash2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import CredentialsModal from '../../components/ui/CredentialsModal'
 import { usersApi, type ApiUser } from '../../api/users'
+import { authApi } from '../../api/auth'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 import { confirmAccountDeletion } from '../../utils/confirmDeletion'
@@ -33,9 +35,9 @@ export default function AccountsPage() {
     setDeleting(true)
     try {
       const { data } = await usersApi.bulkDelete(list.map((u) => u.id))
-      if (data.refused.length) alert(`${data.deleted} compte(s) supprimé(s).\nNon supprimé(s) :\n${data.refused.map((r) => `• ${r.username} : ${r.detail}`).join('\n')}`)
+      if (data.refused.length) await alertDialog({ tone: 'info', title: `${data.deleted} compte(s) supprimé(s)`, message: 'Non supprimé(s) :', details: data.refused.map((r) => `${r.username} : ${r.detail}`) })
       setChecked(new Set()); load(); useAppStore.getState().refreshData()
-    } catch (err) { alert(apiErrorMessage(err)) } finally { setDeleting(false) }
+    } catch (err) { await alertDialog({ tone: 'danger', title: 'Suppression impossible', message: apiErrorMessage(err) }) } finally { setDeleting(false) }
   }
   const [users, setUsers] = useState<ApiUser[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,13 +62,13 @@ export default function AccountsPage() {
   useEffect(() => { load() }, [])
 
   const handleReset = async (u: ApiUser) => {
-    if (!confirm(`Réinitialiser le mot de passe de « ${u.full_name} » ? Un nouveau mot de passe sera généré.`)) return
+    if (!(await confirmDialog({ title: 'Réinitialiser le mot de passe ?', message: `Un mot de passe provisoire sera généré pour « ${u.full_name} » ; il devra le changer à sa prochaine connexion.`, confirmLabel: 'Réinitialiser' }))) return
     setResetting(u.id)
     try {
       const { data } = await usersApi.resetPassword(u.id)
       setCredentials({ name: data.full_name, username: data.username, password: data.new_password })
     } catch {
-      alert("Échec de la réinitialisation.")
+      await alertDialog({ tone: 'danger', title: 'Échec de la réinitialisation' })
     } finally {
       setResetting(null)
     }
@@ -76,7 +78,7 @@ export default function AccountsPage() {
     try {
       await usersApi.toggleActive(u.id)
       load()
-    } catch { alert('Échec.') }
+    } catch (err) { await alertDialog({ tone: 'danger', title: 'Action impossible', message: apiErrorMessage(err) }) }
   }
 
   const filtered = users.filter((u) => {
@@ -175,6 +177,15 @@ export default function AccountsPage() {
                           {resetting === u.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                           Réinitialiser
                         </button>}
+                        {isOwner && canManage(u) && (
+                          <button onClick={async () => {
+                            if (!(await confirmDialog({ title: 'Réinitialiser la double authentification ?', message: `${u.full_name} devra la reconfigurer à sa prochaine connexion (téléphone perdu ou changé).`, confirmLabel: 'Réinitialiser' }))) return
+                            try { const { data } = await authApi.mfaReset(u.id); await alertDialog({ tone: 'success', title: 'Double authentification réinitialisée', message: data.detail }) }
+                            catch (err) { await alertDialog({ tone: 'danger', title: 'Action impossible', message: apiErrorMessage(err) }) }
+                          }} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 font-medium">
+                            <ShieldCheck className="w-3.5 h-3.5" /> 2FA
+                          </button>
+                        )}
                         {canManage(u) && (
                           <button onClick={() => handleToggle(u)} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 font-medium">
                             <Power className="w-3.5 h-3.5" /> {u.is_active ? 'Désactiver' : 'Activer'}
@@ -184,7 +195,7 @@ export default function AccountsPage() {
                           <button onClick={async () => {
                             if (!(await confirmAccountDeletion([u.id], `le compte « ${u.full_name} » (${u.username})`))) return
                             try { await usersApi.remove(u.id); load(); useAppStore.getState().refreshData() }
-                            catch (err) { alert(apiErrorMessage(err)) }
+                            catch (err) { await alertDialog({ tone: 'danger', title: 'Suppression impossible', message: apiErrorMessage(err) }) }
                           }} className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 font-medium">
                             <Trash2 className="w-3.5 h-3.5" /> Supprimer
                           </button>

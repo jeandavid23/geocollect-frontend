@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { confirmDialog } from '../ui/dialog'
 import { Archive, FileText, FileSpreadsheet, Download, Trash2, Loader2, RefreshCw, Search } from 'lucide-react'
 import {
   reportsApi, loadSavedReport, reportPDF, reportExcel, reportCSV, reportGeoJSON, reportKML, reportShapefile,
@@ -45,7 +46,7 @@ export default function SavedReports({ showCooperative = false }: { showCooperat
   }
 
   const remove = async (m: SavedReportMeta) => {
-    if (!window.confirm(`Supprimer le rapport « ${m.title} » ?`)) return
+    if (!(await confirmDialog({ tone: 'danger', title: 'Supprimer ce rapport ?', message: `« ${m.title} »`, confirmLabel: 'Supprimer' }))) return
     try { await reportsApi.remove(m.id); setItems((l) => (l ?? []).filter((x) => x.id !== m.id)) } catch (err) { setError(apiErrorMessage(err)) }
   }
 

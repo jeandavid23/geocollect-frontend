@@ -3,6 +3,7 @@ import { KeyRound, Eye, EyeOff, CheckCircle2, AlertTriangle, Camera, Save, Loade
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
 import { authApi } from '../../api/auth'
+import MfaSettings from '../../components/auth/MfaSettings'
 
 // Réduit une image en base64 (max 400px) pour un stockage léger
 function fileToResizedDataUrl(file: File, max = 400): Promise<string> {
@@ -212,6 +213,8 @@ export default function AccountPage() {
           {savingPwd ? 'Modification...' : 'Modifier le mot de passe'}
         </button>
       </form>
+
+      <MfaSettings />
     </div>
   )
 }

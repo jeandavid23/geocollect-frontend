@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { confirmDialog } from '../../components/ui/dialog'
 import { Link } from 'react-router-dom'
 import { Users, Building2, UserCog, MapPin, Sprout, ShieldCheck, Loader2, ArrowRight, AlertTriangle, Bell, BarChart3, Boxes, FileSpreadsheet, Info } from 'lucide-react'
 import Header from '../../components/layout/Header'
@@ -33,7 +34,7 @@ export default function PlatformPage() {
 
   const bulk = async (m: ModuleId, grant: boolean) => {
     const verb = grant ? 'Activer' : 'Retirer'
-    if (!window.confirm(`${verb} « ${MODULE_LABELS[m]} » pour tous les clients à licence restreinte ?`)) return
+    if (!(await confirmDialog({ title: `${verb} « ${MODULE_LABELS[m]} » ?`, message: 'Pour tous les clients à licence restreinte.', confirmLabel: verb }))) return
     setBulkBusy(m); setBulkMsg('')
     try {
       const { data: r } = await platformApi.bulkModule(m, grant)

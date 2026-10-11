@@ -1,4 +1,5 @@
 import api from '../api/client'
+import { readAuth } from '../store/authStorage'
 import { gzipJson } from './gzip'
 import { exportExcel, exportGeoJSON, exportKML, exportShapefile, type OutFeature } from './featureExport'
 import { downloadBlob } from './geoExport'
@@ -162,8 +163,8 @@ export async function loadSavedReport(m: SavedReportMeta): Promise<Report> {
 
 /** Rapport d'import (registre, producteurs, polygones) : enregistré dans « Rapports », sans bloquer l'import. */
 export function saveImportReport(r: Omit<Report, 'meta'> & { meta?: Report['meta'] }, cooperative?: string) {
-  const auth = JSON.parse(localStorage.getItem('geocollect-auth') || '{}')?.state?.user
-  reportsApi.save({ ...r, meta: { author: auth?.fullName ?? auth?.username ?? '', date: new Date().toISOString(), ...r.meta } }, cooperative)
+  const auth = (readAuth()?.state?.user as Record<string, unknown> | undefined)
+  reportsApi.save({ ...r, meta: { author: String(auth?.fullName ?? auth?.username ?? ''), date: new Date().toISOString(), ...r.meta } }, cooperative)
     .catch(() => { /* hors ligne ou super admin sans coopérative ciblée : pas de rapport */ })
 }
 

@@ -1,4 +1,5 @@
 import { apiErrorMessage } from '../../utils/retry'
+import { confirmDialog } from '../../components/ui/dialog'
 import { parcelsApi } from '../../api/parcels'
 import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -47,7 +48,7 @@ export default function CoopParcelsPage() {
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const removeParcelsNow = async (ids: string[]) => {
-    if (!ids.length || !window.confirm(`Supprimer définitivement ${ids.length} parcelle(s) mappée(s) ? Le producteur repassera « à mapper » s'il n'a plus aucun polygone.`)) return
+    if (!ids.length || !(await confirmDialog({ tone: 'danger', title: `Supprimer ${ids.length} parcelle(s) mappée(s) ?`, message: "Suppression définitive. Le producteur repasse « à mapper » s'il n'a plus aucun polygone.", confirmLabel: 'Supprimer' }))) return
     setDeleting(true)
     try {
       if (useAppStore.getState().isLive) await parcelsApi.bulkDelete(ids)

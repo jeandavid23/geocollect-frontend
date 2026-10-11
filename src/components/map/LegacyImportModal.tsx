@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { confirmDialog } from '../ui/dialog'
 import { X, Upload, Trash2, Layers, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { parseLegacyFiles, LEGACY_ACCEPT, type LegacyParseResult } from '../../utils/legacyImport'
 import { saveImportReport } from '../../utils/report'
@@ -116,7 +117,7 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
   }
 
   const removeSource = async (s: LegacySource) => {
-    if (!confirm(`Supprimer les ${s.count} polygone(s) importés depuis « ${s.source_file} » ?`)) return
+    if (!(await confirmDialog({ tone: 'danger', title: 'Supprimer ces polygones ?', message: `${s.count} polygone(s) importé(s) depuis « ${s.source_file} ».`, confirmLabel: 'Supprimer' }))) return
     setBusy(true)
     try {
       await legacyApi.removeSource(s.source_file, cooperativeId ?? s.cooperative)

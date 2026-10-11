@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import type { UserRole } from '../../types'
+import SecurityGate from './SecurityGate'
 
 interface Props {
   roles?: UserRole[]
@@ -16,5 +17,6 @@ export default function ProtectedRoute({ roles, children }: Props) {
     return <Navigate to={redirect} replace />
   }
 
-  return <>{children}</>
+  // mot de passe provisoire à changer / double authentification à activer avant d'accéder aux pages
+  return <SecurityGate>{children}</SecurityGate>
 }

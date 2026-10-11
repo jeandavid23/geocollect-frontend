@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { promptDialog } from '../ui/dialog'
 import { Search, X, ZoomIn, Plus, Download, Lock } from 'lucide-react'
 import type { GFeature } from './GisEngine'
 
@@ -44,8 +45,8 @@ export default function AttributeTable(props: Props) {
   const pages = Math.max(1, Math.ceil(rows.length / PAGE))
   const cur = Math.min(page, pages - 1)
 
-  const addField = () => {
-    const name = window.prompt('Nom du nouveau champ :')?.trim()
+  const addField = async () => {
+    const name = (await promptDialog({ title: 'Nouveau champ', label: 'Nom du champ', placeholder: 'ex. variete', validate: (v) => (v ? null : 'Saisissez un nom.') }))?.trim()
     if (name) props.onAddField(name)
   }
 

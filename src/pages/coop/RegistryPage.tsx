@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { confirmDialog, alertDialog, promptDialog } from '../../components/ui/dialog'
 import { saveImportReport, registryImportReport } from '../../utils/report'
 import * as XLSX from 'xlsx'
 import {
@@ -250,9 +251,9 @@ export default function RegistryPage() {
     if (!below) setSel({ ...sel, ar: sel.ar + count, r1: sel.r1 + count, r2: sel.r2 + count })
   }
 
-  const deleteRows = () => {
+  const deleteRows = async () => {
     const at = sel.r1, count = sel.r2 - sel.r1 + 1
-    if (count > 20 && !confirm(`Supprimer ${count} lignes ?`)) return
+    if (count > 20 && !(await confirmDialog({ tone: 'danger', title: `Supprimer ${count} lignes ?`, confirmLabel: 'Supprimer' }))) return
     apply((ss) => {
       const trimmed = ss.map((s, i) => {
         if (i !== active) return s
@@ -391,18 +392,21 @@ export default function RegistryPage() {
     setSel(selectCell(0, 0))
   }
 
-  const renameSheet = (i: number) => {
+  const renameSheet = async (i: number) => {
     const old = sheets[i].name
-    const name = prompt('Nouveau nom de la feuille (31 caractères max.)', old)?.trim()
+    const name = (await promptDialog({
+      title: 'Renommer la feuille', label: 'Nouveau nom (31 caractères max.)', defaultValue: old,
+      validate: (v) => !v ? 'Saisissez un nom.'
+        : v.length > 31 || FORBIDDEN_SHEET_CHARS.test(v) ? 'Nom invalide : 31 caractères maximum, sans : \\ / ? * [ ]'
+        : sheets.some((s, j) => j !== i && s.name.toLowerCase() === v.toLowerCase()) ? 'Une feuille porte déjà ce nom.' : null,
+    }))?.trim()
     if (!name || name === old) return
-    if (name.length > 31 || FORBIDDEN_SHEET_CHARS.test(name)) { alert('Nom invalide : 31 caractères maximum, sans : \\ / ? * [ ]'); return }
-    if (sheets.some((s, j) => j !== i && s.name.toLowerCase() === name.toLowerCase())) { alert('Une feuille porte déjà ce nom.'); return }
     apply((ss) => mapFormulas(ss.map((s, j) => (j === i ? { ...s, name } : s)), (f) => renameSheetInFormula(f, old, name)))
   }
 
-  const deleteSheet = (i: number) => {
-    if (sheets.length === 1) { alert('Le registre doit garder au moins une feuille.'); return }
-    if (!confirm(`Supprimer la feuille « ${sheets[i].name} » et tout son contenu ?`)) return
+  const deleteSheet = async (i: number) => {
+    if (sheets.length === 1) { await alertDialog({ title: 'Impossible', message: 'Le registre doit garder au moins une feuille.' }); return }
+    if (!(await confirmDialog({ tone: 'danger', title: `Supprimer la feuille « ${sheets[i].name} » ?`, message: 'La feuille et tout son contenu seront supprimés.', confirmLabel: 'Supprimer' }))) return
     const id = sheets[i].id
     if (id) deletedIds.current.push(id)
     apply((ss) => ss.filter((_, j) => j !== i))

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { confirmDialog } from '../ui/dialog'
 import { X, Save, Trash2, Loader2, Eraser } from 'lucide-react'
 import type { Producer } from '../../types'
 import { producersApi } from '../../api/producers'
@@ -43,7 +44,7 @@ export default function ProducerEditPanel({ producer, polygonCount, onClose }: {
   }
 
   const remove = async () => {
-    if (!window.confirm(`Supprimer définitivement le producteur ${producer.fullName} (${producer.fieldIdBase}) ?`)) return
+    if (!(await confirmDialog({ tone: 'danger', title: 'Supprimer ce producteur ?', message: `${producer.fullName} (${producer.fieldIdBase}) sera supprimé définitivement.`, confirmLabel: 'Supprimer' }))) return
     setBusy('delete'); setError('')
     try {
       await producersApi.remove(producer.id)

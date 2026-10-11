@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { DialogHost } from './components/ui/dialog'
 import { useEffect, lazy, Suspense } from 'react'
 import { useAppStore } from './store/appStore'
 import { useAuthStore } from './store/authStore'
@@ -97,6 +98,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <DialogHost />
       {/* chaque page est chargée à l'ouverture (premier affichage plus rapide sur réseau mobile) */}
       <Suspense fallback={<PageLoader />}>
       <Routes>

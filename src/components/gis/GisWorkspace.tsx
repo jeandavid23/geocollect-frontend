@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { confirmDialog } from '../ui/dialog'
 import { MapContainer, TileLayer, LayersControl, useMap } from 'react-leaflet'
 import type { Map as LMap } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -173,10 +174,10 @@ export default function GisWorkspace() {
     setSelected(new Set([key])); setActive('legacy')
     flash(`Polygone ajouté : ${areaHa(g)} ha — renseignez ses attributs dans la table, puis enregistrez.`)
   }
-  const deleteSelection = () => {
+  const deleteSelection = async () => {
     const keys = [...selected].filter((k) => feats.current.has(k) && editableLayer(feats.current.get(k)!.layer))
     if (!keys.length) return
-    if (!window.confirm(`Supprimer ${keys.length} polygone(s) ? (définitif après « Enregistrer »)`)) return
+    if (!(await confirmDialog({ tone: 'danger', title: `Supprimer ${keys.length} polygone(s) ?`, message: 'La suppression devient définitive après « Enregistrer ».', confirmLabel: 'Supprimer' }))) return
     commit(`Suppression de ${keys.length} polygone(s)`, keys.map((k) => [k, feats.current.get(k)!, null]))
     setSelected(new Set())
   }
@@ -199,8 +200,8 @@ export default function GisWorkspace() {
     return { mod, add, del, total: mod + add + del }
   }, [all])
 
-  const rollback = () => {
-    if (changesCount.total && !window.confirm('Abandonner toutes les modifications non enregistrées ?')) return
+  const rollback = async () => {
+    if (changesCount.total && !(await confirmDialog({ tone: 'danger', title: 'Abandonner les modifications ?', message: 'Toutes les modifications non enregistrées seront perdues.', confirmLabel: 'Abandonner' }))) return
     feats.current = new Map(original.current); undo.current = []; redo.current = []; setSelected(new Set()); setVersion((v) => v + 1)
     flash('Modifications abandonnées')
   }
@@ -267,10 +268,11 @@ export default function GisWorkspace() {
     return () => window.removeEventListener('beforeunload', warn)
   }, [changesCount.total])
 
-  const toggleEdit = () => {
+  const toggleEdit = async () => {
     if (editMode && changesCount.total) {
-      const keep = window.confirm('Enregistrer les modifications avant de quitter le mode édition ?\nOK : enregistrer · Annuler : rester en édition')
-      if (keep) save().then(() => setEditMode(false))
+      const r = await confirmDialog({ title: 'Quitter le mode édition ?', message: 'Des modifications ne sont pas enregistrées.', confirmLabel: 'Enregistrer et quitter', cancelLabel: 'Rester en édition', altLabel: 'Quitter sans enregistrer' })
+      if (r === true) save().then(() => setEditMode(false))
+      if (r === 'alt') { feats.current = new Map(original.current); undo.current = []; redo.current = []; setSelected(new Set()); setVersion((v) => v + 1); setEditMode(false) }
       return
     }
     setEditMode(!editMode)
@@ -360,7 +362,7 @@ export default function GisWorkspace() {
           )}
         </div>
         {isAdmin && (
-          <select value={coop} onChange={(e) => { if (changesCount.total && !window.confirm('Des modifications ne sont pas enregistrées. Changer de coopérative les abandonne. Continuer ?')) return; setCoop(e.target.value); undo.current = []; firstFit.current = false }} className="ml-auto px-2 py-1.5 border border-gray-200 rounded-lg text-xs">
+          <select value={coop} onChange={async (e) => { const v = e.target.value; if (changesCount.total && !(await confirmDialog({ tone: 'danger', title: 'Changer de coopérative ?', message: 'Les modifications non enregistrées seront abandonnées.', confirmLabel: 'Continuer' }))) return; setCoop(v); undo.current = []; firstFit.current = false }} className="ml-auto px-2 py-1.5 border border-gray-200 rounded-lg text-xs">
             {role === 'owner' && <option value="all">Toutes les coopératives</option>}
             {cooperatives.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>

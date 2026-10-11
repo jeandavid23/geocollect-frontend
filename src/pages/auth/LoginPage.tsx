@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Loader2, Shield, ShieldCheck, MapPinned, Lock, ArrowRight, LogIn, Minimize2 } from 'lucide-react'
 import { useAuthStore, MOCK_USERS } from '../../store/authStore'
+import { isRemembered } from '../../store/authStorage'
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 import HeroSlideshow from '../../components/auth/HeroSlideshow'
 import { AnimatedLogo, SplitText } from '../../components/auth/MotionText'
@@ -18,7 +19,12 @@ export default function LoginPage() {
   // le motif n'est affiché qu'une fois : effacé après le premier affichage
   useEffect(() => { try { sessionStorage.removeItem('geocollect-logout-reason') } catch { /* indisponible */ } }, [])
 
-  const { loginWithApi, loginWithGoogle, loginMock } = useAuthStore()
+  const { loginWithApi, loginWithGoogle, loginMock, verifyMfa } = useAuthStore()
+  const [remember, setRemember] = useState(() => isRemembered())
+  // 2e étape : double authentification active → code à 6 chiffres (ou code de secours)
+  const [mfa, setMfa] = useState<{ token: string; name: string } | null>(null)
+  const [code, setCode] = useState('')
+  const [useRecovery, setUseRecovery] = useState(false)
   const navigate = useNavigate()
 
   const goHome = () => {
@@ -32,8 +38,9 @@ export default function LoginPage() {
   const handleGoogle = async (credential: string) => {
     setError(''); setLoading(true)
     try {
-      await loginWithGoogle(credential)
+      const r = await loginWithGoogle(credential, remember)
       setLoading(false)
+      if (r.mfaToken) { setMfa({ token: r.mfaToken, name: '' }); return }
       goHome()
     } catch (err) {
       const d = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
@@ -48,7 +55,8 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      await loginWithApi(username, password)
+      const r = await loginWithApi(username, password, remember)
+      if (r.mfaToken) { setMfa({ token: r.mfaToken, name: username }); setCode(''); setLoading(false); return }
     } catch (err) {
       const resp = (err as { response?: { status?: number; data?: { code?: string; detail?: string } } })?.response
       const status = resp?.status
@@ -78,6 +86,22 @@ export default function LoginPage() {
 
     setLoading(false)
     goHome()
+  }
+
+  const submitCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!mfa) return
+    setError(''); setLoading(true)
+    try {
+      await verifyMfa(mfa.token, code.trim())
+      setLoading(false)
+      goHome()
+    } catch (err) {
+      const d = (err as { response?: { data?: { detail?: string; code?: string } } })?.response?.data
+      if (d?.code === 'mfa_expired') { setMfa(null); setPassword('') }
+      setError(d?.detail || 'Code incorrect.')
+      setLoading(false)
+    }
   }
 
   const [collapsed, setCollapsed] = useState(false)
@@ -142,6 +166,29 @@ export default function LoginPage() {
               className="rounded-full p-1.5 text-gray-400 transition hover:bg-gray-900/5 hover:text-gray-700"><Minimize2 className="h-4 w-4" /></button>
           </div>
 
+          {mfa ? (
+            <form onSubmit={submitCode} className="mt-4 space-y-3">
+              <p className="flex items-start gap-2 rounded-lg bg-primary-50 px-3 py-2 text-xs text-primary-900">
+                <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                {useRecovery ? 'Saisissez un de vos codes de secours (format ABCD-1234).' : 'Saisissez le code à 6 chiffres affiché par votre application d’authentification.'}
+              </p>
+              <input autoFocus inputMode={useRecovery ? 'text' : 'numeric'} autoComplete="one-time-code" value={code}
+                onChange={(e) => setCode(useRecovery ? e.target.value.toUpperCase() : e.target.value.replace(/[^\d]/g, '').slice(0, 6))}
+                placeholder={useRecovery ? 'ABCD-1234' : '123456'} aria-label="Code de vérification"
+                className={`${input} text-center font-mono text-xl tracking-[0.5em]`} />
+              {error && <div role="alert" className="flex items-start gap-2 rounded-md border-l-4 border-red-500 bg-red-50 px-3 py-2 text-xs text-red-800"><Shield className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />{error}</div>}
+              <button type="submit" disabled={loading || (useRecovery ? code.length < 9 : code.length !== 6)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-primary-800 disabled:opacity-60">
+                {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Vérification…</> : 'Valider'}
+              </button>
+              <div className="flex justify-between text-[11px]">
+                <button type="button" onClick={() => { setUseRecovery(!useRecovery); setCode(''); setError('') }} className="text-primary-700 hover:underline">
+                  {useRecovery ? 'Utiliser le code de l’application' : 'Téléphone perdu ? Code de secours'}
+                </button>
+                <button type="button" onClick={() => { setMfa(null); setCode(''); setError('') }} className="text-gray-500 hover:underline">Retour</button>
+              </div>
+            </form>
+          ) : <>
           <form onSubmit={handleSubmit} className="mt-4 space-y-3 mo-stagger">
             <div>
               <label htmlFor="login-user" className="mb-1 block text-xs font-medium text-gray-700">Identifiant</label>
@@ -166,12 +213,18 @@ export default function LoginPage() {
               </div>
             )}
 
+            <label className="flex items-center gap-2 text-xs text-gray-600 select-none">
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-3.5 w-3.5 rounded border-gray-300 text-primary-700" />
+              Rester connecté <span className="text-gray-400">— décochez sur un ordinateur partagé</span>
+            </label>
+
             <button type="submit" disabled={loading}
               className="group flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary-900/20 transition hover:bg-primary-800 hover:shadow-lg active:scale-[.98] disabled:opacity-60">
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Connexion…</> : <>Se connecter <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" /></>}
             </button>
           </form>
           <GoogleSignInButton onCredential={handleGoogle} disabled={loading} />
+          </>}
 
           <p className="mt-4 text-[11px] leading-relaxed text-gray-500">
             Mot de passe oublié ? Votre coopérative ou votre administrateur peut vous en attribuer un nouveau.

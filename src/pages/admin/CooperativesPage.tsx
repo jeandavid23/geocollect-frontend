@@ -1,4 +1,5 @@
 import { Search, Plus, Eye, Users, Leaf, X, Save, Loader2 , Trash2 } from 'lucide-react'
+import { confirmDialog } from '../../components/ui/dialog'
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { platformApi, type PlatformAdmin } from '../../api/platform'
@@ -200,7 +201,7 @@ export default function CooperativesPage() {
                 </button>
                 <button
                   onClick={async () => {
-                    if (!window.confirm(`Supprimer la coopérative « ${c.name} » ? (refusé si elle contient des producteurs ou des parcelles)`)) return
+                    if (!(await confirmDialog({ tone: 'danger', title: `Supprimer la coopérative « ${c.name} » ?`, message: 'Refusé si elle contient des producteurs ou des parcelles.', confirmLabel: 'Supprimer' }))) return
                     try {
                       await cooperativesApi.remove(c.id)
                       useAppStore.setState((st) => ({ cooperatives: st.cooperatives.filter((x) => x.id !== c.id) }))
