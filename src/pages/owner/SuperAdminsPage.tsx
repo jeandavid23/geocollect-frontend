@@ -132,7 +132,7 @@ export default function SuperAdminsPage() {
   }
 
   const remove = async (a: PlatformAdmin) => {
-    if (!confirm(`Supprimer définitivement le compte de ${a.full_name} ?`)) return
+    if (!confirm(`Supprimer définitivement le compte de ${a.full_name} ?\n\nSes coopératives et leurs données sont conservées et passent sous votre gestion directe (vous pourrez les transférer à un autre super admin).`)) return
     setBusyId(a.id)
     try {
       await platformApi.deleteAdmin(a.id)

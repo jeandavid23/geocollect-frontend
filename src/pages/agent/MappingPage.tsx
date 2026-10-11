@@ -112,6 +112,13 @@ export default function MappingPage() {
     ? myProducers.filter((p) => `${p.fullName} ${p.fieldIdBase} ${p.village} ${Object.values(p.extraData ?? {}).join(' ')}`.toLowerCase().includes(q))
     : myProducers).slice(0, 100)
   const selectedProducer = producers.find((p) => p.id === selectedProducerId)
+  // Code de la parcelle : producteur sans aucun polygone → EXACTEMENT son code du registre (règle du serveur) ;
+  // producteur déjà cartographié → code + suffixe -M00x
+  const nextFieldId = (pr: typeof selectedProducer) => {
+    if (!pr) return ''
+    const idx = getNextParcelIndex(parcels, pr.id)
+    return idx === 1 && !(pr.legacyPolygonCount ?? 0) ? pr.fieldIdBase : generateParcelFieldId(pr.fieldIdBase, idx)
+  }
   // arrivée depuis « Ma tournée » : passe directement à l'étape 2 dès que le producteur est chargé (une seule fois)
   const preselected = useRef(Boolean(searchParams.get('producer')))
   useEffect(() => {
@@ -371,8 +378,7 @@ export default function MappingPage() {
     }
 
     // ─── Mode démo / secours : sauvegarde locale ─────────────────────────────
-    const idx = getNextParcelIndex(parcels, selectedProducer.id)
-    const fieldId = generateParcelFieldId(selectedProducer.fieldIdBase, idx)
+    const fieldId = nextFieldId(selectedProducer)
     addParcel({
       id: crypto.randomUUID(),
       fieldId,
@@ -526,9 +532,9 @@ export default function MappingPage() {
           </div>
 
           <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700">
-            <p className="font-semibold mb-1">FIELD ID généré automatiquement</p>
+            <p className="font-semibold mb-1">Code de la parcelle</p>
             <p className="font-mono text-base">
-              {selectedProducer?.fieldIdBase}-M{String(getNextParcelIndex(parcels, selectedProducerId)).padStart(3, '0')}
+              {nextFieldId(selectedProducer)}
             </p>
           </div>
 
@@ -558,7 +564,7 @@ export default function MappingPage() {
         <div className="bg-primary-900 text-white px-4 py-3 flex items-center justify-between">
           <div>
             <p className="font-bold text-sm">{parcelName}</p>
-            <p className="text-primary-300 text-xs font-mono">{selectedProducer?.fieldIdBase}-M{String(getNextParcelIndex(parcels, selectedProducerId)).padStart(3, '0')}</p>
+            <p className="text-primary-300 text-xs font-mono">{nextFieldId(selectedProducer)}</p>
           </div>
           <div className={`flex items-center gap-2 text-sm px-3 py-1 rounded-full ${
             status === 'active' ? 'bg-green-500/20 text-green-300' :

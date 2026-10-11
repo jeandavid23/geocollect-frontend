@@ -27,6 +27,8 @@ export const usersApi = {
 
   // Active / désactive un compte
   remove: (id: string) => api.delete(`/auth/users/${id}/`),
+  // propriétaire uniquement : suppression groupée sans condition (sauf son propre compte et le dernier propriétaire)
+  bulkDelete: (ids: string[]) => api.post<{ deleted: number; refused: { username: string; detail: string }[] }>('/auth/users/bulk-delete/', { ids }, { timeout: 120000 }),
   toggleActive: (id: string) =>
     api.post<{ is_active: boolean }>(`/auth/users/${id}/toggle/`),
 }

@@ -18,9 +18,23 @@ const ROLE_COLOR: Record<string, string> = {
 
 export default function AccountsPage() {
   const me = useAuthStore((s) => s.user)
-  // Le propriétaire gère tous les comptes (sauf le sien) ; un super admin, ceux de ses coopératives
+  // Le propriétaire gère et supprime tous les comptes (sauf le sien) ; un super admin, ceux de ses coopératives
+  const isOwner = me?.role === 'owner'
   const canManage = (u: ApiUser) =>
-    u.id !== me?.id && u.role !== 'owner' && (me?.role === 'owner' || (u.role !== 'super_admin'))
+    u.id !== me?.id && (isOwner || (u.role !== 'owner' && u.role !== 'super_admin'))
+  const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  const toggleCheck = (id: string) => setChecked((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const deleteChecked = async () => {
+    const list = users.filter((u) => checked.has(u.id))
+    if (!list.length || !window.confirm(`Supprimer définitivement ${list.length} compte(s) ?\n\n${list.slice(0, 12).map((u) => `• ${u.full_name} (${u.username})`).join('\n')}${list.length > 12 ? '\n…' : ''}\n\nLes données (coopératives, parcelles, rapports) sont conservées.`)) return
+    setDeleting(true)
+    try {
+      const { data } = await usersApi.bulkDelete(list.map((u) => u.id))
+      if (data.refused.length) alert(`${data.deleted} compte(s) supprimé(s).\nNon supprimé(s) :\n${data.refused.map((r) => `• ${r.username} : ${r.detail}`).join('\n')}`)
+      setChecked(new Set()); load()
+    } catch (err) { alert(apiErrorMessage(err)) } finally { setDeleting(false) }
+  }
   const [users, setUsers] = useState<ApiUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -95,6 +109,12 @@ export default function AccountsPage() {
           <option value="super_admin">Super admins</option>
           {me?.role === 'owner' && <option value="owner">Super Super Admin</option>}
         </select>
+        {isOwner && checked.size > 0 && (
+          <button onClick={deleteChecked} disabled={deleting}
+            className="flex items-center gap-2 border border-red-200 text-red-700 hover:bg-red-50 px-3 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Supprimer la sélection ({checked.size})
+          </button>
+        )}
         <button onClick={load} className="flex items-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-2.5 rounded-xl text-sm font-medium">
           <RefreshCw className="w-4 h-4" /> Actualiser
         </button>
@@ -114,6 +134,11 @@ export default function AccountsPage() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 text-xs text-gray-500 uppercase">
+                  {isOwner && <th className="pl-5 py-3 w-8">
+                    <input type="checkbox" aria-label="Tout sélectionner"
+                      checked={filtered.some((u) => canManage(u)) && filtered.filter(canManage).every((u) => checked.has(u.id))}
+                      onChange={(e) => setChecked(e.target.checked ? new Set(filtered.filter(canManage).map((u) => u.id)) : new Set())} />
+                  </th>}
                   <th className="text-left px-5 py-3 font-medium">Nom</th>
                   <th className="text-left px-5 py-3 font-medium">Identifiant</th>
                   <th className="text-left px-5 py-3 font-medium">Rôle</th>
@@ -125,7 +150,10 @@ export default function AccountsPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50 transition">
+                  <tr key={u.id} className={`hover:bg-gray-50 transition ${checked.has(u.id) ? 'bg-red-50/40' : ''}`}>
+                    {isOwner && <td className="pl-5 py-3">
+                      {canManage(u) && <input type="checkbox" checked={checked.has(u.id)} onChange={() => toggleCheck(u.id)} aria-label={`Sélectionner ${u.username}`} />}
+                    </td>}
                     <td className="px-5 py-3 text-sm font-medium text-gray-800">{u.full_name}</td>
                     <td className="px-5 py-3 text-sm font-mono text-gray-700">{u.username}</td>
                     <td className="px-5 py-3">
@@ -152,7 +180,7 @@ export default function AccountsPage() {
                         )}
                         {canManage(u) && (
                           <button onClick={async () => {
-                            if (!window.confirm(`Supprimer définitivement le compte « ${u.full_name} » (${u.username}) ?`)) return
+                            if (!window.confirm(`Supprimer définitivement le compte « ${u.full_name} » (${u.username}) ?${u.role === 'super_admin' ? '\n\nSes coopératives sont conservées et passent sous votre gestion directe.' : ''}`)) return
                             try { await usersApi.remove(u.id); load() }
                             catch (err) { alert(apiErrorMessage(err)) }
                           }} className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 font-medium">
@@ -164,7 +192,7 @@ export default function AccountsPage() {
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-gray-400">Aucun compte trouvé.</td></tr>
+                  <tr><td colSpan={isOwner ? 8 : 7} className="px-5 py-10 text-center text-sm text-gray-400">Aucun compte trouvé.</td></tr>
                 )}
               </tbody>
             </table>
