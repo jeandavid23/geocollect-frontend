@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useHotkeys } from '../../hooks/useHotkeys'
 import { X, Trash2, AlertTriangle, Loader2 } from 'lucide-react'
 import { producersApi } from '../../api/producers'
 import { useAppStore } from '../../store/appStore'
@@ -14,6 +15,7 @@ interface Props {
 
 /** « Supprimer la base » : vide le registre et/ou la base producteurs de la coopérative, après confirmation écrite. */
 export default function PurgeBaseModal({ cooperativeId, from, onClose, onDone }: Props) {
+  useHotkeys({ escape: onClose })
   const addNotification = useAppStore((s) => s.addNotification)
   const [info, setInfo] = useState<{ cooperative: string; producers: number; protected: number; registry_sheets: number } | null>(null)
   const [registry, setRegistry] = useState(true)

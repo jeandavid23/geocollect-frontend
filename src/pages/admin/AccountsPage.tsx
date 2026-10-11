@@ -1,4 +1,7 @@
 import { apiErrorMessage } from '../../utils/retry'
+import Button from '../../components/ui/Button'
+import { useStickyState, useSort, SortTh, SelectionBar } from '../../components/ui/table'
+import { queryParam } from '../../utils/query'
 import { confirmDialog, alertDialog } from '../../components/ui/dialog'
 import { useEffect, useState } from 'react'
 import { Search, KeyRound, RefreshCw, ShieldCheck, Loader2, AlertTriangle, Power , Trash2 } from 'lucide-react'
@@ -42,8 +45,8 @@ export default function AccountsPage() {
   const [users, setUsers] = useState<ApiUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
-  const [filterRole, setFilterRole] = useState('all')
+  const [search, setSearch] = useState(() => queryParam('q'))   // ?q= : recherche globale (Ctrl+K)
+  const [filterRole, setFilterRole] = useStickyState('accounts:role', 'all')
   const [resetting, setResetting] = useState<string | null>(null)
   const [credentials, setCredentials] = useState<{ name: string; username: string; password: string } | null>(null)
 
@@ -88,6 +91,12 @@ export default function AccountsPage() {
     const r = filterRole === 'all' || u.role === filterRole
     return s && r
   })
+  const ROLE_ORDER: Record<string, number> = { owner: 0, super_admin: 1, cooperative: 2, agent: 3 }
+  const { sorted, sort, toggle: toggleSort } = useSort(filtered, {
+    name: (u) => u.full_name, username: (u) => u.username, role: (u) => ROLE_ORDER[u.role], coop: (u) => u.cooperative_name ?? '',
+    email: (u) => u.email ?? '', status: (u) => (u.is_active ? 0 : 1),
+  }, 'accounts')
+
 
   return (
     <div className="p-6 space-y-5">
@@ -113,11 +122,10 @@ export default function AccountsPage() {
           <option value="super_admin">Super admins</option>
           {me?.role === 'owner' && <option value="owner">Super Super Admin</option>}
         </select>
-        {isOwner && checked.size > 0 && (
-          <button onClick={deleteChecked} disabled={deleting}
-            className="flex items-center gap-2 border border-red-200 text-red-700 hover:bg-red-50 px-3 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
-            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Supprimer la sélection ({checked.size})
-          </button>
+        {isOwner && (
+          <SelectionBar count={checked.size} onClear={() => setChecked(new Set())}>
+            <Button variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} loading={deleting} onClick={deleteChecked}>Supprimer</Button>
+          </SelectionBar>
         )}
         <button onClick={load} className="flex items-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-2.5 rounded-xl text-sm font-medium">
           <RefreshCw className="w-4 h-4" /> Actualiser
@@ -143,17 +151,17 @@ export default function AccountsPage() {
                       checked={filtered.some((u) => canManage(u)) && filtered.filter(canManage).every((u) => checked.has(u.id))}
                       onChange={(e) => setChecked(e.target.checked ? new Set(filtered.filter(canManage).map((u) => u.id)) : new Set())} />
                   </th>}
-                  <th className="text-left px-5 py-3 font-medium">Nom</th>
-                  <th className="text-left px-5 py-3 font-medium">Identifiant</th>
-                  <th className="text-left px-5 py-3 font-medium">Rôle</th>
-                  <th className="text-left px-5 py-3 font-medium">Coopérative</th>
-                  <th className="text-left px-5 py-3 font-medium">Email</th>
-                  <th className="text-left px-5 py-3 font-medium">Statut</th>
+                  <SortTh label="Nom" k="name" sort={sort} onSort={toggleSort} />
+                  <SortTh label="Identifiant" k="username" sort={sort} onSort={toggleSort} />
+                  <SortTh label="Rôle" k="role" sort={sort} onSort={toggleSort} />
+                  <SortTh label="Coopérative" k="coop" sort={sort} onSort={toggleSort} />
+                  <SortTh label="Email" k="email" sort={sort} onSort={toggleSort} />
+                  <SortTh label="Statut" k="status" sort={sort} onSort={toggleSort} />
                   <th className="text-left px-5 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((u) => (
+                {sorted.map((u) => (
                   <tr key={u.id} className={`hover:bg-gray-50 transition ${checked.has(u.id) ? 'bg-red-50/40' : ''}`}>
                     {isOwner && <td className="pl-5 py-3">
                       {canManage(u) && <input type="checkbox" checked={checked.has(u.id)} onChange={() => toggleCheck(u.id)} aria-label={`Sélectionner ${u.username}`} />}

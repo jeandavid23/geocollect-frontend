@@ -2,15 +2,16 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
-  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2, Scissors, Link2, Package, Layers, FileCheck2, Route,
+  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2, Scissors, Link2, Package, Layers, FileCheck2, Route, Trash, Search, Bell,
 } from 'lucide-react'
 import { useState } from 'react'
+import { openCommandPalette } from '../../utils/search'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 import NotificationsBell from './NotificationsBell'
 import type { ModuleId, UserRole } from '../../types'
 
-interface NavItem {
+export interface NavItem {
   label: string
   to: string
   icon: React.ReactNode
@@ -19,10 +20,11 @@ interface NavItem {
   group?: string    // rubrique du menu (titre affiché au-dessus du premier lien de la rubrique)
 }
 
-const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS: NavItem[] = [
   // Propriétaire de la plateforme (Super Super Admin)
   { label: 'Plateforme', to: '/owner', icon: <Globe2 className="w-5 h-5" />, roles: ['owner'], group: 'Propriétaire' },
   { label: 'Super admins (clients)', to: '/owner/admins', icon: <Crown className="w-5 h-5" />, roles: ['owner'], group: 'Propriétaire' },
+  { label: 'Corbeille', to: '/owner/trash', icon: <Trash className="w-5 h-5" />, roles: ['owner'], group: 'Propriétaire' },
   // Super Admin (et propriétaire, sur tous les clients)
   { label: 'Tableau de bord', to: '/admin', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['super_admin', 'owner'], group: 'Pilotage' },
   { label: 'Carte interactive', to: '/map', icon: <Map className="w-5 h-5" />, roles: ['super_admin', 'owner'], group: 'Pilotage' },
@@ -53,6 +55,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Mon activité', to: '/agent', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['agent'], group: 'Activité' },
   { label: 'Mes parcelles', to: '/agent/parcels', icon: <MapPin className="w-5 h-5" />, roles: ['agent'], group: 'Activité' },
   // Mon compte : tous les rôles
+  { label: 'Notifications', to: '/notifications', icon: <Bell className="w-5 h-5" />, roles: ['owner', 'super_admin', 'cooperative', 'agent'], group: 'Compte' },
   { label: 'Mon compte', to: '/account', icon: <UserCircle className="w-5 h-5" />, roles: ['owner', 'super_admin', 'cooperative', 'agent'], group: 'Compte' },
 ]
 
@@ -93,6 +96,15 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
             <p className="text-primary-300 text-xs">Traçabilité cacao · EUDR</p>
           </div>
         )}
+      </div>
+
+      {/* Recherche globale (Ctrl+K) */}
+      <div className="px-2 pt-3">
+        <button onClick={() => { onClose?.(); openCommandPalette() }} title="Recherche globale (Ctrl+K)"
+          className={`flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-primary-200 transition hover:bg-white/10 hover:text-white ${collapsed ? 'justify-center px-0' : ''}`}>
+          <Search className="h-4 w-4 flex-shrink-0" />
+          {!collapsed && <><span className="flex-1 text-left">Rechercher…</span><kbd className="rounded border border-white/20 px-1.5 text-[10px] text-primary-300">Ctrl K</kbd></>}
+        </button>
       </div>
 
       {/* Navigation */}

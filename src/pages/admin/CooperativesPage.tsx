@@ -1,4 +1,5 @@
 import { Search, Plus, Eye, Users, Leaf, X, Save, Loader2 , Trash2 } from 'lucide-react'
+import { queryParam } from '../../utils/query'
 import { confirmDialog } from '../../components/ui/dialog'
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
@@ -18,7 +19,7 @@ const EMPTY_FORM = {
 
 export default function CooperativesPage() {
   const { cooperatives, producers, parcels, agents, addCooperative, addNotification } = useAppStore()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => queryParam('q'))   // ?q= : recherche globale (Ctrl+K)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [selected, setSelected] = useState<Cooperative | null>(null)

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertOctagon, ListTodo, Info, CheckCircle2, ArrowRight, RefreshCw, Loader2, Check } from 'lucide-react'
+import { AlertOctagon, ListTodo, Info, CheckCircle2, ArrowRight, RefreshCw, Loader2, Check, Sparkles, X } from 'lucide-react'
 import { coopActionsApi, type CoopActionsResponse } from '../../api/dashboard'
 import { useAuthStore } from '../../store/authStore'
 import type { ModuleId } from '../../types'
@@ -37,12 +37,46 @@ export default function NextActions() {
     )
   }
 
+  const guide = [
+    { label: 'Importez votre registre (fichier Excel)', done: data.counts.producers > 0, to: '/coop/registry' },
+    { label: 'Importez vos anciens polygones (.shp + .dbf, .zip, .kml…)', done: data.counts.legacy_polygons > 0 || data.counts.parcels > 0, to: '/coop/parcels' },
+    { label: 'Créez les comptes de vos agents mappeurs', done: data.counts.agents > 0, to: '/coop/agents' },
+    { label: 'Lancez les contrôles (chevauchements, forêts classées, déforestation)', done: data.steps[2]?.done ?? false, to: '/coop/spatial' },
+    { label: 'Créez votre première fiche de lot', done: data.steps[3]?.done ?? false, to: '/coop/lots' },
+  ]
+  const guideKey = `geocollect-guide-hidden:${data.cooperative}`
+  const guideDone = guide.filter((g) => g.done).length
+  const showGuide = guideDone < guide.length && !guideHidden(guideKey)
+
   const actions = data.actions.filter((a) => !a.module || modules === null || modules.includes(a.module as ModuleId))
   const doneSteps = data.steps.filter((s) => s.done).length
   const current = data.steps.findIndex((s) => !s.done)
 
   return (
     <section className="space-y-4">
+      {showGuide && (
+        <div className="relative overflow-hidden rounded-2xl border border-primary-200 bg-gradient-to-br from-primary-50 to-white p-5">
+          <button onClick={() => { try { localStorage.setItem(guideKey, '1') } catch { /* indisponible */ } setData({ ...data }) }}
+            aria-label="Masquer le guide" title="Masquer le guide" className="absolute right-3 top-3 rounded-lg p-1 text-gray-400 hover:bg-white hover:text-gray-700"><X className="h-4 w-4" /></button>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary-700" />
+            <p className="font-semibold text-gray-900">Guide de démarrage</p>
+            <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-800">{guideDone}/{guide.length}</span>
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-primary-100"><div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${(guideDone / guide.length) * 100}%` }} /></div>
+          <ol className="mt-3 grid grid-cols-1 gap-1.5 md:grid-cols-2">
+            {guide.map((g, i) => (
+              <li key={g.label}>
+                <Link to={g.to} className={`group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-white ${g.done ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                  <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${g.done ? 'bg-green-600 text-white' : 'bg-white text-primary-800 ring-1 ring-primary-300'}`}>{g.done ? <Check className="h-3 w-3" /> : i + 1}</span>
+                  {g.label}
+                  {!g.done && <ArrowRight className="ml-auto h-3.5 w-3.5 text-primary-700 opacity-0 transition group-hover:opacity-100" />}
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
       {/* Avancement vers l'export */}
       <div className="rounded-2xl border border-gray-100 bg-white p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -115,4 +149,8 @@ export default function NextActions() {
       </div>
     </section>
   )
+}
+
+function guideHidden(key: string) {
+  try { return localStorage.getItem(key) === '1' } catch { return false }
 }

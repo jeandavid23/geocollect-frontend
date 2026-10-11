@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { queryParam } from '../../utils/query'
 import { MapContainer, TileLayer, Polygon, Popup, LayersControl, useMap } from 'react-leaflet'
 import { useNavigate } from 'react-router-dom'
 import { Search, Filter, X, MapPin, Plus, Wifi, WifiOff } from 'lucide-react'
@@ -26,7 +27,7 @@ export default function AgentParcelsPage() {
   const { parcels, producers, currentAgentId } = useAppStore()
   const myParcels = parcels.filter((p) => p.agentId === (currentAgentId ?? 'agent-001'))
 
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => queryParam('q'))   // ?q= : recherche globale (Ctrl+K)
   const [filterStatus, setFilterStatus] = useState('all')
   const [selected, setSelected] = useState<Parcel | null>(null)
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number } | null>(null)

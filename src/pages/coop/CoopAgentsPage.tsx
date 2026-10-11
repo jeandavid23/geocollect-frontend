@@ -1,4 +1,5 @@
 import { apiErrorMessage } from '../../utils/retry'
+import EmptyState from '../../components/ui/EmptyState'
 import { confirmAccountDeletion } from '../../utils/confirmDeletion'
 import { useState } from 'react'
 import { Plus, X, Save, Trash2, MapPin, Phone, Mail, Power, Loader2 } from 'lucide-react'
@@ -205,9 +206,11 @@ export default function CoopAgentsPage() {
           )
         })}
         {coopAgents.length === 0 && (
-          <p className="col-span-full text-center text-sm text-gray-400 py-10">
-            Aucun agent. Cliquez sur « Ajouter un agent » pour commencer.
-          </p>
+          <div className="col-span-full rounded-2xl border border-gray-100 bg-white">
+            <EmptyState title="Aucun agent mappeur"
+              text="Créez un compte pour chaque agent de terrain : il recevra un identifiant et un mot de passe provisoire, et verra la liste des producteurs à mapper."
+              actions={[{ label: 'Ajouter un agent', onClick: () => { setSections([]); setForm(EMPTY_FORM); setShowForm(true) } }]} />
+          </div>
         )}
       </div>
 

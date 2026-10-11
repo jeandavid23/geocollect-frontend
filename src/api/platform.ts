@@ -89,3 +89,15 @@ export const platformApi = {
     api.post<{ id: string; managed_by: string | null; managed_by_name: string | null }>(
       `/platform/cooperatives/${coopId}/assign/`, { managed_by: managedBy }),
 }
+
+// ─── Corbeille (30 jours) ───────────────────────────────────────────────────
+export interface TrashItem {
+  id: string; label: string; username: string; role: string; deleted_by: string | null
+  deleted_at: string; expires_at: string; object_count: number; size_kb: number
+  summary: Record<string, number | string | string[]> & { cooperative_names?: string[] }
+}
+export const trashApi = {
+  list: () => api.get<TrashItem[]>('/platform/trash/'),
+  restore: (id: string) => api.post<{ detail: string }>(`/platform/trash/${id}/restore/`, {}, { timeout: 300000 }),
+  erase: (id: string) => api.delete(`/platform/trash/${id}/`),
+}

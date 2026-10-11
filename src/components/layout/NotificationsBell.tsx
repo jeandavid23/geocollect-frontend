@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { confirmDialog } from '../ui/dialog'
 import { Bell, CheckCheck, X, Send , Trash2 } from 'lucide-react'
 import { notificationsApi, type ApiNotification } from '../../api/notifications'
@@ -94,6 +95,7 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
                   <CheckCheck className="w-3.5 h-3.5" /> Tout lu
                 </button>
               )}
+              <Link to="/notifications" onClick={() => setOpen(false)} className="text-xs text-primary-700 hover:underline">Tout voir</Link>
               <button onClick={() => setOpen(false)} className="p-1 hover:bg-gray-100 rounded-lg">
                 <X className="w-4 h-4 text-gray-500" />
               </button>

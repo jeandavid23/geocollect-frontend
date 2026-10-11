@@ -1,4 +1,8 @@
 import { useMemo, useState } from 'react'
+import Button from '../../components/ui/Button'
+import { useStickyState, useSort, SortTh, SelectionBar } from '../../components/ui/table'
+import { queryParam } from '../../utils/query'
+import EmptyState from '../../components/ui/EmptyState'
 import { confirmDialog } from '../../components/ui/dialog'
 import { useSearchParams } from 'react-router-dom'
 import { Search, Plus, MapPin, X, Save, FileSpreadsheet, Trash2, Hash } from 'lucide-react'
@@ -29,16 +33,16 @@ const EMPTY_FORM = {
 
 export default function ProducersPage() {
   const user = useAuthStore((s) => s.user)
-  const { producers, parcels, addProducer, addNotification, isLive } = useAppStore()
+  const { producers, parcels, addProducer, addNotification, isLive, isLoading } = useAppStore()
   const coopId = user?.cooperativeId ?? 'coop-001'
   const coopProducers = producers.filter((p) => p.cooperativeId === coopId)
 
-  const [search, setSearch] = useState('')
-  const [filterSection, setFilterSection] = useState('all')
+  const [search, setSearch] = useState(() => queryParam('q'))   // ?q= : recherche globale (Ctrl+K)
+  const [filterSection, setFilterSection] = useStickyState('producers:section', 'all')
   const [selected, setSelected] = useState<Producer | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [params] = useSearchParams()
-  const [mapFilter, setMapFilter] = useState<'all' | 'todo' | 'done'>(() => (params.get('map') === 'todo' ? 'todo' : params.get('map') === 'done' ? 'done' : 'all'))
+  const [mapFilter, setMapFilter] = useStickyState<'all' | 'todo' | 'done'>('producers:map', 'all', params.get('map') === 'todo' || params.get('map') === 'done' ? (params.get('map') as 'todo' | 'done') : null)
   const [deleting, setDeleting] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -52,7 +56,7 @@ export default function ProducersPage() {
     for (const p of coopProducers) for (const k of Object.keys(p.extraData ?? {})) seen.add(k)
     return [...seen]
   }, [coopProducers])
-  const [view, setView] = useState<'excel' | 'standard'>('excel')
+  const [view, setView] = useStickyState<'excel' | 'standard'>('producers:view', 'excel')
   const showExcel = view === 'excel' && excelHeaders.length > 0
 
   // polygones d'un producteur = parcelles mappées (à jour en direct) + anciens polygones rattachés par son code
@@ -101,7 +105,10 @@ export default function ProducersPage() {
   const [page, setPage] = useState(0)
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE))
   const currentPage = Math.min(page, pageCount - 1)
-  const pageRows = filtered.slice(currentPage * PAGE, (currentPage + 1) * PAGE)
+  const { sorted, sort, toggle: toggleSort } = useSort(filtered, {
+    name: (p) => p.fullName, code: (p) => p.fieldIdBase, village: (p) => p.village, section: (p) => p.section, polygons: (p) => polys(p),
+  }, 'producers')
+  const pageRows = sorted.slice(currentPage * PAGE, (currentPage + 1) * PAGE)
   // Parcelles par producteur, calculées une fois (au lieu d'un filtre par ligne)
   const parcelsByProducer = useMemo(() => {
     const m = new Map<string, { n: number; ha: number }>()
@@ -224,12 +231,9 @@ export default function ProducersPage() {
           <option value="todo">À mapper (sans polygone)</option>
           <option value="done">Cartographiés</option>
         </select>
-        {checked.size > 0 && (
-          <button onClick={deleteChecked} disabled={deleting}
-            className="flex items-center gap-2 border border-red-200 text-red-700 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50">
-            <Trash2 className="w-4 h-4" /> Supprimer la sélection ({checked.size})
-          </button>
-        )}
+        <SelectionBar count={checked.size} onClear={() => setChecked(new Set())}>
+          <Button variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} loading={deleting} onClick={deleteChecked}>Supprimer</Button>
+        </SelectionBar>
         {coopProducers.length > 0 && (
           <button onClick={() => setShowPurge(true)} title="Supprimer toute la base producteurs (et le registre si vous le souhaitez)"
             className="flex items-center gap-2 border border-red-200 text-red-700 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-medium">
@@ -257,6 +261,14 @@ export default function ProducersPage() {
       </div>
 
       {/* Vue « Fichier Excel » : les colonnes sont les entêtes du fichier importé */}
+      {coopProducers.length === 0 && !isLoading && (
+        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <EmptyState icon={<FileSpreadsheet className="h-7 w-7" />} title="Votre base producteurs est vide"
+            text="Importez votre registre : chaque ligne devient un producteur, avec son code du registre. Les producteurs sans polygone apparaîtront chez vos agents mappeurs."
+            steps={['Importez le fichier Excel de votre registre', 'Choisissez la colonne du code producteur', 'Importez vos anciens polygones (.shp + .dbf, .zip, .kml…)']}
+            actions={[{ label: 'Importer le registre', to: '/coop/registry' }, { label: 'Importer un fichier Excel', onClick: () => setShowImport(true) }, { label: 'Ajouter un producteur', onClick: () => setShowForm(true) }]} />
+        </div>
+      )}
       {showExcel && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-auto max-h-[70vh]">
@@ -302,11 +314,11 @@ export default function ProducersPage() {
               <tr className="bg-gray-50 text-xs text-gray-500 uppercase">
                 <th className="px-3 py-3"><input type="checkbox" aria-label="Tout sélectionner (page)" checked={pageRows.length > 0 && pageRows.every((p) => checked.has(p.id))}
                   onChange={(e) => setChecked((c) => { const n = new Set(c); pageRows.forEach((p) => (e.target.checked ? n.add(p.id) : n.delete(p.id))); return n })} /></th>
-                <th className="text-left px-5 py-3 font-medium">Producteur</th>
-                <th className="text-left px-5 py-3 font-medium">Code producteur</th>
-                <th className="text-left px-5 py-3 font-medium">Village</th>
-                <th className="text-left px-5 py-3 font-medium">Section</th>
-                <th className="text-left px-5 py-3 font-medium">Polygones</th>
+                <SortTh label="Producteur" k="name" sort={sort} onSort={toggleSort} />
+                <SortTh label="Code producteur" k="code" sort={sort} onSort={toggleSort} />
+                <SortTh label="Village" k="village" sort={sort} onSort={toggleSort} />
+                <SortTh label="Section" k="section" sort={sort} onSort={toggleSort} />
+                <SortTh label="Polygones" k="polygons" sort={sort} onSort={toggleSort} />
                 <th className="text-left px-5 py-3 font-medium">Superficie</th>
                 <th className="text-left px-5 py-3 font-medium">Actions</th>
               </tr>
@@ -349,7 +361,7 @@ export default function ProducersPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-5 py-10 text-center text-sm text-gray-400">
-                    Aucun producteur trouvé. Cliquez sur « Nouveau producteur » pour en ajouter un.
+                    Aucun producteur ne correspond à la recherche ou au filtre.
                   </td>
                 </tr>
               )}

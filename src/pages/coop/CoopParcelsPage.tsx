@@ -1,4 +1,8 @@
 import { apiErrorMessage } from '../../utils/retry'
+import Button from '../../components/ui/Button'
+import { useStickyState, useSort, SortTh, SelectionBar } from '../../components/ui/table'
+import { queryParam } from '../../utils/query'
+import EmptyState from '../../components/ui/EmptyState'
 import { confirmDialog } from '../../components/ui/dialog'
 import { parcelsApi } from '../../api/parcels'
 import { useState, useMemo } from 'react'
@@ -40,10 +44,10 @@ export default function CoopParcelsPage() {
   const [showLegacy, setShowLegacy] = useState(true)
   const coopLegacy = useMemo(() => legacyParcels.filter((p) => p.cooperativeId === coopId), [legacyParcels, coopId])
 
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => queryParam('q'))   // ?q= : recherche globale (Ctrl+K)
   const [params] = useSearchParams()
-  const [filterStatus, setFilterStatus] = useState(() => (['compliant', 'non_compliant', 'pending'].includes(params.get('eudr') ?? '') ? params.get('eudr')! : 'all'))
-  const [filterAgent, setFilterAgent] = useState('all')
+  const [filterStatus, setFilterStatus] = useStickyState('parcels:eudr', 'all', ['compliant', 'non_compliant', 'pending'].includes(params.get('eudr') ?? '') ? params.get('eudr') : null)
+  const [filterAgent, setFilterAgent] = useStickyState('parcels:agent', 'all')
   const [selected, setSelected] = useState<Parcel | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
@@ -77,6 +81,11 @@ export default function CoopParcelsPage() {
     return matchStatus && matchAgent && matchSearch
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [coopParcels, search, filterStatus, filterAgent])
+  const EUDR_ORDER: Record<string, number> = { non_compliant: 0, pending: 1, compliant: 2 }
+  const { sorted, sort, toggle: toggleSort } = useSort(filtered, {
+    field: (p) => p.fieldId, producer: (p) => producerName(p.producerId), agent: (p) => agentName(p.agentId), village: (p) => p.village,
+    culture: (p) => p.culture, area: (p) => p.areaHectares, eudr: (p) => EUDR_ORDER[p.eudrStatus ?? 'pending'],
+  }, 'parcels')
 
   const focusParcel = (p: Parcel) => {
     setSelected(p)
@@ -201,14 +210,9 @@ export default function CoopParcelsPage() {
       {showLegacyImport && <LegacyImportModal onClose={() => setShowLegacyImport(false)} />}
 
       {/* Table with agent info */}
-      {checked.size > 0 && (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50/60 px-4 py-2.5 text-sm">
-          <span>{checked.size} parcelle(s) sélectionnée(s)</span>
-          <button onClick={() => removeParcelsNow([...checked])} disabled={deleting} className="flex items-center gap-2 rounded-lg border border-red-300 bg-white px-3 py-1.5 font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">
-            <Trash2 className="w-4 h-4" /> Supprimer la sélection
-          </button>
-        </div>
-      )}
+      <SelectionBar count={checked.size} onClear={() => setChecked(new Set())}>
+        <Button variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} loading={deleting} onClick={() => removeParcelsNow([...checked])}>Supprimer</Button>
+      </SelectionBar>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -216,18 +220,18 @@ export default function CoopParcelsPage() {
               <tr className="bg-gray-50 text-xs text-gray-500 uppercase">
                 <th className="px-3 py-3"><input type="checkbox" aria-label="Tout sélectionner" checked={filtered.length > 0 && filtered.every((p) => checked.has(p.id))}
                   onChange={(e) => setChecked(e.target.checked ? new Set(filtered.map((p) => p.id)) : new Set())} /></th>
-                <th className="text-left px-5 py-3 font-medium">FIELD ID</th>
-                <th className="text-left px-5 py-3 font-medium">Producteur</th>
-                <th className="text-left px-5 py-3 font-medium">Agent mappeur</th>
-                <th className="text-left px-5 py-3 font-medium">Village</th>
-                <th className="text-left px-5 py-3 font-medium">Culture</th>
-                <th className="text-left px-5 py-3 font-medium">Superficie</th>
-                <th className="text-left px-5 py-3 font-medium">EUDR</th>
+                <SortTh label="FIELD ID" k="field" sort={sort} onSort={toggleSort} />
+                <SortTh label="Producteur" k="producer" sort={sort} onSort={toggleSort} />
+                <SortTh label="Agent mappeur" k="agent" sort={sort} onSort={toggleSort} />
+                <SortTh label="Village" k="village" sort={sort} onSort={toggleSort} />
+                <SortTh label="Culture" k="culture" sort={sort} onSort={toggleSort} />
+                <SortTh label="Superficie" k="area" sort={sort} onSort={toggleSort} />
+                <SortTh label="EUDR" k="eudr" sort={sort} onSort={toggleSort} />
                 <th className="text-left px-5 py-3 font-medium"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filtered.map((p) => (
+              {sorted.map((p) => (
                 <tr key={p.id} className={`hover:bg-gray-50 transition ${checked.has(p.id) ? 'bg-primary-50/60' : ''}`}>
                   <td className="px-3 py-3"><input type="checkbox" checked={checked.has(p.id)} onChange={() => setChecked((c) => { const n = new Set(c); if (n.has(p.id)) n.delete(p.id); else n.add(p.id); return n })} /></td>
                   <td className="px-5 py-3 text-sm font-mono text-gray-700">{p.fieldId}</td>
@@ -255,7 +259,11 @@ export default function CoopParcelsPage() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-5 py-10 text-center text-sm text-gray-400">Aucune parcelle trouvée.</td></tr>
+                <tr><td colSpan={9}>{coopParcels.length === 0 ? (
+                  <EmptyState title="Aucune parcelle mappée pour l'instant"
+                    text="Les parcelles apparaissent ici dès que vos agents les relèvent au GPS (application mobile ou site). Vos anciens polygones restent visibles sur la carte."
+                    actions={[{ label: 'Producteurs à mapper', to: '/coop/producers?map=todo' }, { label: 'Créer un agent', to: '/coop/agents' }, { label: 'Importer d’anciens polygones', onClick: () => setShowLegacyImport(true) }]} />
+                ) : <p className="px-5 py-10 text-center text-sm text-gray-400">Aucune parcelle ne correspond à la recherche ou au filtre.</p>}</td></tr>
               )}
             </tbody>
           </table>

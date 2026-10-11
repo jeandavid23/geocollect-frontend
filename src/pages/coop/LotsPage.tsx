@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { offerUndo } from '../../components/ui/undo'
+import EmptyState from '../../components/ui/EmptyState'
 import { confirmDialog } from '../../components/ui/dialog'
 import { Plus, Package, Trash2, FileText, FileCheck2, FileSpreadsheet, AlertTriangle, CheckCircle2, Search, ArrowLeft, Loader2, Truck } from 'lucide-react'
 import Header from '../../components/layout/Header'
@@ -94,7 +96,7 @@ function Editor({ lot, onSaved, onCancel }: { lot: Lot | null; onSaved: (l: Lot)
                     <td className="px-3 py-1.5"><input type="date" value={l.delivery_date ?? ''} onChange={(e) => setLine(i, 'delivery_date', e.target.value)} className="rounded border border-gray-200 px-2 py-1" /></td>
                     <td className="px-3 py-1.5"><input type="number" min="0" value={l.bags || ''} onChange={(e) => setLine(i, 'bags', e.target.value)} className="w-20 rounded border border-gray-200 px-2 py-1" /></td>
                     <td className="px-3 py-1.5"><input type="number" min="0" step="0.1" value={l.weight_kg || ''} onChange={(e) => setLine(i, 'weight_kg', e.target.value)} className="w-28 rounded border border-gray-200 px-2 py-1" /></td>
-                    <td className="px-3 py-1.5"><button onClick={() => setLines(lines.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-600" aria-label="Retirer"><Trash2 className="h-4 w-4" /></button></td>
+                    <td className="px-3 py-1.5"><button onClick={() => { const prev = lines; setLines(lines.filter((_, j) => j !== i)); offerUndo('Ligne retirée du lot', () => setLines(prev)) }} className="text-gray-400 hover:text-red-600" aria-label="Retirer"><Trash2 className="h-4 w-4" /></button></td>
                   </tr>
                 )
               })}
@@ -119,9 +121,13 @@ function Detail({ lot, onBack, onEdit, onChanged }: { lot: Lot; onBack: () => vo
   const { addNotification } = useAppStore()
   const [busy, setBusy] = useState('')
   const c = lot.checks
-  const setStatus = async (status: Lot['status']) => {
+  const setStatus = async (status: Lot['status'], undoing = false) => {
     setBusy(status)
-    try { const { data } = await lotsApi.update(lot.id, { status }); onChanged(data); addNotification({ type: 'success', title: `Lot ${STATUS_LABEL[status].toLowerCase()}`, message: lot.code }) }
+    const previous = lot.status
+    try {
+      const { data } = await lotsApi.update(lot.id, { status }); onChanged(data)
+      if (!undoing) offerUndo(`Lot ${lot.code} : ${STATUS_LABEL[status].toLowerCase()}`, () => setStatus(previous, true))
+    }
     catch (err) {
       const d = (err as { response?: { data?: Lot & { detail?: string } } })?.response?.data
       if (d?.checks) onChanged(d)
@@ -224,7 +230,9 @@ export default function LotsPage() {
           {error && <p className="text-sm text-red-700">{error}</p>}
           <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
             {lots === null ? <p className="p-6 text-sm text-gray-500">Chargement…</p> : lots.length === 0 ? (
-              <div className="p-10 text-center"><Package className="mx-auto h-8 w-8 text-gray-300" /><p className="mt-3 text-sm text-gray-500">Aucun lot pour le moment. Créez le premier à partir des livraisons de vos producteurs.</p></div>
+              <EmptyState icon={<Package className="h-7 w-7" />} title="Aucune fiche de lot"
+                text="Une fiche de lot regroupe les livraisons de plusieurs producteurs. GeoCollect vérifie que chaque producteur a une parcelle conforme avant de valider le lot, puis produit la fiche PDF avec QR code et le fichier TRACES."
+                actions={[{ label: 'Nouveau lot', onClick: () => setView({ mode: 'edit', lot: null }) }]} />
             ) : (
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-xs text-gray-500"><tr>{['Lot', 'Date', 'Produit', 'Producteurs', 'Sacs', 'Poids net', 'Acheteur', 'Statut'].map((h) => <th key={h} className="px-4 py-2 text-left font-medium">{h}</th>)}</tr></thead>

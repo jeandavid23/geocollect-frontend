@@ -19,7 +19,8 @@ export async function confirmAccountDeletion(userIds: string[], label: string): 
   const heavy = !!p && (p.cooperatives > 0 || p.producers > 0 || p.parcels > 0)
   return confirmDialog({
     tone: 'danger', title: `Supprimer ${label} ?`,
-    message: details.length ? 'Seront supprimés définitivement, avec le compte :' : 'Le compte et ses données seront supprimés définitivement.',
+    message: (details.length ? 'Seront supprimés de la plateforme, avec le compte :' : 'Le compte et ses données seront supprimés de la plateforme.')
+      + '\nUne copie reste 30 jours dans la corbeille du propriétaire, qui peut tout restaurer.',
     details, confirmLabel: 'Supprimer définitivement', requireText: heavy ? 'SUPPRIMER' : undefined,
   })
 }

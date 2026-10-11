@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useHotkeys } from '../../hooks/useHotkeys'
 import { X, Hash, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react'
 import { producersApi, type RecodeReport, type MatchStats } from '../../api/producers'
 import { useAppStore } from '../../store/appStore'
@@ -6,6 +7,7 @@ import { apiErrorMessage } from '../../utils/retry'
 
 /** Remplace les codes générés (PROD…) par le code producteur du registre, puis recroise les anciens polygones. */
 export default function ProducerRecodeModal({ cooperativeId, onClose }: { cooperativeId: string; onClose: () => void }) {
+  useHotkeys({ escape: onClose })
   const addNotification = useAppStore((s) => s.addNotification)
   const [columns, setColumns] = useState<{ name: string; filled: number }[]>([])
   const [column, setColumn] = useState('')

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { offerUndo } from '../ui/undo'
+import { useHotkeys } from '../../hooks/useHotkeys'
 import { confirmDialog } from '../ui/dialog'
 import { X, Save, Trash2, Loader2, Eraser } from 'lucide-react'
 import type { Producer } from '../../types'
@@ -42,6 +44,8 @@ export default function ProducerEditPanel({ producer, polygonCount, onClose }: {
       onClose()
     } catch (err) { setError(apiErrorMessage(err)) } finally { setBusy('') }
   }
+  useHotkeys({ escape: onClose, save: () => { save() } })
+
 
   const remove = async () => {
     if (!(await confirmDialog({ tone: 'danger', title: 'Supprimer ce producteur ?', message: `${producer.fullName} (${producer.fieldIdBase}) sera supprimé définitivement.`, confirmLabel: 'Supprimer' }))) return
@@ -75,7 +79,7 @@ export default function ProducerEditPanel({ producer, polygonCount, onClose }: {
           {FIELDS.map((f) => (
             <label key={f.key} className="relative block text-xs text-gray-600">{f.label}
               <input type={f.type ?? 'text'} value={values[f.key]} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} className={`${input} pr-7`} />
-              {values[f.key] && clearBtn(() => setValues({ ...values, [f.key]: '' }))}
+              {values[f.key] && clearBtn(() => { const prev = values[f.key]; setValues((v) => ({ ...v, [f.key]: '' })); offerUndo(`« ${f.label} » vidé`, () => setValues((v) => ({ ...v, [f.key]: prev }))) })}
             </label>
           ))}
           <label className="block text-xs text-gray-600">Genre
@@ -86,14 +90,14 @@ export default function ProducerEditPanel({ producer, polygonCount, onClose }: {
           <div>
             <div className="mb-2 flex items-center justify-between">
               <p className="text-xs font-medium uppercase text-gray-500">Colonnes du registre</p>
-              <button onClick={() => setExtra(extra.map(([k]) => [k, '']))} className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-600"><Eraser className="h-3.5 w-3.5" /> Tout vider</button>
+              <button onClick={() => { const prev = extra; setExtra(extra.map(([k]) => [k, ''])); offerUndo('Colonnes du registre vidées', () => setExtra(prev)) }} className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-600"><Eraser className="h-3.5 w-3.5" /> Tout vider</button>
             </div>
             <div className="space-y-2">
               {extra.map(([k, v], i) => (
                 <div key={k} className="flex items-center gap-2">
                   <span className="w-36 flex-shrink-0 truncate text-xs text-gray-500" title={k}>{k}</span>
                   <input value={v} onChange={(e) => setExtra(extra.map((x, j) => (j === i ? [x[0], e.target.value] : x)))} className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm" />
-                  <button onClick={() => setExtra(extra.filter((_, j) => j !== i))} title="Retirer cette colonne du producteur" className="text-gray-300 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => { const prev = extra; setExtra(extra.filter((_, j) => j !== i)); offerUndo(`Colonne « ${extra[i][0]} » retirée`, () => setExtra(prev)) }} title="Retirer cette colonne du producteur" className="text-gray-300 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
                 </div>
               ))}
             </div>

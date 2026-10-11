@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { queryParam } from '../../utils/query'
 import { useNavigate } from 'react-router-dom'
 import { Search, MapPin, Satellite, CheckCircle2, Phone, ChevronDown, Navigation, Wifi, WifiOff, Route, Loader2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
@@ -27,7 +28,7 @@ export default function AgentProducersPage() {
   const { producers, parcels, currentAgentId, isOnline, isLoading } = useAppStore()
   const coopId = user?.cooperativeId ?? 'coop-001'
 
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => queryParam('q'))   // ?q= : recherche globale (Ctrl+K)
   const [showDone, setShowDone] = useState(false)
   const [sort, setSort] = useState<Sort>('count')
   const [here, setHere] = useState<[number, number] | null>(null)
