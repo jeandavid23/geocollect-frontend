@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { MapContainer, TileLayer, LayersControl } from 'react-leaflet'
+import { useSearchParams } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
 import { Layers, RefreshCw, Loader2, AlertTriangle, CheckCircle2, Database } from 'lucide-react'
 import Header from '../../components/layout/Header'
@@ -36,7 +37,8 @@ const n = (v: number, d = 2) => v.toLocaleString('fr-FR', { maximumFractionDigit
 /** Contrôle spatial de la coopérative : chevauchements (internes et avec les autres coopératives) et zones foncières. */
 export default function SpatialCheckPage() {
   const coopId = useAuthStore((s) => s.user?.cooperativeId) ?? undefined
-  const [tab, setTab] = useState<'overlaps' | 'zones'>('overlaps')
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState<'overlaps' | 'zones'>(() => (params.get('tab') === 'zones' ? 'zones' : 'overlaps'))
   const [minHa, setMinHa] = useState(0.01)
   const [other, setOther] = useState(true)
   const [typeFilter, setTypeFilter] = useState<OverlapRow['type'] | 'all' | 'doublon'>('all')

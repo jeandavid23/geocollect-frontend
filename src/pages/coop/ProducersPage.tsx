@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search, Plus, MapPin, X, Save, FileSpreadsheet, Trash2, Hash } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
@@ -35,12 +36,13 @@ export default function ProducersPage() {
   const [filterSection, setFilterSection] = useState('all')
   const [selected, setSelected] = useState<Producer | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())
-  const [mapFilter, setMapFilter] = useState<'all' | 'todo' | 'done'>('all')
+  const [params] = useSearchParams()
+  const [mapFilter, setMapFilter] = useState<'all' | 'todo' | 'done'>(() => (params.get('map') === 'todo' ? 'todo' : params.get('map') === 'done' ? 'done' : 'all'))
   const [deleting, setDeleting] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [showImport, setShowImport] = useState(false)
-  const [showRecode, setShowRecode] = useState(false)
+  const [showRecode, setShowRecode] = useState(() => params.get('recode') === '1')
   const [showPurge, setShowPurge] = useState(false)
 
   // Entêtes des fichiers Excel importés (dans l'ordre du fichier) : colonnes de la vue « Fichier Excel »

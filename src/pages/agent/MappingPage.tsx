@@ -6,7 +6,7 @@ import {
   Satellite, Play, Pause, Square, AlertTriangle, CheckCircle2,
   Target, ArrowLeft, ChevronRight, MapPin, Undo2, Crosshair, Ban,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppStore } from '../../store/appStore'
 import LegacyParcelsLayer, { LEGACY_COLOR } from '../../components/map/LegacyParcelsLayer'
 import { useAuthStore } from '../../store/authStore'
@@ -71,7 +71,9 @@ export default function MappingPage() {
   const coopId = authUser?.cooperativeId ?? 'coop-001'
 
   const [step, setStep] = useState<Step>('select_producer')
-  const [selectedProducerId, setSelectedProducerId] = useState('')
+  // « Ma tournée » → « Mapper » : le producteur arrive présélectionné (?producer=<id>)
+  const [searchParams] = useSearchParams()
+  const [selectedProducerId, setSelectedProducerId] = useState(() => searchParams.get('producer') ?? '')
   const [parcelName, setParcelName] = useState('Nouvelle parcelle')
   const [culture, setCulture] = useState('Cacao')
   const [status, setStatus] = useState<MappingStatus>('idle')
@@ -110,6 +112,11 @@ export default function MappingPage() {
     ? myProducers.filter((p) => `${p.fullName} ${p.fieldIdBase} ${p.village} ${Object.values(p.extraData ?? {}).join(' ')}`.toLowerCase().includes(q))
     : myProducers).slice(0, 100)
   const selectedProducer = producers.find((p) => p.id === selectedProducerId)
+  // arrivée depuis « Ma tournée » : passe directement à l'étape 2 dès que le producteur est chargé (une seule fois)
+  const preselected = useRef(Boolean(searchParams.get('producer')))
+  useEffect(() => {
+    if (preselected.current && selectedProducer) { preselected.current = false; setStep('configure') }
+  }, [selectedProducer])
 
   // Keep refs in sync so the geolocation callback always reads the latest values
   useEffect(() => { autoTrackRef.current = autoTrack }, [autoTrack])

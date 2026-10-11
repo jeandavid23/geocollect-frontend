@@ -4,6 +4,7 @@ import {
   UserPlus, Upload, Package, TreePine, ShieldCheck, FileBarChart, Send, BookOpen, Link2,
 } from 'lucide-react'
 import QuickActions from '../../components/ui/QuickActions'
+import NextActions from '../../components/coop/NextActions'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -31,6 +32,7 @@ export default function CoopDashboardPage() {
         title="Tableau de bord Coopérative"
         subtitle={`Espace ${coopName} · Vue d'ensemble de vos activités`}
       />
+      <NextActions />
       <QuickActions actions={[
         { label: 'Importer / ajouter des producteurs', icon: <Upload className="w-4 h-4" />, to: '/coop/producers', tone: 'primary' },
         { label: 'Nouvel agent mappeur', icon: <UserPlus className="w-4 h-4" />, to: '/coop/agents', tone: 'blue' },

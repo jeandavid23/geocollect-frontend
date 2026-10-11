@@ -1,6 +1,7 @@
 import { apiErrorMessage } from '../../utils/retry'
 import { parcelsApi } from '../../api/parcels'
 import { useState, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Polygon, Popup, LayersControl, useMap } from 'react-leaflet'
 import { Search, Filter, X, MapPin, Layers, Eye, EyeOff , Trash2 } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
@@ -39,7 +40,8 @@ export default function CoopParcelsPage() {
   const coopLegacy = useMemo(() => legacyParcels.filter((p) => p.cooperativeId === coopId), [legacyParcels, coopId])
 
   const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
+  const [params] = useSearchParams()
+  const [filterStatus, setFilterStatus] = useState(() => (['compliant', 'non_compliant', 'pending'].includes(params.get('eudr') ?? '') ? params.get('eudr')! : 'all'))
   const [filterAgent, setFilterAgent] = useState('all')
   const [selected, setSelected] = useState<Parcel | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())

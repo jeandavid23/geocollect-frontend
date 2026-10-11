@@ -1,5 +1,6 @@
 import { FileText, FileSpreadsheet, Map, Download, CheckCircle2, Loader2, Globe, Users, ShieldCheck, AlertTriangle, Wrench, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
@@ -30,6 +31,13 @@ interface AnalysisRow extends PolygonAnalysis {
 
 export default function ReportsPage() {
   const user = useAuthStore((s) => s.user)
+  // lien direct vers une section (menu « Export TRACES » → #traces)
+  const { hash } = useLocation()
+  useEffect(() => {
+    if (!hash) return
+    const t = setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150)
+    return () => clearTimeout(t)
+  }, [hash])
   const { parcels, producers, updateParcel, addNotification, isLive, isLoading } = useAppStore()
   const coopId = user?.cooperativeId ?? 'coop-001'
   const [loading, setLoading] = useState<string | null>(null)
