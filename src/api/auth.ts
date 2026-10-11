@@ -34,6 +34,9 @@ export const authApi = {
   changePassword: (old_password: string, new_password: string) =>
     api.post('/auth/change-password/', { old_password, new_password }),
 
+  // « Voir comme » (lecture seule, 1 h) : propriétaire → tout compte ; super admin → comptes de ses coopératives
+  impersonate: (userId: string) => api.post<{ access: string; user: User; impersonator: string }>('/auth/impersonate/', { user: userId }),
+
   // Double authentification (TOTP)
   mfaVerify: (mfa_token: string, code: string) => api.post<LoginResponse>('/auth/mfa/verify/', { mfa_token, code }),
   mfaSetup: () => api.get<{ enabled: boolean; secret?: string; uri?: string; recovery_left?: number }>('/auth/mfa/setup/'),

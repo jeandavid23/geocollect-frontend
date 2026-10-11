@@ -1,26 +1,33 @@
 import { useEffect, useState } from 'react'
 import { confirmDialog } from '../ui/dialog'
 import { Inbox, Phone, Mail , Trash2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import api from '../../api/client'
 
 interface Demo { id: string; full_name: string; organization: string; profile: string; phone: string; email: string; producers: number | null; plan: string; message: string; status: string; created_at: string }
 const PROFILE: Record<string, string> = { cooperative: 'Coopérative', exportateur: 'Exportateur', certification: 'Certification', autre: 'Autre' }
-const STATUS: Record<string, string> = { nouvelle: 'Nouvelle', contactee: 'Contactée', demo: 'Démo faite', client: 'Devenue cliente', sans_suite: 'Sans suite' }
+export const DEMO_STATUS: Record<string, string> = { nouvelle: 'Nouvelle', contactee: 'Contactée', demo: 'Démo faite', client: 'Devenue cliente', sans_suite: 'Sans suite' }
 
-/** Demandes de démonstration reçues depuis la page de présentation (propriétaire). */
-export default function DemoRequests() {
-  const [items, setItems] = useState<Demo[] | null>(null)
+/**
+ * Demandes de démonstration reçues depuis la page de présentation (propriétaire).
+ * `compact` : 5 plus récentes + lien vers la page Prospects ; `status` : filtre ; `onLoaded` : liste complète (compteurs).
+ */
+export default function DemoRequests({ compact = false, status, onLoaded }: { compact?: boolean; status?: string; onLoaded?: (items: { status: string }[]) => void }) {
+  const [all, setItems] = useState<Demo[] | null>(null)
   useEffect(() => { api.get<Demo[]>('/contact/demo/list/').then(({ data }) => setItems(data)).catch(() => setItems([])) }, [])
+  useEffect(() => { if (all) onLoaded?.(all) }, [all]) // eslint-disable-line react-hooks/exhaustive-deps
+  const items = all === null ? null : all.filter((d) => !status || d.status === status).slice(0, compact ? 5 : undefined)
   const setStatus = async (d: Demo, status: string) => {
     const { data } = await api.patch<Demo>(`/contact/demo/${d.id}/`, { status })
     setItems((l) => (l ?? []).map((x) => (x.id === d.id ? data : x)))
   }
-  const fresh = (items ?? []).filter((d) => d.status === 'nouvelle').length
+  const fresh = (all ?? []).filter((d) => d.status === 'nouvelle').length
   return (
     <section className="rounded-2xl border border-gray-200 bg-white">
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
         <p className="flex items-center gap-2 font-semibold text-gray-900"><Inbox className="h-4 w-4 text-primary-700" /> Demandes de démo {fresh > 0 && <span className="rounded-full bg-primary-700 px-2 py-0.5 text-xs text-white">{fresh} nouvelle(s)</span>}</p>
-        <a href="/" target="_blank" rel="noreferrer" className="text-sm text-primary-700 hover:underline">Voir la page publique</a>
+        {compact ? <Link to="/owner/prospects" className="text-sm text-primary-700 hover:underline">Tous les prospects →</Link>
+          : <a href="/" target="_blank" rel="noreferrer" className="text-sm text-primary-700 hover:underline">Voir la page publique</a>}
       </div>
       {items === null ? <p className="px-5 py-6 text-sm text-gray-500">Chargement…</p> : items.length === 0 ? <p className="px-5 py-6 text-sm text-gray-500">Aucune demande pour le moment.</p> : (
         <div className="divide-y divide-gray-100">
@@ -37,7 +44,7 @@ export default function DemoRequests() {
                 {d.email && <a href={`mailto:${d.email}`} className="flex items-center gap-1.5 text-primary-700 hover:underline"><Mail className="h-3.5 w-3.5" />{d.email}</a>}
               </div>
               <select value={d.status} onChange={(e) => setStatus(d, e.target.value)} className="rounded-md border border-gray-300 px-2 py-1 text-xs">
-                {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                {Object.entries(DEMO_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
               <button onClick={async () => { if (!(await confirmDialog({ tone: 'danger', title: 'Supprimer cette demande ?', message: `Demande de démo de ${d.organization}.`, confirmLabel: 'Supprimer' }))) return; await api.delete(`/contact/demo/${d.id}/`); setItems((l) => (l ?? []).filter((x) => x.id !== d.id)) }}
                 title="Supprimer la demande" className="text-gray-300 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>

@@ -1,8 +1,9 @@
+import { useT, LangSwitch } from '../../i18n'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
-  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2, Scissors, Link2, Package, Layers, FileCheck2, Route, Trash, Search, Bell,
+  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2, Scissors, Link2, Package, Layers, FileCheck2, Route, Trash, Search, Bell, Inbox,
 } from 'lucide-react'
 import { useState } from 'react'
 import { openCommandPalette } from '../../utils/search'
@@ -23,7 +24,8 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   // Propriétaire de la plateforme (Super Super Admin)
   { label: 'Plateforme', to: '/owner', icon: <Globe2 className="w-5 h-5" />, roles: ['owner'], group: 'Propriétaire' },
-  { label: 'Super admins (clients)', to: '/owner/admins', icon: <Crown className="w-5 h-5" />, roles: ['owner'], group: 'Propriétaire' },
+  { label: 'Clients (super admins)', to: '/owner/admins', icon: <Crown className="w-5 h-5" />, roles: ['owner'], group: 'Propriétaire' },
+  { label: 'Prospects', to: '/owner/prospects', icon: <Inbox className="w-5 h-5" />, roles: ['owner'], group: 'Propriétaire' },
   { label: 'Corbeille', to: '/owner/trash', icon: <Trash className="w-5 h-5" />, roles: ['owner'], group: 'Propriétaire' },
   // Super Admin (et propriétaire, sur tous les clients)
   { label: 'Tableau de bord', to: '/admin', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['super_admin', 'owner'], group: 'Pilotage' },
@@ -60,12 +62,25 @@ export const NAV_ITEMS: NavItem[] = [
 ]
 
 /** Menu latéral ; sur téléphone (< 768 px) c'est un tiroir ouvert par le bouton ☰ de la barre du haut. */
+// Libellés anglais du menu (le français reste la source)
+export const EN: Record<string, string> = {
+  'Propriétaire': 'Owner', 'Pilotage': 'Overview', 'Organisation': 'Organisation', 'Suivi': 'Monitoring', 'Base': 'Records',
+  'Parcelles & conformité': 'Plots & compliance', 'Export': 'Export', 'Terrain': 'Field', 'Activité': 'Activity', 'Compte': 'Account',
+  'Plateforme': 'Platform', 'Clients (super admins)': 'Clients (super admins)', 'Prospects': 'Leads', 'Corbeille': 'Recycle bin',
+  'Tableau de bord': 'Dashboard', 'Carte interactive': 'Interactive map', 'Coopératives': 'Cooperatives', 'Agents mappeurs': 'Field agents',
+  'Comptes & accès': 'Accounts & access', 'Rapports': 'Reports', 'Journaux': 'Logs', 'Registre': 'Register', 'Producteurs': 'Farmers',
+  'Agents': 'Agents', 'Parcelles': 'Plots', 'Contrôle spatial': 'Spatial checks', 'Analyse déforestation': 'Deforestation analysis',
+  'Fiches de lot': 'Lot sheets', 'Export TRACES': 'TRACES export', 'Ma tournée': 'My round', 'Nouveau mapping': 'New mapping', 'Carte': 'Map',
+  'Mon activité': 'My activity', 'Mes parcelles': 'My plots', 'Notifications': 'Notifications', 'Mon compte': 'My account',
+}
+
 export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: boolean; onClose?: () => void }) {
   const [collapsedPref, setCollapsed] = useState(false)
   const collapsed = collapsedPref && !mobileOpen
   const { user, logout } = useAuthStore()
   const { isOnline } = useAppStore()
   const location = useLocation()
+  const t = useT()
 
   const role = user?.role ?? 'agent'
   const modules = user?.modules ?? null // null = tous
@@ -103,7 +118,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
         <button onClick={() => { onClose?.(); openCommandPalette() }} title="Recherche globale (Ctrl+K)"
           className={`flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-primary-200 transition hover:bg-white/10 hover:text-white ${collapsed ? 'justify-center px-0' : ''}`}>
           <Search className="h-4 w-4 flex-shrink-0" />
-          {!collapsed && <><span className="flex-1 text-left">Rechercher…</span><kbd className="rounded border border-white/20 px-1.5 text-[10px] text-primary-300">Ctrl K</kbd></>}
+          {!collapsed && <><span className="flex-1 text-left">{t('Rechercher…', 'Search…')}</span><kbd className="rounded border border-white/20 px-1.5 text-[10px] text-primary-300">Ctrl K</kbd></>}
         </button>
       </div>
 
@@ -120,7 +135,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
               <div key={item.to + item.label}>
                 {heading && (collapsed
                   ? <div className={`mx-3 ${i ? 'my-2' : 'mb-2'} border-t border-white/10`} />
-                  : <p className={`px-3 pb-1 ${i ? 'pt-4' : 'pt-0'} text-[10px] font-semibold uppercase tracking-[0.14em] text-primary-300/70`}>{item.group}</p>)}
+                  : <p className={`px-3 pb-1 ${i ? 'pt-4' : 'pt-0'} text-[10px] font-semibold uppercase tracking-[0.14em] text-primary-300/70`}>{t(item.group!, EN[item.group!])}</p>)}
                 <NavLink
                   to={item.to}
                   onClick={onClose}
@@ -135,7 +150,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
                   }
                 >
                   <span className="flex-shrink-0">{item.icon}</span>
-                  {!collapsed && <span className="truncate">{item.label}</span>}
+                  {!collapsed && <span className="truncate">{t(item.label, EN[item.label])}</span>}
                 </NavLink>
               </div>
             )
@@ -150,7 +165,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           isOnline ? 'text-green-300' : 'text-red-300'
         }`}>
           {isOnline ? <Wifi className="w-4 h-4 flex-shrink-0" /> : <WifiOff className="w-4 h-4 flex-shrink-0" />}
-          {!collapsed && (isOnline ? 'En ligne' : 'Hors ligne')}
+          {!collapsed && (isOnline ? t('En ligne', 'Online') : t('Hors ligne', 'Offline'))}
+          {!collapsed && <LangSwitch dark className="ml-auto" />}
         </div>
 
         {/* Notifications (connectées au backend) */}
@@ -161,9 +177,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           <div className="px-3 py-2">
             <p className="text-xs font-medium text-white truncate">{user?.fullName}</p>
             <p className="text-xs text-primary-400 capitalize">{
-              role === 'owner' ? 'Super Super Admin' :
-              role === 'super_admin' ? 'Super Administrateur' :
-              role === 'cooperative' ? 'Coopérative' : 'Agent Mappeur'
+              role === 'owner' ? t('Super Super Admin', 'Platform owner') :
+              role === 'super_admin' ? t('Super Administrateur', 'Super administrator') :
+              role === 'cooperative' ? t('Coopérative', 'Cooperative') : t('Agent Mappeur', 'Field agent')
             }</p>
           </div>
         )}
@@ -174,7 +190,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-red-300 hover:bg-red-900/30 hover:text-red-200 text-sm transition"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && 'Déconnexion'}
+          {!collapsed && t('Déconnexion', 'Sign out')}
         </button>
       </div>
 

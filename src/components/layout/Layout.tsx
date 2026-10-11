@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { Menu, Leaf, Search } from 'lucide-react'
 import CommandPalette from './CommandPalette'
 import { UndoHost } from '../ui/undo'
+import ImpersonationBanner from './ImpersonationBanner'
 import { openCommandPalette } from '../../utils/search'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
@@ -22,6 +23,7 @@ export default function Layout() {
       <CommandPalette />
       <UndoHost />
       <div className="flex-1 flex flex-col overflow-hidden">
+        <ImpersonationBanner />
         {/* barre du haut sur téléphone : bouton du menu */}
         <div className="flex items-center gap-3 border-b border-gray-100 bg-white px-4 py-2.5 md:hidden">
           <button onClick={() => setMenuOpen(true)} aria-label="Ouvrir le menu" className="rounded-lg p-1.5 text-gray-700 hover:bg-gray-100"><Menu className="h-6 w-6" /></button>

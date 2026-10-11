@@ -1,3 +1,4 @@
+import { useLang } from '../../i18n'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import SlideMotion from './SlideMotion'
 import { SplitText } from './MotionText'
@@ -6,27 +7,27 @@ import { SplitText } from './MotionText'
 // Photos réelles (Wikimedia Commons, CC BY-SA 4.0) : l'auteur doit rester cité.
 export const SLIDES = [
   {
-    img: 'plantation-cacao', step: 'La plantation', place: 'Est de la Côte d\'Ivoire',
+    img: 'plantation-cacao', step: 'La plantation', place: 'Est de la Côte d\'Ivoire', en: { step: 'The plantation', place: 'Eastern Côte d\'Ivoire', text: 'Every plot is surveyed by GPS by field agents, then checked before entering the register.' },
     text: 'Chaque parcelle est relevée au GPS par les agents de terrain, puis contrôlée avant d\'entrer dans le registre.',
     author: 'Hanay', file: 'Cacao_fruit_in_Côte_d\'Ivoire_(14).JPG', pos: '50% 60%',
   },
   {
-    img: 'cabosses-arbre-tiassale', step: 'Les cabosses', place: 'Tiassalé',
+    img: 'cabosses-arbre-tiassale', step: 'Les cabosses', place: 'Tiassalé', en: { step: 'The pods', place: 'Tiassalé', text: 'The farmer, their plot and their production are linked in a single record.' },
     text: 'Le producteur, sa parcelle et sa production sont reliés dans un même dossier.',
     author: 'Durand ndri', file: 'Tiassalé_-Environnement_et_Biodiversité_24.jpg', pos: '45% 40%',
   },
   {
-    img: 'cabosses-soubre', step: 'La récolte', place: 'Soubré',
+    img: 'cabosses-soubre', step: 'La récolte', place: 'Soubré', en: { step: 'The harvest', place: 'Soubré', text: 'The deforestation analysis checks that no plot lost forest after 31 December 2020.' },
     text: 'L\'analyse de déforestation vérifie qu\'aucune parcelle n\'a perdu de forêt après le 31 décembre 2020.',
     author: 'Milequem Diarassouba', file: 'Cocoa_pods_in_Soubré.jpg', pos: '50% 55%',
   },
   {
-    img: 'producteur-cacao', step: 'Le séchage', place: 'Côte d\'Ivoire',
+    img: 'producteur-cacao', step: 'Le séchage', place: 'Côte d\'Ivoire', en: { step: 'Drying', place: 'Côte d\'Ivoire', text: 'Cooperatives track their agents, farmers and volumes in real time.' },
     text: 'Les coopératives suivent leurs agents, leurs producteurs et leurs volumes en temps réel.',
     author: 'KokoDZ', file: 'Cultivateur_de_cacao_01.jpg', pos: '35% 50%',
   },
   {
-    img: 'sacs-cacao-soubre', step: 'La mise en sacs', place: 'Région de Soubré',
+    img: 'sacs-cacao-soubre', step: 'La mise en sacs', place: 'Région de Soubré', en: { step: 'Bagging', place: 'Soubré region', text: 'The exporter receives verified data for its due diligence statement.' },
     text: 'L\'exportateur reçoit des données vérifiées pour sa déclaration de diligence raisonnable.',
     author: 'Abdallahbigboy', file: 'Emballage_de_Cacao.jpg', pos: '50% 45%',
   },
@@ -99,7 +100,9 @@ export default function HeroSlideshow({ children, headline, footer, reserveRight
     return () => clearTimeout(t)
   }, [index])
 
-  const s = SLIDES[index]
+  const lang = useLang((st) => st.lang)
+  const raw = SLIDES[index]
+  const s = lang === 'en' ? { ...raw, ...raw.en } : raw
   const prev = previous.current
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#2b2118]" onMouseMove={onMove}>

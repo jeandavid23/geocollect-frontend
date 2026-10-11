@@ -1,3 +1,4 @@
+import { useT, useLang, LangSwitch } from '../../i18n'
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Loader2, Shield, ShieldCheck, MapPinned, Lock, ArrowRight, LogIn, Minimize2 } from 'lucide-react'
@@ -105,6 +106,8 @@ export default function LoginPage() {
   }
 
   const [collapsed, setCollapsed] = useState(false)
+  const t = useT()
+  const lang = useLang((st) => st.lang)
   const input = 'w-full rounded-lg border border-gray-300/80 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition focus:border-primary-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-600/30'
 
   return (
@@ -114,16 +117,16 @@ export default function LoginPage() {
         headline={
           <>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
-              <SplitText text="Côte d'Ivoire · filière cacao" by="char" delay={500} step={22} variant="soft" />
+              <SplitText key={lang} text={t("Côte d'Ivoire · filière cacao", "Côte d'Ivoire · cocoa supply chain")} by="char" delay={500} step={22} variant="soft" />
             </p>
             <h1 className="mt-4 font-serif text-[2.4rem] xl:text-[3.1rem] leading-[1.1] font-semibold">
-              <SplitText text="La traçabilité du cacao, de la parcelle jusqu'à l'exportation." delay={900} step={75} variant="rise" highlight={['cacao']} />
+              <SplitText key={lang} text={t("La traçabilité du cacao, de la parcelle jusqu'à l'exportation.", 'Cocoa traceability, from plot to export.')} delay={900} step={75} variant="rise" highlight={[t('cacao', 'Cocoa')]} />
             </h1>
             <ul className="mt-6 flex flex-wrap gap-2 text-[13px] text-white/85">
               {[
-                [MapPinned, 'Parcelles relevées au GPS'],
-                [ShieldCheck, 'Règlement (UE) 2023/1115'],
-                [Lock, 'Données cloisonnées par coopérative'],
+                [MapPinned, t('Parcelles relevées au GPS', 'GPS-surveyed plots')],
+                [ShieldCheck, t('Règlement (UE) 2023/1115', 'Regulation (EU) 2023/1115')],
+                [Lock, t('Données cloisonnées par coopérative', 'Data isolated per cooperative')],
               ].map(([Icon, t], i) => {
                 const I = Icon as typeof Lock
                 return <li key={t as string} className="mo-soft flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 backdrop-blur-sm" style={{ animationDelay: `${1800 + i * 160}ms` }}><I className="h-3.5 w-3.5 text-[#e9c98b]" />{t as string}</li>
@@ -134,15 +137,18 @@ export default function LoginPage() {
         footer={
           <span className="flex gap-4">
             <span>© {new Date().getFullYear()} GeoLab Service · Abidjan</span>
-            <Link to="/cgu" className="hover:text-white">CGU</Link>
-            <Link to="/confidentialite" className="hover:text-white">Confidentialité</Link>
+            <Link to="/cgu" className="hover:text-white">{t('CGU', 'Terms')}</Link>
+            <Link to="/confidentialite" className="hover:text-white">{t('Confidentialité', 'Privacy')}</Link>
           </span>
         }>
         <div className="flex items-start justify-between gap-4">
           <AnimatedLogo />
+          <div className="flex items-center gap-2">
+          <LangSwitch dark />
           <Link to="/" className="mo-soft hidden sm:inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm text-white backdrop-blur-sm transition hover:bg-white/20" style={{ animationDelay: '700ms' }}>
-            Découvrir l'offre <ArrowRight className="h-4 w-4" />
+            {t("Découvrir l'offre", 'Discover the offer')} <ArrowRight className="h-4 w-4" />
           </Link>
+          </div>
         </div>
       </HeroSlideshow>
 
@@ -150,7 +156,7 @@ export default function LoginPage() {
       {collapsed ? (
         <button onClick={() => setCollapsed(false)}
           className="login-card-in login-glow absolute bottom-24 right-4 z-20 flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-primary-800 shadow-2xl transition hover:scale-[1.03] sm:bottom-28 sm:right-8 lg:bottom-12 lg:right-14">
-          <LogIn className="h-4 w-4" /> Se connecter
+          <LogIn className="h-4 w-4" /> {t('Se connecter', 'Sign in')}
         </button>
       ) : (
         <section aria-label="Connexion"
@@ -159,10 +165,10 @@ export default function LoginPage() {
           style={{ animationDelay: '250ms' }}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="font-serif text-2xl font-semibold text-gray-900"><SplitText text="Connexion" by="char" delay={600} step={40} variant="rise" /></h2>
-              <p className="mt-1 text-xs text-gray-500">Espace coopérative, administrateur ou agent de terrain.</p>
+              <h2 className="font-serif text-2xl font-semibold text-gray-900"><SplitText key={lang} text={t('Connexion', 'Sign in')} by="char" delay={600} step={40} variant="rise" /></h2>
+              <p className="mt-1 text-xs text-gray-500">{t('Espace coopérative, administrateur ou agent de terrain.', 'Cooperative, administrator or field agent workspace.')}</p>
             </div>
-            <button type="button" onClick={() => setCollapsed(true)} title="Réduire pour voir les photos"
+            <button type="button" onClick={() => setCollapsed(true)} title={t('Réduire pour voir les photos', 'Minimise to see the photos')}
               className="rounded-full p-1.5 text-gray-400 transition hover:bg-gray-900/5 hover:text-gray-700"><Minimize2 className="h-4 w-4" /></button>
           </div>
 
@@ -170,7 +176,7 @@ export default function LoginPage() {
             <form onSubmit={submitCode} className="mt-4 space-y-3">
               <p className="flex items-start gap-2 rounded-lg bg-primary-50 px-3 py-2 text-xs text-primary-900">
                 <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                {useRecovery ? 'Saisissez un de vos codes de secours (format ABCD-1234).' : 'Saisissez le code à 6 chiffres affiché par votre application d’authentification.'}
+                {useRecovery ? t('Saisissez un de vos codes de secours (format ABCD-1234).', 'Enter one of your recovery codes (ABCD-1234).') : t('Saisissez le code à 6 chiffres affiché par votre application d’authentification.', 'Enter the 6-digit code from your authenticator app.')}
               </p>
               <input autoFocus inputMode={useRecovery ? 'text' : 'numeric'} autoComplete="one-time-code" value={code}
                 onChange={(e) => setCode(useRecovery ? e.target.value.toUpperCase() : e.target.value.replace(/[^\d]/g, '').slice(0, 6))}
@@ -179,24 +185,24 @@ export default function LoginPage() {
               {error && <div role="alert" className="flex items-start gap-2 rounded-md border-l-4 border-red-500 bg-red-50 px-3 py-2 text-xs text-red-800"><Shield className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />{error}</div>}
               <button type="submit" disabled={loading || (useRecovery ? code.length < 9 : code.length !== 6)}
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-primary-800 disabled:opacity-60">
-                {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Vérification…</> : 'Valider'}
+                {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> {t('Vérification…', 'Checking…')}</> : t('Valider', 'Verify')}
               </button>
               <div className="flex justify-between text-[11px]">
                 <button type="button" onClick={() => { setUseRecovery(!useRecovery); setCode(''); setError('') }} className="text-primary-700 hover:underline">
-                  {useRecovery ? 'Utiliser le code de l’application' : 'Téléphone perdu ? Code de secours'}
+                  {useRecovery ? t('Utiliser le code de l’application', 'Use the app code') : t('Téléphone perdu ? Code de secours', 'Lost phone? Recovery code')}
                 </button>
-                <button type="button" onClick={() => { setMfa(null); setCode(''); setError('') }} className="text-gray-500 hover:underline">Retour</button>
+                <button type="button" onClick={() => { setMfa(null); setCode(''); setError('') }} className="text-gray-500 hover:underline">{t('Retour', 'Back')}</button>
               </div>
             </form>
           ) : <>
           <form onSubmit={handleSubmit} className="mt-4 space-y-3 mo-stagger">
             <div>
-              <label htmlFor="login-user" className="mb-1 block text-xs font-medium text-gray-700">Identifiant</label>
+              <label htmlFor="login-user" className="mb-1 block text-xs font-medium text-gray-700">{t('Identifiant', 'Username')}</label>
               <input id="login-user" type="text" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)}
-                placeholder="Votre identifiant" required className={input} />
+                placeholder={t('Votre identifiant', 'Your username')} required className={input} />
             </div>
             <div>
-              <label htmlFor="login-pass" className="mb-1 block text-xs font-medium text-gray-700">Mot de passe</label>
+              <label htmlFor="login-pass" className="mb-1 block text-xs font-medium text-gray-700">{t('Mot de passe', 'Password')}</label>
               <div className="relative">
                 <input id="login-pass" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password}
                   onChange={(e) => setPassword(e.target.value)} required className={`${input} pr-10`} />
@@ -215,19 +221,19 @@ export default function LoginPage() {
 
             <label className="flex items-center gap-2 text-xs text-gray-600 select-none">
               <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-3.5 w-3.5 rounded border-gray-300 text-primary-700" />
-              Rester connecté <span className="text-gray-400">— décochez sur un ordinateur partagé</span>
+              {t('Rester connecté', 'Stay signed in')} <span className="text-gray-400">— {t('décochez sur un ordinateur partagé', 'untick on a shared computer')}</span>
             </label>
 
             <button type="submit" disabled={loading}
               className="group flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary-900/20 transition hover:bg-primary-800 hover:shadow-lg active:scale-[.98] disabled:opacity-60">
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Connexion…</> : <>Se connecter <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" /></>}
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> {t('Connexion…', 'Signing in…')}</> : <>{t('Se connecter', 'Sign in')} <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" /></>}
             </button>
           </form>
           <GoogleSignInButton onCredential={handleGoogle} disabled={loading} />
           </>}
 
           <p className="mt-4 text-[11px] leading-relaxed text-gray-500">
-            Mot de passe oublié ? Votre coopérative ou votre administrateur peut vous en attribuer un nouveau.
+            {t('Mot de passe oublié ? Votre coopérative ou votre administrateur peut vous en attribuer un nouveau.', 'Forgot your password? Your cooperative or administrator can issue a new one.')}
           </p>
 
           {/* Comptes de démonstration : développement local uniquement (jamais affichés en ligne) */}

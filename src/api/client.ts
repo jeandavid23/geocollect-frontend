@@ -29,6 +29,12 @@ api.interceptors.response.use(
       if (!window.location.pathname.startsWith('/login')) window.location.href = '/login'
       return Promise.reject(error)
     }
+    // « Voir comme » : écriture refusée (lecture seule) ou consultation expirée → retour au compte d'origine
+    if (error.response?.status === 403 && error.response?.data?.code === 'read_only') return Promise.reject(error)
+    if (error.response?.status === 401 && !readAuth()?.state?.refreshToken && (readAuth()?.state as { impersonator?: string } | undefined)?.impersonator) {
+      import('../store/authStore').then(({ useAuthStore }) => { useAuthStore.getState().stopImpersonation(); window.location.replace('/') })
+      return Promise.reject(error)
+    }
     // Mot de passe provisoire / double authentification à activer : le profil à jour affiche l'écran à compléter
     const gate = error.response?.status === 403 ? error.response?.data?.code : null
     if (gate === 'password_change_required' || gate === 'mfa_setup_required') {

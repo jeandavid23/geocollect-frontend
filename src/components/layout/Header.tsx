@@ -1,9 +1,10 @@
+import { useT, useLang } from '../../i18n'
 import { RefreshCw } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 import LiveBadge from '../ui/LiveBadge'
 import { format } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import { fr, enGB } from 'date-fns/locale'
 
 interface HeaderProps {
   title: string
@@ -11,6 +12,8 @@ interface HeaderProps {
 }
 
 export default function Header({ title, subtitle }: HeaderProps) {
+  const t = useT()
+  const lang = useLang((st) => st.lang)
   const user = useAuthStore((s) => s.user)
   const { isOnline, isSyncing, isLoading } = useAppStore()
 
@@ -25,14 +28,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
         <LiveBadge />
         {/* Date */}
         <span className="text-sm text-gray-500 hidden md:block">
-          {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+          {format(new Date(), 'EEEE d MMMM yyyy', { locale: lang === 'en' ? enGB : fr })}
         </span>
 
         {/* Chargement des données */}
         {isLoading && (
           <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">
             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            Chargement des données…
+            {t('Chargement des données…', 'Loading data…')}
           </div>
         )}
 
@@ -40,7 +43,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
         {isSyncing && (
           <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            Synchronisation...
+            {t('Synchronisation…', 'Syncing…')}
           </div>
         )}
 
@@ -51,7 +54,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
             : 'bg-red-50 text-red-700'
         }`}>
           <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'} ${isOnline ? 'animate-pulse' : ''}`} />
-          {isOnline ? 'En ligne' : 'Hors ligne'}
+          {isOnline ? t('En ligne', 'Online') : t('Hors ligne', 'Offline')}
         </div>
 
         {/* Avatar */}

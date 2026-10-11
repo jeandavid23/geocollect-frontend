@@ -11,6 +11,10 @@ interface AuthStore {
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
+  // « Voir comme » : nom de la personne qui consulte (lecture seule) ; session d'origine gardée pour revenir
+  impersonator: string | null
+  startImpersonation: (userId: string) => Promise<void>
+  stopImpersonation: () => void
   // Actions
   // renvoie { mfaToken } si la double authentification est active (2e étape : verifyMfa)
   loginWithApi: (username: string, password: string, remember?: boolean) => Promise<{ mfaToken?: string }>
@@ -23,6 +27,8 @@ interface AuthStore {
   refreshMe: () => Promise<void>
   clearError: () => void
 }
+
+const ORIGIN_KEY = 'geocollect-impersonation-origin'
 
 // Keep mock fallback for offline/demo mode
 export const MOCK_USERS: Record<string, { user: User; password: string }> = {
@@ -81,6 +87,21 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      impersonator: null,
+
+      startImpersonation: async (userId) => {
+        const { data } = await authApi.impersonate(userId)
+        const { user, token, refreshToken } = get()
+        try { sessionStorage.setItem(ORIGIN_KEY, JSON.stringify({ user, token, refreshToken })) } catch { /* indisponible */ }
+        set({ user: mapApiUser(data.user as unknown as Record<string, unknown>), token: data.access, refreshToken: null, impersonator: data.impersonator })
+      },
+
+      stopImpersonation: () => {
+        let origin: { user: User; token: string; refreshToken: string | null } | null = null
+        try { origin = JSON.parse(sessionStorage.getItem(ORIGIN_KEY) || 'null'); sessionStorage.removeItem(ORIGIN_KEY) } catch { /* indisponible */ }
+        if (origin?.token) set({ user: origin.user, token: origin.token, refreshToken: origin.refreshToken, impersonator: null, isAuthenticated: true })
+        else set({ user: null, token: null, refreshToken: null, impersonator: null, isAuthenticated: false })
+      },
 
       loginWithApi: async (username, password, remember = true) => {
         set({ isLoading: true, error: null })
@@ -129,6 +150,7 @@ export const useAuthStore = create<AuthStore>()(
       loginMock: (user, token) => set({ user, token, isAuthenticated: true }),
 
       logout: async () => {
+        if (get().impersonator) { get().stopImpersonation(); return }
         const { refreshToken } = get()
         try {
           if (refreshToken) await authApi.logout(refreshToken)

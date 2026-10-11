@@ -4,7 +4,7 @@ import { useStickyState, useSort, SortTh, SelectionBar } from '../../components/
 import { queryParam } from '../../utils/query'
 import { confirmDialog, alertDialog } from '../../components/ui/dialog'
 import { useEffect, useState } from 'react'
-import { Search, KeyRound, RefreshCw, ShieldCheck, Loader2, AlertTriangle, Power , Trash2 } from 'lucide-react'
+import { Search, KeyRound, RefreshCw, ShieldCheck, Loader2, AlertTriangle, Power , Trash2 , Eye } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import CredentialsModal from '../../components/ui/CredentialsModal'
 import { usersApi, type ApiUser } from '../../api/users'
@@ -185,6 +185,17 @@ export default function AccountsPage() {
                           {resetting === u.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                           Réinitialiser
                         </button>}
+                        {canManage(u) && u.is_active && u.role !== 'owner' && (isOwner || u.role === 'cooperative' || u.role === 'agent') && (
+                          <button onClick={async () => {
+                            try {
+                              useAppStore.getState().clearData()
+                              await useAuthStore.getState().startImpersonation(u.id)
+                              window.location.replace(({ super_admin: '/admin', cooperative: '/coop', agent: '/agent' } as Record<string, string>)[u.role] ?? '/')
+                            } catch (err) { await alertDialog({ tone: 'danger', title: 'Consultation impossible', message: apiErrorMessage(err) }) }
+                          }} title="Ouvrir son espace en lecture seule (support)" className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 font-medium">
+                            <Eye className="w-3.5 h-3.5" /> Voir comme
+                          </button>
+                        )}
                         {isOwner && canManage(u) && (
                           <button onClick={async () => {
                             if (!(await confirmDialog({ title: 'Réinitialiser la double authentification ?', message: `${u.full_name} devra la reconfigurer à sa prochaine connexion (téléphone perdu ou changé).`, confirmLabel: 'Réinitialiser' }))) return

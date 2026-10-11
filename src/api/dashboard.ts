@@ -19,3 +19,14 @@ export interface CoopActionsResponse {
 export const coopActionsApi = {
   get: (refresh = false) => api.get<CoopActionsResponse>('/dashboard/coop/actions/', { params: refresh ? { refresh: 1 } : undefined, timeout: 120000 }),
 }
+
+// ─── Comparatif des coopératives (super admin / propriétaire) ──────────────
+export interface CoopCompareRow {
+  id: string; name: string; is_active: boolean; managed_by: string | null
+  producers: number; mapped: number; to_map: number; mapped_pct: number
+  parcels: number; non_compliant: number; legacy_polygons: number; agents: number; lots_ready: number
+  overlaps: number | null; illegal: number | null; last_activity: string | null; coop_account_id: string | null
+}
+export const compareApi = {
+  get: () => api.get<{ cooperatives: CoopCompareRow[] }>('/dashboard/admin/compare/', { timeout: 120000 }),
+}

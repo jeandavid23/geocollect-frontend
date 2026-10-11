@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Users, MapPin, Package, UserCircle, CornerDownLeft, Keyboard, Building2, ArrowRight } from 'lucide-react'
-import { NAV_ITEMS } from './Sidebar'
+import { NAV_ITEMS, EN } from './Sidebar'
+import { useT } from '../../i18n'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 import { lotsApi } from '../../api/lots'
@@ -29,6 +30,7 @@ export default function CommandPalette() {
   const [accounts, setAccounts] = useState<ApiUser[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
   const role = user?.role ?? 'agent'
+  const tr = useT()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -63,23 +65,23 @@ export default function CommandPalette() {
     const modules = user?.modules ?? null
     NAV_ITEMS.filter((n) => n.roles.includes(role) && (!n.module || modules === null || modules.includes(n.module)) && match(n.label, n.group))
       .slice(0, t ? 8 : 12)
-      .forEach((n) => out.push({ key: `p${n.to}${n.label}`, group: 'Pages', label: n.label, sub: n.group, icon: n.icon, to: n.to }))
+      .forEach((n) => out.push({ key: `p${n.to}${n.label}`, group: 'Pages', label: tr(n.label, EN[n.label]), sub: n.group ? tr(n.group, EN[n.group]) : undefined, icon: n.icon, to: n.to }))
     if (t.length >= 2) {
       const prodPage = role === 'agent' ? '/agent/producers' : '/coop/producers'
       if (role === 'cooperative' || role === 'agent') {
         producers.filter((p) => match(p.fullName, p.fieldIdBase, p.village, p.phone)).slice(0, MAX_PER_GROUP).forEach((p) =>
-          out.push({ key: `pr${p.id}`, group: 'Producteurs', label: p.fullName || p.fieldIdBase, sub: `${p.fieldIdBase} · ${p.village}`, icon: <Users className="h-4 w-4" />, to: `${prodPage}?q=${encodeURIComponent(p.fieldIdBase)}` }))
+          out.push({ key: `pr${p.id}`, group: tr('Producteurs', 'Farmers'), label: p.fullName || p.fieldIdBase, sub: `${p.fieldIdBase} · ${p.village}`, icon: <Users className="h-4 w-4" />, to: `${prodPage}?q=${encodeURIComponent(p.fieldIdBase)}` }))
         const parcPage = role === 'agent' ? '/agent/parcels' : '/coop/parcels'
         parcels.filter((p) => match(p.fieldId, p.village, p.name)).slice(0, MAX_PER_GROUP).forEach((p) =>
-          out.push({ key: `pa${p.id}`, group: 'Parcelles', label: p.fieldId, sub: `${p.village} · ${p.areaHectares?.toFixed?.(2) ?? p.areaHectares} ha`, icon: <MapPin className="h-4 w-4" />, to: `${parcPage}?q=${encodeURIComponent(p.fieldId)}` }))
+          out.push({ key: `pa${p.id}`, group: tr('Parcelles', 'Plots'), label: p.fieldId, sub: `${p.village} · ${p.areaHectares?.toFixed?.(2) ?? p.areaHectares} ha`, icon: <MapPin className="h-4 w-4" />, to: `${parcPage}?q=${encodeURIComponent(p.fieldId)}` }))
         lots.filter((l) => match(l.code)).slice(0, MAX_PER_GROUP).forEach((l) =>
-          out.push({ key: `l${l.id}`, group: 'Fiches de lot', label: l.code, sub: l.status, icon: <Package className="h-4 w-4" />, to: '/coop/lots' }))
+          out.push({ key: `l${l.id}`, group: tr('Fiches de lot', 'Lot sheets'), label: l.code, sub: l.status, icon: <Package className="h-4 w-4" />, to: '/coop/lots' }))
       }
       if (role === 'owner' || role === 'super_admin') {
         cooperatives.filter((c) => match(c.name)).slice(0, MAX_PER_GROUP).forEach((c) =>
-          out.push({ key: `c${c.id}`, group: 'Coopératives', label: c.name, icon: <Building2 className="h-4 w-4" />, to: `/admin/cooperatives?q=${encodeURIComponent(c.name)}` }))
+          out.push({ key: `c${c.id}`, group: tr('Coopératives', 'Cooperatives'), label: c.name, icon: <Building2 className="h-4 w-4" />, to: `/admin/cooperatives?q=${encodeURIComponent(c.name)}` }))
         accounts.filter((a) => match(a.full_name, a.username, a.email ?? '', a.cooperative_name ?? '')).slice(0, MAX_PER_GROUP).forEach((a) =>
-          out.push({ key: `u${a.id}`, group: 'Comptes', label: a.full_name || a.username, sub: `${a.username}${a.cooperative_name ? ` · ${a.cooperative_name}` : ''}`, icon: <UserCircle className="h-4 w-4" />, to: `/admin/accounts?q=${encodeURIComponent(a.username)}` }))
+          out.push({ key: `u${a.id}`, group: tr('Comptes', 'Accounts'), label: a.full_name || a.username, sub: `${a.username}${a.cooperative_name ? ` · ${a.cooperative_name}` : ''}`, icon: <UserCircle className="h-4 w-4" />, to: `/admin/accounts?q=${encodeURIComponent(a.username)}` }))
       }
     }
     return out
@@ -97,7 +99,7 @@ export default function CommandPalette() {
       <div role="dialog" aria-label="Recherche globale" className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center gap-3 border-b border-gray-100 px-4">
           <Search className="h-5 w-5 text-gray-400" />
-          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Code producteur, parcelle, lot, page…"
+          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr('Code producteur, parcelle, lot, page…', 'Farmer code, plot, lot, page…')}
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(a + 1, hits.length - 1)) }
               else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)) }
@@ -107,7 +109,7 @@ export default function CommandPalette() {
           <kbd className="rounded border border-gray-200 px-1.5 py-0.5 text-[10px] text-gray-500">Échap</kbd>
         </div>
         <ul className="max-h-[55vh] overflow-y-auto py-2">
-          {hits.length === 0 && <li className="px-4 py-8 text-center text-sm text-gray-500">{q.trim().length < 2 ? 'Tapez au moins 2 caractères.' : 'Aucun résultat.'}</li>}
+          {hits.length === 0 && <li className="px-4 py-8 text-center text-sm text-gray-500">{q.trim().length < 2 ? tr('Tapez au moins 2 caractères.', 'Type at least 2 characters.') : tr('Aucun résultat.', 'No results.')}</li>}
           {hits.map((h, i) => {
             const header = h.group !== lastGroup ? (lastGroup = h.group) : null
             return (
@@ -127,8 +129,8 @@ export default function CommandPalette() {
           })}
         </ul>
         <div className="flex items-center gap-4 border-t border-gray-100 px-4 py-2 text-[11px] text-gray-500">
-          <span><kbd className="font-mono">↑ ↓</kbd> choisir</span><span><kbd className="font-mono">Entrée</kbd> ouvrir</span>
-          <button onClick={() => { setOpen(false); setHelp(true) }} className="ml-auto flex items-center gap-1 hover:text-gray-800"><Keyboard className="h-3.5 w-3.5" /> Raccourcis</button>
+          <span><kbd className="font-mono">↑ ↓</kbd> {tr('choisir', 'select')}</span><span><kbd className="font-mono">{tr('Entrée', 'Enter')}</kbd> {tr('ouvrir', 'open')}</span>
+          <button onClick={() => { setOpen(false); setHelp(true) }} className="ml-auto flex items-center gap-1 hover:text-gray-800"><Keyboard className="h-3.5 w-3.5" /> {tr('Raccourcis', 'Shortcuts')}</button>
         </div>
       </div>
     </div>

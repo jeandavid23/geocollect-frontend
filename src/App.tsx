@@ -62,6 +62,7 @@ function PageLoader() {
 const LandingPage = lazy(() => import('./pages/public/LandingPage'))
 const TrashPage = lazy(() => import('./pages/owner/TrashPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
+const ProspectsPage = lazy(() => import('./pages/owner/ProspectsPage'))
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuthStore()
@@ -122,6 +123,7 @@ export default function App() {
           <Route path="/owner" element={<PlatformPage />} />
           <Route path="/owner/admins" element={<SuperAdminsPage />} />
           <Route path="/owner/trash" element={<TrashPage />} />
+          <Route path="/owner/prospects" element={<ProspectsPage />} />
         </Route>
 
         {/* Super Admin (le propriétaire y a aussi accès, sur tous les clients) */}

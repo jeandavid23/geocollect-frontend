@@ -1,3 +1,4 @@
+import CoopCompare from '../../components/admin/CoopCompare'
 import {
   Building2, Users, MapPin, UserCog, Leaf, TrendingUp,
   CheckCircle2, XCircle, Clock, BarChart3, Shield, Activity,
@@ -100,6 +101,8 @@ export default function AdminDashboardPage() {
         { label: 'Exporter Excel', icon: <FileSpreadsheet className="w-4 h-4" />, onClick: exportCoops, tone: 'green', hint: 'Chiffres par coopérative' },
         { label: 'Journaux', icon: <ScrollText className="w-4 h-4" />, to: '/admin/logs' },
       ]} />
+
+      <CoopCompare />
 
       {/* Stats globales */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

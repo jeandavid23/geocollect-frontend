@@ -1,3 +1,4 @@
+import { useLang } from '../../i18n'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { AlertTriangle, Info, CheckCircle2, X } from 'lucide-react'
 import Button from './Button'
@@ -54,6 +55,7 @@ export function DialogHost() {
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const okRef = useRef<HTMLButtonElement>(null)
+  const en = useLang((s) => s.lang) === 'en'
 
   useEffect(() => {
     setError(null)
@@ -116,13 +118,13 @@ export function DialogHost() {
         )}
 
         <div className="mt-6 flex flex-wrap justify-end gap-2">
-          {current.kind !== 'alert' && <Button variant="secondary" onClick={cancel}>{current.kind === 'confirm' ? current.opts.cancelLabel ?? 'Annuler' : 'Annuler'}</Button>}
+          {current.kind !== 'alert' && <Button variant="secondary" onClick={cancel}>{current.kind === 'confirm' ? current.opts.cancelLabel ?? (en ? 'Cancel' : 'Annuler') : (en ? 'Cancel' : 'Annuler')}</Button>}
           {current.kind === 'confirm' && current.opts.altLabel && (
             <Button variant="secondary" onClick={() => { current.resolve('alt'); shift() }}>{current.opts.altLabel}</Button>
           )}
           <Button ref={okRef} variant={tone === 'danger' ? 'danger' : 'primary'} onClick={ok}
             disabledReason={blocked ? `Saisissez ${needText} pour confirmer` : undefined}>
-            {o && 'confirmLabel' in o && o.confirmLabel ? o.confirmLabel : current.kind === 'alert' ? 'Compris' : current.kind === 'prompt' ? 'Valider' : 'Confirmer'}
+            {o && 'confirmLabel' in o && o.confirmLabel ? o.confirmLabel : current.kind === 'alert' ? (en ? 'OK' : 'Compris') : current.kind === 'prompt' ? (en ? 'Confirm' : 'Valider') : (en ? 'Confirm' : 'Confirmer')}
           </Button>
         </div>
       </div>

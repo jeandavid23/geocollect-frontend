@@ -1,3 +1,4 @@
+import PlatformHealth from '../../components/owner/PlatformHealth'
 import { useCallback, useEffect, useState } from 'react'
 import { confirmDialog } from '../../components/ui/dialog'
 import { Link } from 'react-router-dom'
@@ -98,7 +99,9 @@ export default function PlatformPage() {
         ))}
       </section>
 
-      <DemoRequests />
+      <PlatformHealth />
+
+      <DemoRequests compact />
 
       {data && (
         <section className="bg-white rounded-2xl border border-gray-100 p-5">
