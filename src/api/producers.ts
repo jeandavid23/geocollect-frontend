@@ -38,6 +38,7 @@ export interface MatchStats {
   polygons_per_producer: { '1': number; '2': number; '3+': number }
   legacy_polygons: number; linked_polygons: number; orphan_polygons: number; polygons_without_code: number
   fields?: string[]; suggested_field?: string | null; suggested_matches?: number
+  unmatched_codes?: string[]; ambiguous_codes?: string[]
 }
 
 export interface BulkImportResult {

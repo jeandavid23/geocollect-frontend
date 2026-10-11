@@ -405,6 +405,8 @@ export default function ProducerImportModal({ cooperativeId, onClose, initialWor
                       <p>1 polygone : <b>{matchResult.polygons_per_producer['1']}</b> · 2 : <b>{matchResult.polygons_per_producer['2']}</b> · 3 et + : <b>{matchResult.polygons_per_producer['3+']}</b></p>
                       <p>Polygones rattachés : <b>{matchResult.linked_polygons}</b> / {matchResult.legacy_polygons}</p>
                       {matchResult.orphan_polygons > 0 && <p className="text-amber-800">Polygones sans producteur : <b>{matchResult.orphan_polygons}</b></p>}
+                      {!!matchResult.unmatched_codes?.length && <p className="text-amber-800">Codes des polygones absents du registre : <span className="font-mono">{matchResult.unmatched_codes.slice(0, 15).join(', ')}{matchResult.unmatched_codes.length > 15 ? '…' : ''}</span></p>}
+                      {!!matchResult.ambiguous_codes?.length && <p className="text-red-700">Codes ambigus (plusieurs producteurs du registre ont ce code, écrit différemment) — non rattachés : <span className="font-mono">{matchResult.ambiguous_codes.slice(0, 15).join(', ')}</span></p>}
                     </div>
                     {matchResult.code_field && <p className="mt-2 text-xs text-gray-500">Code lu dans l'attribut « {matchResult.code_field} » des anciens polygones.</p>}
                   </div>

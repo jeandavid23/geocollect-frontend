@@ -86,7 +86,7 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
         try {
           const { data: m } = await producersApi.match(codeField, cooperativeId)
           addNotification({ type: 'success', title: 'Croisement avec le registre',
-            message: `${m.linked_polygons} polygone(s) rattaché(s) · ${m.mapped_producers} producteur(s) cartographié(s) · ${m.to_map} à mapper par les agents${m.orphan_polygons ? ` · ${m.orphan_polygons} polygone(s) sans producteur` : ''}.` })
+            message: `${m.linked_polygons} polygone(s) rattaché(s) · ${m.mapped_producers} producteur(s) cartographié(s) · ${m.to_map} à mapper par les agents${m.orphan_polygons ? ` · ${m.orphan_polygons} polygone(s) sans producteur` : ''}${m.unmatched_codes?.length ? ` (codes absents du registre : ${m.unmatched_codes.slice(0, 8).join(', ')}${m.unmatched_codes.length > 8 ? '…' : ''})` : ''}${m.ambiguous_codes?.length ? ` · ${m.ambiguous_codes.length} code(s) ambigu(s) non rattaché(s) : ${m.ambiguous_codes.slice(0, 5).join(', ')}` : ''}.` })
         } catch { /* le croisement pourra être relancé depuis le Registre */ }
       }
       setProgress('Chargement sur la carte…')
