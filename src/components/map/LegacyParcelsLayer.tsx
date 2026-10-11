@@ -65,7 +65,10 @@ export default function LegacyParcelsLayer({ parcels, coopName, interactive = tr
 }
 
 /** Légende commune : anciens polygones + parcelles mappées. */
-export function MapLegend({ legacyCount, mappedCount }: { legacyCount: number; mappedCount: number }) {
+export function MapLegend({ legacyCount, mappedCount, zones = [] }: {
+  legacyCount: number; mappedCount: number
+  zones?: { label: string; color: string; fill: string; count: number; dashed?: boolean }[]
+}) {
   return (
     <div className="absolute bottom-4 left-4 z-[500] bg-white/95 rounded-xl shadow border border-gray-100 px-3 py-2 text-xs space-y-1">
       <p className="flex items-center gap-2">
@@ -76,6 +79,12 @@ export function MapLegend({ legacyCount, mappedCount }: { legacyCount: number; m
         <span className="w-4 h-3 rounded-sm border-2 border-green-700 bg-green-600/40" />
         Parcelles mappées ({mappedCount})
       </p>
+      {zones.map((z) => (
+        <p key={z.label} className="flex items-center gap-2">
+          <span className={`w-4 h-3 rounded-sm border-2 ${z.dashed ? 'border-dashed' : ''}`} style={{ borderColor: z.color, background: `${z.fill}55` }} />
+          {z.label} ({z.count})
+        </p>
+      ))}
     </div>
   )
 }

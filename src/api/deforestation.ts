@@ -61,6 +61,8 @@ export interface AnalyzeFeature {
 export const deforestationApi = {
   // Forêts classées, parcs / réserves, enclaves (données privées de la coopérative, en base)
   landZones: () => api.get<GeoJSON.FeatureCollection>('/parcels/landuse/', { timeout: 120000 }),
+  // carte interactive : contours simplifiés (~10 m), visibles par tous les comptes
+  landZonesDisplay: () => api.get<GeoJSON.FeatureCollection>('/parcels/landuse/', { params: { display: 1 }, timeout: 120000 }),
   // 1000 parcelles max par appel : la page découpe les gros fichiers en lots
   analyze: (features: AnalyzeFeature[], options: DeforestationOptions) =>
     api.post<DeforestationResponse>('/parcels/deforestation/analyze/', { features, ...options }, { timeout: 180000 }),

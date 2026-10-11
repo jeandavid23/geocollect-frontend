@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { MapContainer, TileLayer, Polygon, Popup, LayersControl, useMap } from 'react-leaflet'
 import { Search, Filter, X, Layers, Eye, EyeOff } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
@@ -12,6 +12,9 @@ import LegacyParcelsLayer, { MapLegend, LEGACY_COLOR } from '../components/map/L
 import LegacyImportModal from '../components/map/LegacyImportModal'
 import FitToData from '../components/map/FitToData'
 import GisWorkspace from '../components/gis/GisWorkspace'
+import LandZonesLayer, { FlyToZone, ZONE_STYLE } from '../components/map/LandZonesLayer'
+import { deforestationApi } from '../api/deforestation'
+import { useStickyState } from '../components/ui/table'
 
 const { BaseLayer } = LayersControl
 
@@ -36,6 +39,20 @@ export default function MapPage() {
   // Super admin : toutes les coopératives, ou une seule
   const [filterCoop, setFilterCoop] = useState('all')
   const [showLegacy, setShowLegacy] = useState(true)
+  // Forêts classées, parcs, enclaves (référence RDUE) : catégories affichées mémorisées par utilisateur
+  const [zones, setZones] = useState<GeoJSON.FeatureCollection | null>(null)
+  const [zoneCats, setZoneCats] = useStickyState<string[]>('map:zones', ['Foret classee', 'Parc/reserve', 'Agro-foret classee', 'Enclave'])
+  const [flyTo, setFlyTo] = useState<GeoJSON.Feature | null>(null)
+  useEffect(() => { deforestationApi.landZonesDisplay().then(({ data }) => setZones(data)).catch(() => setZones(null)) }, [])
+  const zoneCounts = useMemo(() => {
+    const c: Record<string, number> = {}
+    for (const f of zones?.features ?? []) c[String(f.properties?.category)] = (c[String(f.properties?.category)] ?? 0) + 1
+    return c
+  }, [zones])
+  const zoneList = useMemo(() => [...(zones?.features ?? [])]
+    .filter((f) => zoneCats.includes(String(f.properties?.category)))
+    .sort((a, b) => String(a.properties?.name).localeCompare(String(b.properties?.name), 'fr')), [zones, zoneCats])
+  const toggleCat = (c: string) => setZoneCats(zoneCats.includes(c) ? zoneCats.filter((x) => x !== c) : [...zoneCats, c])
   const [showLegacyImport, setShowLegacyImport] = useState(false)
   const coopName = (id: string) => cooperatives.find((c) => c.id === id)?.name
   const legacy = useMemo(
@@ -151,6 +168,31 @@ export default function MapPage() {
         <span className="text-xs text-gray-400 ml-auto">{filtered.length} parcelle(s)</span>
       </div>
 
+      {/* Forêts classées, parcs / réserves, enclaves */}
+      {zones && zones.features.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 px-6 pb-3">
+          <span className="text-xs font-medium text-gray-500">Zones foncières :</span>
+          {Object.entries(ZONE_STYLE).filter(([c]) => zoneCounts[c]).map(([c, st]) => {
+            const on = zoneCats.includes(c)
+            return (
+              <button key={c} onClick={() => toggleCat(c)} aria-pressed={on}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition ${on ? 'bg-white shadow-sm' : 'border-gray-200 bg-gray-50 text-gray-400'}`}
+                style={on ? { borderColor: st.color, color: st.color } : undefined}>
+                <span className="h-3 w-3 rounded-sm border" style={{ background: on ? st.fill : 'transparent', borderColor: st.color, opacity: on ? 0.8 : 0.4 }} />
+                {st.label} ({zoneCounts[c]})
+              </button>
+            )
+          })}
+          {zoneList.length > 0 && (
+            <select value="" onChange={(e) => setFlyTo(zoneList[Number(e.target.value)] ?? null)}
+              className="ml-auto max-w-[260px] rounded-xl border border-gray-200 px-3 py-1.5 text-xs" aria-label="Aller à une zone">
+              <option value="">Aller à une zone…</option>
+              {zoneList.map((f, i) => <option key={String(f.properties?.id ?? i)} value={i}>{String(f.properties?.name || '(sans nom)')} — {ZONE_STYLE[String(f.properties?.category)]?.one ?? ''}</option>)}
+            </select>
+          )}
+        </div>
+      )}
+
       {/* Map */}
       <div className="flex-1 px-6 pb-6">
         <div className="relative h-full rounded-2xl overflow-hidden shadow-sm border border-gray-100">
@@ -160,6 +202,8 @@ export default function MapPage() {
             className="h-full w-full"
           >
             <FitToData geometries={[...filtered.map((p) => p.geometry), ...legacy.map((p) => p.geometry)]} />
+            {zones && <LandZonesLayer data={zones} visible={new Set(zoneCats)} />}
+            <FlyToZone feature={flyTo} />
             {showLegacy && <LegacyParcelsLayer parcels={legacy} coopName={isAdmin ? coopName : undefined} />}
             {centerOn && <MapAutoCenter lat={centerOn.lat} lng={centerOn.lng} />}
 
@@ -237,7 +281,8 @@ export default function MapPage() {
               )
             })}
           </MapContainer>
-          <MapLegend legacyCount={showLegacy ? legacy.length : 0} mappedCount={filtered.length} />
+          <MapLegend legacyCount={showLegacy ? legacy.length : 0} mappedCount={filtered.length}
+            zones={Object.entries(ZONE_STYLE).filter(([c]) => zoneCats.includes(c) && zoneCounts[c]).map(([c, st]) => ({ label: st.label, color: st.color, fill: st.fill, count: zoneCounts[c], dashed: c !== 'Enclave' }))} />
         </div>
       </div>
       {showLegacyImport && (
