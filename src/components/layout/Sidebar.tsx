@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
-  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2, Scissors, Link2, Package,
+  Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2, Scissors, Link2, Package, Layers,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
@@ -37,6 +37,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Agents', to: '/coop/agents', icon: <UserCog className="w-5 h-5" />, roles: ['cooperative'] },
   { label: 'Fiches de lot', to: '/coop/lots', icon: <Package className="w-5 h-5" />, roles: ['cooperative'], module: 'lots' },
   { label: 'Rapports', to: '/coop/reports', icon: <FileBarChart className="w-5 h-5" />, roles: ['cooperative'] },
+  { label: 'Contrôle spatial', to: '/coop/spatial', icon: <Layers className="w-5 h-5" />, roles: ['cooperative'] },
   { label: 'Analyse déforestation', to: '/coop/deforestation', icon: <TreePine className="w-5 h-5" />, roles: ['cooperative'], module: 'deforestation' },
   { label: 'Polygon Validator', to: '/coop/validator', icon: <ShieldCheck className="w-5 h-5" />, roles: ['cooperative'], module: 'validator' },
   { label: 'Self-intersection', to: '/coop/selfintersection', icon: <Scissors className="w-5 h-5" />, roles: ['cooperative'], module: 'selfintersection' },

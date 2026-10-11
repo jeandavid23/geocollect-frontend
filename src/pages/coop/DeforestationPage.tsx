@@ -59,7 +59,7 @@ export default function DeforestationPage() {
   const hasRdue = useHasModule('rdue')
   const [picked, setPicked] = useState<PickedSource | null>(null)
   const [opts, setOpts] = useState<DeforestationOptions>({
-    standard: 'EUDR', tolerance_ha: 0.01, alert_pct: 1, treecover_min: 10, apply_rdue: false, forest_min_frac: 0.1,
+    standard: 'EUDR', tolerance_ha: 0.01, alert_pct: 1, treecover_min: 10, apply_rdue: false, forest_min_frac: 0.1, forest_ref: 'jrc',
   })
   // Forêts classées, parcs / réserves et enclaves (matrice RDUE)
   const [zones, setZones] = useState<GeoJSON.FeatureCollection | null>(null)
@@ -73,7 +73,7 @@ export default function DeforestationPage() {
   const [progress, setProgress] = useState({ done: 0, total: 0, retry: '' })
   const [failed, setFailed] = useState<number[]>([])
   const [error, setError] = useState('')
-  const [meta, setMeta] = useState<{ cutoff: number; source: string; rdue: boolean } | null>(null)
+  const [meta, setMeta] = useState<{ cutoff: number; source: string; rdue: boolean; jrc: boolean } | null>(null)
   const [filter, setFilter] = useState<DefStatus | 'all'>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
@@ -110,7 +110,7 @@ export default function DeforestationPage() {
             (n) => setProgress((p) => ({ ...p, retry: `nouvelle tentative ${n}/3 d'un lot` })),
           )
           chunk.forEach((i, k) => { acc[i] = data.results[k] })
-          setMeta({ cutoff: data.cutoff_year, source: data.source, rdue: Boolean((data as { rdue?: boolean }).rdue) })
+          setMeta({ cutoff: data.cutoff_year, source: data.source, rdue: Boolean((data as { rdue?: boolean }).rdue), jrc: data.forest_ref === 'jrc' })
         } catch (err) {
           lastError = apiErrorMessage(err)
           chunk.forEach((i) => { acc[i] = { status: 'Indetermine', error: lastError } })
@@ -185,6 +185,7 @@ export default function DeforestationPage() {
     statut: r ? STATUS_STYLE[r.status]?.label : '', niveau_risque: r?.risk_level ? RISK_LABEL[r.risk_level] : '',
     surface_ha: r?.area_ha ?? '', perte_ha: r?.defor_ha ?? '', perte_pct: r?.defor_pct ?? '', annees_perte: r?.years ?? '',
     foret_2000_pct: r?.forest2000_pct ?? '', foret_coupure_pct: r?.forest2020_pct ?? '', usage_coupure: r?.cover2020 ?? '',
+    foret_2020_ue_jrc_pct: r?.jrc_forest2020_pct ?? '', foret_2020_hansen_pct: r?.hansen_forest2020_pct ?? '', note: r?.note ?? r?.jrc_error ?? '',
     methode: r?.method ?? '', erreur: r?.error ?? '',
     ...(r?.rdue_stat ? {
       categorie_fonciere: CAT_STYLE[r.usage_cat ?? '']?.label ?? r.usage_cat, zone: r.zone ?? '', legalite: r.legalite ?? '',
@@ -198,6 +199,7 @@ export default function DeforestationPage() {
       ['Source', picked?.label ?? ''], ['Norme', opts.standard], ['Perte comptée après', meta?.cutoff ?? ''],
       ['Données', meta?.source ?? ''], ['Tolérance (ha)', opts.tolerance_ha], ['Seuil « À risque » (%)', opts.alert_pct],
       ['Couvert forestier minimal (%)', opts.treecover_min],
+      ['Forêt au 31/12/2020', meta?.jrc ? "Carte de l'UE (JRC GFC2020 V4)" : 'Estimation Hansen'],
       ['Matrice RDUE', meta?.rdue ? `Oui (forêt au 31/12 si ≥ ${Math.round(opts.forest_min_frac * 100)} % boisé)` : 'Non'], [],
       ['Parcelles analysées', stats.total], ['Conformes', stats.byStatus['Conforme'] ?? 0],
       ['À risque', stats.byStatus['A risque'] ?? 0], ['Non conformes', stats.byStatus['Non conforme'] ?? 0],
@@ -277,6 +279,13 @@ export default function DeforestationPage() {
           <label className="text-xs text-gray-600">« À risque » jusqu'à (% de la parcelle)
             <input type="number" step="0.1" min="0" value={opts.alert_pct} onChange={(e) => setOpts({ ...opts, alert_pct: Number(e.target.value) })} className={input} />
           </label>
+          <label className="text-xs text-gray-600 md:col-span-2">Forêt au 31/12/2020 (référence)
+            <select value={opts.standard === 'EUDR' ? opts.forest_ref : 'hansen'} disabled={opts.standard !== 'EUDR'}
+              onChange={(e) => setOpts({ ...opts, forest_ref: e.target.value as 'jrc' | 'hansen' })} className={input}>
+              <option value="jrc">Carte officielle de l'UE — JRC 2020, 10 m (recommandé EUDR)</option>
+              <option value="hansen">Estimation Hansen (couvert 2000 moins les pertes)</option>
+            </select>
+          </label>
           <label className="text-xs text-gray-600">Forêt si couvert 2000 ≥ (%)
             <input type="number" min="0" max="100" value={opts.treecover_min} onChange={(e) => setOpts({ ...opts, treecover_min: Number(e.target.value) })} className={input} />
           </label>
@@ -289,7 +298,7 @@ export default function DeforestationPage() {
           <p className="text-xs text-gray-500">
             Base foncière : {zoneCount('Foret classee')} forêts classées · {zoneCount('Parc/reserve')} parcs / réserves · {zoneCount('Enclave')} enclaves
             {zoneCount('Agro-foret classee') ? ` · ${zoneCount('Agro-foret classee')} agro-forêts` : ''}.
-            Forêt classée, parc / réserve : illégal · enclave, agro-forêt, domaine rural : légal. Une enclave prime sur la forêt qui l'entoure.
+            Forêt classée, parc / réserve : illégal · enclave, agro-forêt, domaine rural : légal. Une enclave prime sur la forêt qui l'entoure, sauf si la parcelle en déborde de plus de 1 %.
           </p>
           {opts.apply_rdue && (
             <label className="text-xs text-gray-600 block max-w-xs">Parcelle « forêt au 31/12/{opts.standard === 'EUDR' ? 2020 : 2013} » si boisée à ≥ (%)
@@ -431,6 +440,7 @@ export default function DeforestationPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-xs text-gray-500">
                   <tr>{['Identifiant', 'Statut', 'Risque', 'Surface (ha)', 'Perte (ha)', 'Perte (%)', 'Années', 'Forêt 2000',
+                    ...(meta?.jrc ? ['Forêt 2020 (UE)'] : []),
                     ...(meta?.rdue ? ['Catégorie foncière', 'Légalité', 'Zéro défor.', 'RDUE'] : [])].map((h) => <th key={h} className="text-left px-4 py-2 font-medium">{h}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -438,13 +448,16 @@ export default function DeforestationPage() {
                     <tr key={i}>
                       <td className="px-4 py-2 font-mono text-xs">{f.id}</td>
                       <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLE[r!.status]?.badge}`}>{STATUS_STYLE[r!.status]?.label}</span>
-                        {r!.error && <span className="block text-[11px] text-red-600">{r!.error}</span>}</td>
+                        {r!.error && <span className="block text-[11px] text-red-600">{r!.error}</span>}
+                        {r!.note && <span className="block max-w-[16rem] text-[11px] text-amber-700">{r!.note}</span>}
+                        {r!.jrc_error && <span className="block max-w-[16rem] text-[11px] text-gray-500">{r!.jrc_error}</span>}</td>
                       <td className="px-4 py-2 text-xs" style={{ color: r!.risk_level ? RISK_COLOR[r!.risk_level] : undefined }}>{r!.risk_level ? RISK_LABEL[r!.risk_level] : '—'}</td>
                       <td className="px-4 py-2">{r!.area_ha ?? '—'}</td>
                       <td className="px-4 py-2">{r!.defor_ha ?? '—'}</td>
                       <td className="px-4 py-2">{r!.defor_pct ?? '—'}</td>
                       <td className="px-4 py-2 text-xs">{r!.years || '—'}</td>
                       <td className="px-4 py-2 text-xs">{r!.forest2000_pct != null ? `${r!.forest2000_pct} %` : '—'}</td>
+                      {meta?.jrc && <td className="px-4 py-2 text-xs" title={r!.hansen_forest2020_pct != null ? `Hansen : ${r!.hansen_forest2020_pct} %` : undefined}>{r!.jrc_forest2020_pct != null ? `${r!.jrc_forest2020_pct} %` : '—'}</td>}
                       {meta?.rdue && <>
                         <td className="px-4 py-2 text-xs" style={{ color: CAT_STYLE[r!.usage_cat ?? '']?.color }}>
                           {CAT_STYLE[r!.usage_cat ?? '']?.label ?? '—'}{r!.zone && <span className="block text-gray-500">{r!.zone}</span>}</td>

@@ -6,7 +6,7 @@ import { downloadBlob } from './geoExport'
 // ─── Rapport commun à tous les traitements et imports ─────────────────────────
 // Même contenu, tous les formats : PDF, Excel, CSV, GeoJSON, KML, Shapefile.
 
-export type ReportKind = 'deforestation' | 'validator' | 'selfintersection' | 'gmr' | 'import_registry' | 'import_polygons'
+export type ReportKind = 'deforestation' | 'validator' | 'selfintersection' | 'gmr' | 'import_registry' | 'import_polygons' | 'spatial'
 
 export const REPORT_KIND_LABEL: Record<ReportKind, string> = {
   deforestation: 'Analyse déforestation',
@@ -15,6 +15,7 @@ export const REPORT_KIND_LABEL: Record<ReportKind, string> = {
   gmr: 'Polygon & GMR (registre × polygones)',
   import_registry: 'Import du registre',
   import_polygons: 'Import de polygones',
+  spatial: 'Contrôle spatial (chevauchements, zones foncières)',
 }
 
 export type Cell = string | number | boolean | null

@@ -26,6 +26,12 @@ export interface DeforestationResult {
   zero_def?: string
   rdue_stat?: 'Potentiellement conforme' | 'Non conforme' | 'A verifier'
   legal_note?: string
+  // Forêt au 31/12/2020 selon la carte de l'UE (JRC), si demandée
+  jrc_forest2020_pct?: number
+  jrc_forest2020_ha?: number
+  hansen_forest2020_pct?: number
+  jrc_error?: string
+  note?: string
 }
 
 export interface DeforestationOptions {
@@ -35,6 +41,7 @@ export interface DeforestationOptions {
   treecover_min: number
   apply_rdue: boolean         // matrice RDUE : légalité foncière x zéro déforestation
   forest_min_frac: number     // part de forêt au 31/12 de coupure pour classer la parcelle « Forêt »
+  forest_ref: 'jrc' | 'hansen' // forêt au 31/12/2020 : carte officielle de l'UE (JRC) ou estimation Hansen
 }
 
 export interface DeforestationResponse {
@@ -42,6 +49,7 @@ export interface DeforestationResponse {
   standard: Standard
   cutoff_year: number
   source: string
+  forest_ref?: 'jrc' | 'hansen'
   results: DeforestationResult[]
 }
 
