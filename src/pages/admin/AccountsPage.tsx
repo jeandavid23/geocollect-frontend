@@ -5,6 +5,8 @@ import Header from '../../components/layout/Header'
 import CredentialsModal from '../../components/ui/CredentialsModal'
 import { usersApi, type ApiUser } from '../../api/users'
 import { useAuthStore } from '../../store/authStore'
+import { useAppStore } from '../../store/appStore'
+import { confirmAccountDeletion } from '../../utils/confirmDeletion'
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Super Super Admin', super_admin: 'Super Admin', cooperative: 'Coopérative', agent: 'Agent',
@@ -27,12 +29,12 @@ export default function AccountsPage() {
   const toggleCheck = (id: string) => setChecked((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const deleteChecked = async () => {
     const list = users.filter((u) => checked.has(u.id))
-    if (!list.length || !window.confirm(`Supprimer définitivement ${list.length} compte(s) ?\n\n${list.slice(0, 12).map((u) => `• ${u.full_name} (${u.username})`).join('\n')}${list.length > 12 ? '\n…' : ''}\n\nLes données (coopératives, parcelles, rapports) sont conservées.`)) return
+    if (!list.length || !(await confirmAccountDeletion(list.map((u) => u.id), `${list.length} compte(s) (${list.slice(0, 6).map((u) => u.username).join(', ')}${list.length > 6 ? '…' : ''})`))) return
     setDeleting(true)
     try {
       const { data } = await usersApi.bulkDelete(list.map((u) => u.id))
       if (data.refused.length) alert(`${data.deleted} compte(s) supprimé(s).\nNon supprimé(s) :\n${data.refused.map((r) => `• ${r.username} : ${r.detail}`).join('\n')}`)
-      setChecked(new Set()); load()
+      setChecked(new Set()); load(); useAppStore.getState().refreshData()
     } catch (err) { alert(apiErrorMessage(err)) } finally { setDeleting(false) }
   }
   const [users, setUsers] = useState<ApiUser[]>([])
@@ -180,8 +182,8 @@ export default function AccountsPage() {
                         )}
                         {canManage(u) && (
                           <button onClick={async () => {
-                            if (!window.confirm(`Supprimer définitivement le compte « ${u.full_name} » (${u.username}) ?${u.role === 'super_admin' ? '\n\nSes coopératives sont conservées et passent sous votre gestion directe.' : ''}`)) return
-                            try { await usersApi.remove(u.id); load() }
+                            if (!(await confirmAccountDeletion([u.id], `le compte « ${u.full_name} » (${u.username})`))) return
+                            try { await usersApi.remove(u.id); load(); useAppStore.getState().refreshData() }
                             catch (err) { alert(apiErrorMessage(err)) }
                           }} className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 font-medium">
                             <Trash2 className="w-3.5 h-3.5" /> Supprimer

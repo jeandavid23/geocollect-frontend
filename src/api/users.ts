@@ -27,8 +27,15 @@ export const usersApi = {
 
   // Active / désactive un compte
   remove: (id: string) => api.delete(`/auth/users/${id}/`),
+  // ce qui sera supprimé avec ces comptes (affiché avant confirmation)
+  deletePreview: (ids: string[]) => api.post<DeletionPreview>('/auth/users/delete-preview/', { ids }, { timeout: 60000 }),
   // propriétaire uniquement : suppression groupée sans condition (sauf son propre compte et le dernier propriétaire)
   bulkDelete: (ids: string[]) => api.post<{ deleted: number; refused: { username: string; detail: string }[] }>('/auth/users/bulk-delete/', { ids }, { timeout: 120000 }),
   toggleActive: (id: string) =>
     api.post<{ is_active: boolean }>(`/auth/users/${id}/toggle/`),
+}
+
+export interface DeletionPreview {
+  cooperatives: number; accounts: number; producers: number; parcels: number; legacy_polygons: number
+  registry_sheets: number; lots: number; reports: number; documents: number; logs: number; cooperative_names: string[]
 }

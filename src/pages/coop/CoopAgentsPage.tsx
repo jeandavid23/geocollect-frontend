@@ -1,4 +1,5 @@
 import { apiErrorMessage } from '../../utils/retry'
+import { confirmAccountDeletion } from '../../utils/confirmDeletion'
 import { useState } from 'react'
 import { Plus, X, Save, Trash2, MapPin, Phone, Mail, Power, Loader2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
@@ -112,9 +113,12 @@ export default function CoopAgentsPage() {
 
   const handleDelete = async (agent: Agent) => {
     try {
-      if (useAppStore.getState().isLive) await agentsApi.remove(agent.id)   // compte de connexion supprimé aussi
+      const live = useAppStore.getState().isLive
+      if (live && !(await confirmAccountDeletion([agent.userId], `l'agent ${agent.fullName}`))) return
+      if (live) await agentsApi.remove(agent.id)   // compte et données de l'agent supprimés
       removeAgent(agent.id)
-      addNotification({ type: 'info', title: 'Agent supprimé', message: `${agent.fullName} : compte supprimé, ses parcelles mappées sont conservées.` })
+      if (live) useAppStore.getState().refreshData()
+      addNotification({ type: 'info', title: 'Agent supprimé', message: `${agent.fullName} : compte et données supprimés (parcelles mappées comprises).` })
     } catch (err) {
       addNotification({ type: 'error', title: 'Suppression impossible', message: apiErrorMessage(err) })
     } finally {
@@ -290,15 +294,15 @@ export default function CoopAgentsPage() {
             <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-7 h-7 text-red-600" />
             </div>
-            <h3 className="font-bold text-gray-900">Retirer cet agent ?</h3>
+            <h3 className="font-bold text-gray-900">Supprimer cet agent ?</h3>
             <p className="text-sm text-gray-500 mt-1">
-              <strong>{confirmDelete.fullName}</strong> ne fera plus partie de la coopérative. Cette action est irréversible.
+              Le compte de <strong>{confirmDelete.fullName}</strong> et toutes ses données (parcelles mappées, polygones importés, rapports) seront supprimés. Cette action est irréversible.
             </p>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setConfirmDelete(null)}
                 className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition">Annuler</button>
               <button onClick={() => handleDelete(confirmDelete)}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-xl transition">Retirer</button>
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-xl transition">Supprimer</button>
             </div>
           </div>
         </div>

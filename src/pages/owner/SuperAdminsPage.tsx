@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { confirmAccountDeletion } from '../../utils/confirmDeletion'
 import {
   Plus, X, Save, Loader2, ShieldCheck, ShieldOff, KeyRound, Trash2, Pencil, Building2, AlertTriangle, Search,
 } from 'lucide-react'
@@ -132,7 +133,7 @@ export default function SuperAdminsPage() {
   }
 
   const remove = async (a: PlatformAdmin) => {
-    if (!confirm(`Supprimer définitivement le compte de ${a.full_name} ?\n\nSes coopératives et leurs données sont conservées et passent sous votre gestion directe (vous pourrez les transférer à un autre super admin).`)) return
+    if (!(await confirmAccountDeletion([a.id], `le super admin ${a.full_name}`))) return
     setBusyId(a.id)
     try {
       await platformApi.deleteAdmin(a.id)

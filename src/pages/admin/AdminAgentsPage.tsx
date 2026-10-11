@@ -1,4 +1,5 @@
 import { apiErrorMessage } from '../../utils/retry'
+import { confirmAccountDeletion } from '../../utils/confirmDeletion'
 import { agentsApi } from '../../api/agents'
 import { useState } from 'react'
 import { Search, MapPin, Phone, Mail, X, Building2, Activity , Trash2 } from 'lucide-react'
@@ -155,10 +156,11 @@ export default function AdminAgentsPage() {
             )})()}
             <button
               onClick={async () => {
-                if (!window.confirm(`Supprimer l'agent ${selected.fullName} et son compte de connexion ? Ses parcelles mappées sont conservées.`)) return
+                if (!(await confirmAccountDeletion([selected.userId], `l'agent ${selected.fullName}`))) return
                 try {
                   await agentsApi.remove(selected.id)
                   useAppStore.getState().removeAgent(selected.id)
+                  useAppStore.getState().refreshData()
                   useAppStore.getState().addNotification({ type: 'success', title: 'Agent supprimé', message: selected.fullName })
                   setSelected(null)
                 } catch (err) {
