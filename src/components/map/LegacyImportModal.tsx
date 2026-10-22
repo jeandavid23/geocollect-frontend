@@ -50,8 +50,10 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
       setParsed(result)
       const keys = Object.keys(result.features[0]?.properties ?? {})
       const norm = (k: string) => k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
-      const pref = ['code producteur', 'code planteur', 'code parcelle', 'field id', 'fieldid', 'field_id', 'code', 'matricule', 'id producteur']
-      setCodeField(pref.map((p) => keys.find((k) => norm(k) === p)).find(Boolean) ?? keys.find((k) => norm(k).includes('code')) ?? '')
+      const pref = ['code producteur', 'code planteur', 'farmer id', 'prod', 'code parcelle', 'farm id', 'field id', 'fieldid', 'code', 'matricule', 'id producteur']
+      // à défaut, « Name » (shapefiles et KML) porte souvent le code de parcelle : SPAM-BE-001-P1
+      setCodeField(pref.map((p) => keys.find((k) => norm(k) === p)).find(Boolean) ?? keys.find((k) => norm(k).includes('code'))
+        ?? keys.find((k) => ['name', 'nom'].includes(norm(k))) ?? '')
     } catch (err) {
       setError(errorMessage(err))
     } finally {
