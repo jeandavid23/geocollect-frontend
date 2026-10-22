@@ -70,6 +70,7 @@ export default function LoginPage() {
       // En production : jamais de connexion « démo » de secours (elle masquait les vraies erreurs)
       if (!import.meta.env.DEV) {
         setError(status === 429 ? 'Trop de tentatives. Patientez une minute avant de réessayer.'
+          : status && status >= 500 ? 'Le serveur GeoCollect rencontre un problème technique (base de données indisponible). Vos identifiants ne sont pas en cause : réessayez plus tard.'
           : status ? 'Identifiant ou mot de passe incorrect.'
           : 'Serveur injoignable. Vérifiez votre connexion Internet et réessayez.')
         setLoading(false)
