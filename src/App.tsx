@@ -63,6 +63,7 @@ const LandingPage = lazy(() => import('./pages/public/LandingPage'))
 const TrashPage = lazy(() => import('./pages/owner/TrashPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const ProspectsPage = lazy(() => import('./pages/owner/ProspectsPage'))
+const DueDiligencePage = lazy(() => import('./pages/coop/DueDiligencePage'))
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuthStore()
@@ -160,6 +161,7 @@ export default function App() {
           <Route path="/coop/selfintersection" element={<RequireModule module="selfintersection"><SelfIntersectionPage /></RequireModule>} />
           <Route path="/coop/gmr" element={<RequireModule module="gmr"><GmrPage /></RequireModule>} />
           <Route path="/coop/spatial" element={<SpatialCheckPage />} />
+          <Route path="/coop/due-diligence" element={<RequireModule module="due_diligence"><DueDiligencePage /></RequireModule>} />
           <Route path="/coop/lots" element={<RequireModule module="lots"><LotsPage /></RequireModule>} />
           <Route path="/coop/registry" element={<RequireModule module="registry"><Suspense fallback={<p className="p-6 text-gray-500">Chargement du registre…</p>}><RegistryPage /></Suspense></RequireModule>} />
         </Route>

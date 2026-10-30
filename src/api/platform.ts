@@ -69,6 +69,7 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   selfintersection: 'Self-intersection (nettoyage)',
   gmr: 'Polygon & GMR (registre × polygones)',
   lots: 'Fiches de lot',
+  due_diligence: 'Diligence raisonnée EUDR (convergence de preuves)',
 }
 export const ALL_MODULES = Object.keys(MODULE_LABELS) as ModuleId[]
 

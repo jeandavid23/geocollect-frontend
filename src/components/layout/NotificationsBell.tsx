@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { onWake, shouldPoll } from '../../utils/activity'
 import { Link } from 'react-router-dom'
 import { confirmDialog } from '../ui/dialog'
 import { Bell, CheckCheck, X, Send , Trash2 } from 'lucide-react'
@@ -44,10 +45,21 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
 
   useEffect(() => {
     load()
+    // Toutes les 20 s, seulement si l'onglet est visible et l'utilisateur présent : un écran oublié ne doit pas
+    // tenir la base de données éveillée jour et nuit (temps de calcul facturé par Neon).
+    const tick = () => { if (shouldPoll()) load() }
+    const onVisibility = () => { if (document.visibilityState === 'visible') load() }
+    let offWake = () => {}
     if (isLive) {
-      timer.current = setInterval(load, 20000) // rafraîchit toutes les 20 s
+      timer.current = setInterval(tick, 20000)
+      document.addEventListener('visibilitychange', onVisibility)
+      offWake = onWake(load)
     }
-    return () => { if (timer.current) clearInterval(timer.current) }
+    return () => {
+      if (timer.current) clearInterval(timer.current)
+      document.removeEventListener('visibilitychange', onVisibility)
+      offWake()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLive])
 
