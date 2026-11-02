@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Button from '../ui/Button'
 import { offerUndo } from '../ui/undo'
 import { useHotkeys } from '../../hooks/useHotkeys'
 import { confirmDialog } from '../ui/dialog'
@@ -106,12 +107,12 @@ export default function ProducerEditPanel({ producer, polygonCount, onClose }: {
         {error && <p role="alert" className="rounded-md border-l-4 border-red-500 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
       </div>
       <div className="flex items-center gap-2 border-t border-gray-100 p-4">
-        <button onClick={save} disabled={!!busy} className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary-700 py-2.5 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-50">
+        <Button className="flex-1" onClick={save} disabled={!!busy}>
           {busy === 'save' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer
-        </button>
-        <button onClick={remove} disabled={!!busy} className="flex items-center gap-2 rounded-md border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">
+        </Button>
+        <Button variant="secondary" onClick={remove} disabled={!!busy}>
           {busy === 'delete' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Supprimer
-        </button>
+        </Button>
       </div>
     </div>
   )

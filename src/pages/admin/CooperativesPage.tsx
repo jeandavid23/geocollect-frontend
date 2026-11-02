@@ -1,4 +1,5 @@
 import { Search, Plus, Eye, Users, Leaf, X, Save, Loader2 , Trash2 } from 'lucide-react'
+import Button from '../../components/ui/Button'
 import { queryParam } from '../../utils/query'
 import { confirmDialog } from '../../components/ui/dialog'
 import { useEffect, useState } from 'react'
@@ -131,14 +132,14 @@ export default function CooperativesPage() {
             {license.expires_at && ` · jusqu'au ${new Date(license.expires_at).toLocaleDateString('fr-FR')}`}
           </span>
         )}
-        <button
+        <Button
           onClick={() => { setFormError(''); setShowForm(true) }}
           disabled={quotaReached}
-          title={quotaReached ? 'Limite de coopératives de votre abonnement atteinte' : undefined}
-          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
+          label={quotaReached ? 'Limite de coopératives de votre abonnement atteinte' : undefined}
+         
         >
           <Plus className="w-4 h-4" /> Nouvelle coopérative
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -305,11 +306,11 @@ export default function CooperativesPage() {
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)}
                   className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition">Annuler</button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl transition">
+                <Button className="flex-1" type="submit" disabled={saving}
+                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   {saving ? 'Création...' : 'Créer le compte'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

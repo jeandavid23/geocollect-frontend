@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Button from './Button'
 import { KeyRound, Copy, Check, X, AlertTriangle } from 'lucide-react'
 
 interface Props {
@@ -66,12 +67,12 @@ export default function CredentialsModal({ title, subtitle, username, password, 
             {copied === 'both' ? <><Check className="w-4 h-4 text-green-600" /> Copié</> : <><Copy className="w-4 h-4" /> Copier les deux</>}
           </button>
 
-          <button
+          <Button fullWidth
             onClick={onClose}
-            className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 rounded-xl transition"
+           
           >
             J'ai noté les identifiants
-          </button>
+          </Button>
         </div>
       </div>
     </div>

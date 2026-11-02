@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import Button from '../ui/Button'
 import { X, Delete, CornerDownLeft } from 'lucide-react'
 import { formatComputed, isError, type WorkbookEngine } from '../../utils/spreadsheet/engine'
 import { normalizeFormulaInput } from '../../utils/spreadsheet/refs'
@@ -113,12 +114,12 @@ export default function Calculator({ engine, sheetName, selectionRef, onInsert, 
 
         {/* Insertion dans la cellule active */}
         <div className="grid grid-cols-2 gap-2">
-          <button
+          <Button size="sm"
             disabled={result === null || isError(result)}
             onClick={() => onInsert(typeof result === 'number' ? String(result).replace('.', ',') : resultText)}
-            className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-primary-600 text-white text-xs font-semibold disabled:bg-gray-300">
+           >
             <CornerDownLeft className="w-3.5 h-3.5" /> Insérer le résultat
-          </button>
+          </Button>
           <button
             disabled={!expr.trim()}
             onClick={() => onInsert(toFormula(expr))}

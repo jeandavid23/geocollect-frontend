@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import Button from '../../components/ui/Button'
 import { MapContainer, TileLayer, LayersControl, GeoJSON } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import * as XLSX from 'xlsx'
@@ -318,19 +319,19 @@ export default function DeforestationPage() {
         </p>
         <div className="flex flex-wrap items-center gap-3">
           {!running ? (
-            <button onClick={() => run()} disabled={!features.length}
-              className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">
+            <Button onClick={() => run()} disabled={!features.length}
+             >
               <Play className="w-4 h-4" /> Analyser {features.length ? `${features.length.toLocaleString('fr-FR')} parcelle(s)` : ''}
-            </button>
+            </Button>
           ) : (
-            <button onClick={() => { cancelRef.current = true }} className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">
+            <Button variant="danger" onClick={() => { cancelRef.current = true }}>
               <Square className="w-4 h-4" /> Arrêter
-            </button>
+            </Button>
           )}
           {failed.length > 0 && !running && (
-            <button onClick={() => run(failed)} className="flex items-center gap-2 border border-amber-400 text-amber-800 px-4 py-2.5 rounded-xl text-sm font-medium">
+            <Button variant="secondary" onClick={() => run(failed)}>
               <RotateCcw className="w-4 h-4" /> Relancer les {failed.length} échec(s)
-            </button>
+            </Button>
           )}
         </div>
         {running && (
@@ -395,8 +396,8 @@ export default function DeforestationPage() {
               <p className="mt-1">{meta?.source}</p>
             </div>
             <div className="flex items-start gap-2 ml-auto">
-              <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-600 text-white font-medium"><FileSpreadsheet className="w-4 h-4" /> Excel</button>
-              <button onClick={exportGeoJSON} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 font-medium"><Download className="w-4 h-4" /> GeoJSON</button>
+              <Button onClick={exportExcel}><FileSpreadsheet className="w-4 h-4" /> Excel</Button>
+              <Button variant="secondary" onClick={exportGeoJSON}><Download className="w-4 h-4" /> GeoJSON</Button>
             </div>
           </section>
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Button from './Button'
 import { Link } from 'react-router-dom'
 import { FileText, FileSpreadsheet, Download, Loader2, CheckCircle2, AlertTriangle, Archive } from 'lucide-react'
 import { reportCSV, reportExcel, reportGeoJSON, reportKML, reportPDF, reportShapefile, reportsApi, type Report } from '../../utils/report'
@@ -47,8 +48,8 @@ export default function ReportExportBar({ report, autoSave = true }: { report: R
   return (
     <section className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-wrap items-center gap-2">
       <p className="text-xs font-semibold text-gray-700 mr-1 flex items-center gap-1.5"><Archive className="w-4 h-4 text-primary-600" /> Rapport :</p>
-      <button onClick={() => run('pdf', () => reportPDF(full))} disabled={!!busy} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-600 text-white text-xs font-medium disabled:opacity-60">{icon('pdf', <FileText className="w-4 h-4" />)} PDF</button>
-      <button onClick={() => run('xlsx', () => reportExcel(full))} disabled={!!busy} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-600 text-white text-xs font-medium disabled:opacity-60">{icon('xlsx', <FileSpreadsheet className="w-4 h-4" />)} Excel</button>
+      <Button variant="danger" size="sm" onClick={() => run('pdf', () => reportPDF(full))} disabled={!!busy}>{icon('pdf', <FileText className="w-4 h-4" />)} PDF</Button>
+      <Button size="sm" onClick={() => run('xlsx', () => reportExcel(full))} disabled={!!busy}>{icon('xlsx', <FileSpreadsheet className="w-4 h-4" />)} Excel</Button>
       <button onClick={() => run('csv', () => reportCSV(full))} disabled={!!busy} className={btn}>{icon('csv', <Download className="w-4 h-4" />)} CSV</button>
       <button onClick={() => run('geojson', () => reportGeoJSON(full))} disabled={!!busy || !geo} className={btn}>{icon('geojson', <Download className="w-4 h-4" />)} GeoJSON</button>
       <button onClick={() => run('kml', () => reportKML(full))} disabled={!!busy || !geo} className={btn}>{icon('kml', <Download className="w-4 h-4" />)} KML</button>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Button from '../../components/ui/Button'
 import { MapContainer, TileLayer, LayersControl } from 'react-leaflet'
 import { useSearchParams } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
@@ -140,17 +141,17 @@ export default function SpatialCheckPage() {
             Inclure les parcelles des autres coopératives (un même champ déclaré deux fois)
           </label>
           <div className="flex items-end">
-            <button onClick={run} disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-md bg-primary-700 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-50">
+            <Button fullWidth onClick={run} disabled={busy}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Contrôler
-            </button>
+            </Button>
           </div>
         </section>
       )}
       {tab === 'zones' && (
         <div className="flex justify-end">
-          <button onClick={run} disabled={busy} className="flex items-center gap-2 rounded-md bg-primary-700 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-50">
+          <Button onClick={run} disabled={busy}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Relancer le contrôle
-          </button>
+          </Button>
         </div>
       )}
 

@@ -235,29 +235,29 @@ export default function ProducersPage() {
           <Button variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} loading={deleting} onClick={deleteChecked}>Supprimer</Button>
         </SelectionBar>
         {coopProducers.length > 0 && (
-          <button onClick={() => setShowPurge(true)} title="Supprimer toute la base producteurs (et le registre si vous le souhaitez)"
-            className="flex items-center gap-2 border border-red-200 text-red-700 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-medium">
+          <Button variant="secondary" onClick={() => setShowPurge(true)} label="Supprimer toute la base producteurs (et le registre si vous le souhaitez)"
+           >
             <Trash2 className="w-4 h-4" /> Supprimer la base
-          </button>
+          </Button>
         )}
         {excelHeaders.length > 0 && (
-          <button onClick={() => setShowRecode(true)} title="Reprendre le code producteur du registre (sans générer de code)"
-            className="flex items-center gap-2 border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl text-sm font-medium">
+          <Button variant="secondary" onClick={() => setShowRecode(true)} label="Reprendre le code producteur du registre (sans générer de code)"
+           >
             <Hash className="w-4 h-4" /> Codes du registre
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           onClick={() => setShowImport(true)}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
+         
         >
           <FileSpreadsheet className="w-4 h-4" /> Importer Excel
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
+         
         >
           <Plus className="w-4 h-4" /> Nouveau producteur
-        </button>
+        </Button>
       </div>
 
       {/* Vue « Fichier Excel » : les colonnes sont les entêtes du fichier importé */}
@@ -505,12 +505,12 @@ export default function ProducersPage() {
                 >
                   Annuler
                 </button>
-                <button
+                <Button className="flex-1"
                   type="submit"
-                  className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 rounded-xl transition"
+                 
                 >
                   <Save className="w-4 h-4" /> Enregistrer
-                </button>
+                </Button>
               </div>
             </form>
           </div>

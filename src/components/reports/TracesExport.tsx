@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import Button from '../ui/Button'
 import { FileCheck2, Download, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
 import { useAppStore } from '../../store/appStore'
 import { buildTraces, type TracesInput, type TracesResult } from '../../utils/traces'
@@ -113,11 +114,11 @@ export default function TracesExport({ cooperativeId }: { cooperativeId?: string
       <p className="flex items-start gap-2 text-xs text-gray-500"><Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />Le polygone reste la preuve la plus solide : gardez-le, même sous 4 ha, si l'exportateur le demande. Les parcelles invalides sont écartées et listées ci-dessous.</p>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button onClick={prepare} disabled={!count} className="rounded-md bg-primary-700 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-40">Contrôler et préparer ({count})</button>
+        <Button onClick={prepare} disabled={!count}>Contrôler et préparer ({count})</Button>
         {result && result.kept > 0 && (
-          <button onClick={download} className="flex items-center gap-2 rounded-md border border-primary-700 px-4 py-2 text-sm font-semibold text-primary-700 hover:bg-primary-50">
+          <Button variant="secondary" onClick={download}>
             <Download className="h-4 w-4" /> Télécharger {result.files.length > 1 ? `(${result.files.length} fichiers, zip)` : 'le GeoJSON'}
-          </button>
+          </Button>
         )}
       </div>
 

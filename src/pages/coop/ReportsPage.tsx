@@ -1,4 +1,5 @@
 import { FileText, FileSpreadsheet, Map, Download, CheckCircle2, Loader2, Globe, Users, ShieldCheck, AlertTriangle, Wrench, X } from 'lucide-react'
+import Button from '../../components/ui/Button'
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import Header from '../../components/layout/Header'
@@ -361,14 +362,14 @@ export default function ReportsPage() {
               >
                 Fermer
               </button>
-              <button
+              <Button className="flex-1"
                 onClick={handleCorrectAll}
                 disabled={fixableRows.length === 0 || correcting}
-                className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl transition"
+               
               >
                 {correcting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wrench className="w-4 h-4" />}
                 {correcting ? 'Correction...' : `Corriger ${fixableRows.length} polygone(s)`}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

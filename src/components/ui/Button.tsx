@@ -44,10 +44,11 @@ const Button = forwardRef<HTMLButtonElement, Props>(function Button(
   const off = disabled || loading || !!disabledReason
   return (
     // l'info-bulle reste visible sur un bouton inactif grâce à l'enveloppe
-    <span title={disabledReason ?? label} className={`${fullWidth ? 'flex w-full' : 'inline-flex'} ${off ? 'cursor-not-allowed' : ''}`}>
+    // className = MISE EN PAGE (marges, ml-auto, flex-1…) : appliquée à l'enveloppe, sinon elle serait sans effet
+    <span title={disabledReason ?? label} className={`${fullWidth ? 'flex w-full' : 'inline-flex'} ${off ? 'cursor-not-allowed' : ''} ${className}`}>
       <button ref={ref} type={type} disabled={off} aria-label={size === 'icon' ? label : undefined} aria-busy={loading || undefined}
         className={`inline-flex items-center justify-center font-semibold whitespace-nowrap transition active:scale-[.98] disabled:pointer-events-none
-          ${VARIANT[variant]} ${SIZE[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
+          ${VARIANT[variant]} ${SIZE[size]} w-full`}
         {...rest}>
         {loading ? <Loader2 className={size === 'sm' ? 'h-3.5 w-3.5 animate-spin' : 'h-4 w-4 animate-spin'} /> : icon}
         {size !== 'icon' && children}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import Button from '../../components/ui/Button'
 import { MapContainer, TileLayer, LayersControl } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import * as XLSX from 'xlsx'
@@ -216,11 +217,11 @@ export default function ValidatorPage() {
           le plus valide, puis le plus grand, puis le plus ancien ; l'autre est supprimé.
         </p>
         <div className="flex items-center gap-3">
-          <button onClick={run} disabled={!picked || running}
-            className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">
+          <Button onClick={run} disabled={!picked || running}
+           >
             {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
             {running ? 'Validation en cours…' : `Valider ${picked ? picked.features.length.toLocaleString('fr-FR') + ' polygone(s)' : ''}`}
-          </button>
+          </Button>
           {step && <span className="text-xs text-gray-500">{step}</span>}
         </div>
         {error && <p className="flex items-start gap-2 text-sm text-red-700 bg-red-50 rounded-xl p-3"><AlertTriangle className="w-4 h-4 mt-0.5" /> {error}</p>}
@@ -262,9 +263,9 @@ export default function ValidatorPage() {
               <p className="text-gray-400 mt-2">Calcul : {s.processing_time} s</p>
             </div>
             <div className="flex flex-wrap items-start gap-2 ml-auto">
-              <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-600 text-white font-medium"><FileSpreadsheet className="w-4 h-4" /> Rapport Excel</button>
-              <button onClick={() => exportGeoJSON('kept')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 font-medium"><Download className="w-4 h-4" /> Conservés</button>
-              <button onClick={() => exportGeoJSON('removed')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 font-medium"><Download className="w-4 h-4" /> Supprimés</button>
+              <Button onClick={exportExcel}><FileSpreadsheet className="w-4 h-4" /> Rapport Excel</Button>
+              <Button variant="secondary" onClick={() => exportGeoJSON('kept')}><Download className="w-4 h-4" /> Conservés</Button>
+              <Button variant="secondary" onClick={() => exportGeoJSON('removed')}><Download className="w-4 h-4" /> Supprimés</Button>
             </div>
           </section>
 

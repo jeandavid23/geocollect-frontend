@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import Button from '../../components/ui/Button'
 import { MapContainer, TileLayer, Polyline, Polygon, Marker, CircleMarker, Popup, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -544,13 +545,13 @@ export default function MappingPage() {
           </div>
         </div>
 
-        <button
+        <Button fullWidth
           onClick={() => { setStep('mapping'); handleStart() }}
-          className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-2xl transition flex items-center justify-center gap-3 text-lg shadow-lg"
+         
         >
           <Satellite className="w-6 h-6" />
           Commencer le Mapping GPS
-        </button>
+        </Button>
       </div>
     )
   }
@@ -745,12 +746,12 @@ export default function MappingPage() {
         <div className="bg-white border-t border-gray-100 p-4 space-y-3">
           {/* Primary action: mark a point */}
           {status === 'active' && !autoTrack && (
-            <button
+            <Button fullWidth
               onClick={handleMarkPoint}
-              className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-2xl transition text-lg shadow-md active:scale-[0.98]"
+             
             >
               <MapPin className="w-6 h-6" /> Marquer ce point
-            </button>
+            </Button>
           )}
           {status === 'active' && autoTrack && (
             <div className="text-center text-sm text-primary-700 bg-primary-50 rounded-xl py-3">
@@ -775,12 +776,12 @@ export default function MappingPage() {
               </button>
             )}
             {status === 'paused' && (
-              <button
+              <Button size="lg" className="flex-1"
                 onClick={handleResume}
-                className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-2xl transition"
+               
               >
                 <Play className="w-5 h-5" /> Reprendre
-              </button>
+              </Button>
             )}
             <button
               onClick={handleFinish}
@@ -871,12 +872,12 @@ export default function MappingPage() {
           >
             Refaire le mapping
           </button>
-          <button
+          <Button size="lg" className="flex-1"
             onClick={handleSave}
-            className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-2xl transition"
+           
           >
             Enregistrer
-          </button>
+          </Button>
         </div>
       </div>
     )

@@ -18,13 +18,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const { isOnline, isSyncing, isLoading } = useAppStore()
 
   return (
-    <header className="bg-white border-b border-gray-100 px-4 py-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
+    <header className="bg-white border-b border-gray-100 px-4 py-4 sm:px-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+      {/* le titre garde une largeur lisible ; les badges passent à la ligne quand la place manque (téléphone, page étroite) */}
+      <div className="min-w-[14rem] flex-1">
         <h1 className="font-serif text-[1.45rem] leading-tight font-semibold text-gray-900 text-balance">{title}</h1>
         {subtitle && <p className="text-sm text-gray-600 mt-0.5">{subtitle}</p>}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 sm:gap-4 sm:flex-nowrap sm:shrink-0">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
         <LiveBadge />
         {/* Date */}
         <span className="text-sm text-gray-500 hidden md:block">

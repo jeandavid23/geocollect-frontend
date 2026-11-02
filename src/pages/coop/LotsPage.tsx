@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import Button from '../../components/ui/Button'
 import { offerUndo } from '../../components/ui/undo'
 import EmptyState from '../../components/ui/EmptyState'
 import { confirmDialog } from '../../components/ui/dialog'
@@ -137,9 +138,9 @@ function Editor({ lot, onSaved, onCancel }: { lot: Lot | null; onSaved: (l: Lot)
 
       {error && <p role="alert" className="rounded-md border-l-4 border-red-500 bg-red-50 px-3.5 py-2.5 text-sm text-red-800">{error}</p>}
       <div className="flex gap-3">
-        <button onClick={save} disabled={busy || (fromDeliveries ? !picked.size : !lines.length)} className="flex items-center gap-2 rounded-md bg-primary-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-40">
-          {busy && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer et contrôler</button>
-        <button onClick={onCancel} className="rounded-md border border-gray-300 px-5 py-2.5 text-sm">Annuler</button>
+        <Button onClick={save} disabled={busy || (fromDeliveries ? !picked.size : !lines.length)}>
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer et contrôler</Button>
+        <Button variant="secondary" onClick={onCancel}>Annuler</Button>
       </div>
     </div>
   )
@@ -186,18 +187,18 @@ function Detail({ lot, onBack, onEdit, onChanged }: { lot: Lot; onBack: () => vo
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLE[lot.status]}`}>{STATUS_LABEL[lot.status]}</span>
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
-          <button onClick={async () => { setBusy('pdf'); try { await lotPdf(lot) } finally { setBusy('') } }} className="flex items-center gap-2 rounded-md bg-primary-700 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-800">{busy === 'pdf' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} Fiche de lot (PDF)</button>
-          <button onClick={() => { const r = lotTraces(lot); addNotification(r ? { type: r.excluded ? 'warning' : 'success', title: 'Fichier TRACES du lot', message: `${r.kept} parcelle(s)${r.excluded ? `, ${r.excluded} écartée(s) (géométrie invalide)` : ''}` } : { type: 'warning', title: 'Aucune parcelle', message: 'Aucune parcelle cartographiée pour ce lot.' }) }}
-            className="flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"><FileCheck2 className="h-4 w-4" /> TRACES (GeoJSON)</button>
-          <button onClick={excel} className="flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"><FileSpreadsheet className="h-4 w-4" /> Excel</button>
+          <Button onClick={async () => { setBusy('pdf'); try { await lotPdf(lot) } finally { setBusy('') } }}>{busy === 'pdf' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} Fiche de lot (PDF)</Button>
+          <Button variant="secondary" onClick={() => { const r = lotTraces(lot); addNotification(r ? { type: r.excluded ? 'warning' : 'success', title: 'Fichier TRACES du lot', message: `${r.kept} parcelle(s)${r.excluded ? `, ${r.excluded} écartée(s) (géométrie invalide)` : ''}` } : { type: 'warning', title: 'Aucune parcelle', message: 'Aucune parcelle cartographiée pour ce lot.' }) }}
+           ><FileCheck2 className="h-4 w-4" /> TRACES (GeoJSON)</Button>
+          <Button variant="secondary" onClick={excel}><FileSpreadsheet className="h-4 w-4" /> Excel</Button>
           <span className="flex-1" />
           {lot.status === 'brouillon' && <>
-            <button onClick={onEdit} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Modifier</button>
-            <button onClick={() => setStatus('valide')} disabled={!!busy} className="rounded-md border border-primary-700 px-4 py-2 text-sm font-semibold text-primary-700 hover:bg-primary-50">Valider le lot</button>
+            <Button variant="secondary" onClick={onEdit}>Modifier</Button>
+            <Button variant="secondary" onClick={() => setStatus('valide')} disabled={!!busy}>Valider le lot</Button>
             <button onClick={remove} className="rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50">Supprimer</button>
           </>}
           {lot.status === 'valide' && <>
-            <button onClick={() => setStatus('brouillon')} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Repasser en brouillon</button>
+            <Button variant="secondary" onClick={() => setStatus('brouillon')}>Repasser en brouillon</Button>
             <span className="flex items-center gap-1.5 text-sm text-gray-500"><Truck className="h-4 w-4" /> Expédition : émettez la fiche d'accompagnement ci-dessous</span>
           </>}
         </div>
@@ -264,7 +265,7 @@ export default function LotsPage() {
         onChanged={(l) => { if (l) setView({ mode: 'detail', lot: l }); else { load(); setView({ mode: 'list' }) } }} />}
       {view.mode === 'list' && (
         <>
-          <button onClick={() => setView({ mode: 'edit', lot: null })} className="flex items-center gap-2 rounded-md bg-primary-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-800"><Plus className="h-4 w-4" /> Nouveau lot</button>
+          <Button onClick={() => setView({ mode: 'edit', lot: null })}><Plus className="h-4 w-4" /> Nouveau lot</Button>
           {error && <p className="text-sm text-red-700">{error}</p>}
           <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
             {lots === null ? <p className="p-6 text-sm text-gray-500">Chargement…</p> : lots.length === 0 ? (

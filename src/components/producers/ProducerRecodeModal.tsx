@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Button from '../ui/Button'
 import { useHotkeys } from '../../hooks/useHotkeys'
 import { X, Hash, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react'
 import { producersApi, type RecodeReport, type MatchStats } from '../../api/producers'
@@ -100,11 +101,11 @@ export default function ProducerRecodeModal({ cooperativeId, onClose }: { cooper
         )}
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm">{done ? 'Fermer' : 'Annuler'}</button>
-          {!done && <button onClick={apply} disabled={busy || !column || !report?.recoded}
-            className="rounded-md bg-primary-700 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-40">
+          <Button variant="secondary" onClick={onClose}>{done ? 'Fermer' : 'Annuler'}</Button>
+          {!done && <Button onClick={apply} disabled={busy || !column || !report?.recoded}
+           >
             Appliquer ({report ? n(report.recoded) : 0})
-          </button>}
+          </Button>}
         </div>
       </div>
     </div>

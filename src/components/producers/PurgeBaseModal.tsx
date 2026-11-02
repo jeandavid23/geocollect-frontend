@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Button from '../ui/Button'
 import { useHotkeys } from '../../hooks/useHotkeys'
 import { X, Trash2, AlertTriangle, Loader2 } from 'lucide-react'
 import { producersApi } from '../../api/producers'
@@ -88,11 +89,11 @@ export default function PurgeBaseModal({ cooperativeId, from, onClose, onDone }:
         </label>
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm">Annuler</button>
-          <button onClick={run} disabled={!ok}
-            className="flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40">
+          <Button variant="secondary" onClick={onClose}>Annuler</Button>
+          <Button variant="danger" onClick={run} disabled={!ok}
+           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />} Supprimer définitivement
-          </button>
+          </Button>
         </div>
       </div>
     </div>

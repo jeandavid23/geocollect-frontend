@@ -1,4 +1,5 @@
 import { apiErrorMessage } from '../../utils/retry'
+import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import { confirmAccountDeletion } from '../../utils/confirmDeletion'
 import { useState } from 'react'
@@ -132,10 +133,10 @@ export default function CoopAgentsPage() {
       <Header title="Agents de la coopérative" subtitle={`${coopAgents.length} agents mappeurs`} />
 
       <div className="flex justify-end">
-        <button onClick={() => { setSections([]); setForm(EMPTY_FORM); setShowForm(true) }}
-          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition">
+        <Button onClick={() => { setSections([]); setForm(EMPTY_FORM); setShowForm(true) }}
+         >
           <Plus className="w-4 h-4" /> Ajouter un agent
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -197,10 +198,10 @@ export default function CoopAgentsPage() {
                   className="flex-1 flex items-center justify-center gap-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 py-2 rounded-xl text-xs font-medium transition">
                   <Power className="w-3.5 h-3.5" /> {a.isActive ? 'Désactiver' : 'Activer'}
                 </button>
-                <button onClick={() => setConfirmDelete(a)}
-                  className="flex items-center justify-center gap-1.5 border border-red-200 text-red-600 hover:bg-red-50 py-2 px-3 rounded-xl text-xs font-medium transition">
+                <Button variant="secondary" size="sm" onClick={() => setConfirmDelete(a)}
+                 >
                   <Trash2 className="w-3.5 h-3.5" /> Retirer
-                </button>
+                </Button>
               </div>
             </div>
           )
@@ -268,11 +269,11 @@ export default function CoopAgentsPage() {
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => { setShowForm(false); setSections([]) }}
                   className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition">Annuler</button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl transition">
+                <Button className="flex-1" type="submit" disabled={saving}
+                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   {saving ? 'Création...' : 'Créer l\'accès'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -304,8 +305,8 @@ export default function CoopAgentsPage() {
             <div className="flex gap-3 mt-5">
               <button onClick={() => setConfirmDelete(null)}
                 className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition">Annuler</button>
-              <button onClick={() => handleDelete(confirmDelete)}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-xl transition">Supprimer</button>
+              <Button variant="danger" className="flex-1" onClick={() => handleDelete(confirmDelete)}
+               >Supprimer</Button>
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import Button from '../../components/ui/Button'
 import { MapContainer, TileLayer, LayersControl } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Scissors, Play, Download, FileSpreadsheet, Search, AlertTriangle, Loader2 } from 'lucide-react'
@@ -219,11 +220,11 @@ export default function SelfIntersectionPage() {
           Les surfaces sont géodésiques (hectares réels).
         </p>
         <div className="flex items-center gap-3">
-          <button onClick={run} disabled={!picked || running}
-            className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">
+          <Button onClick={run} disabled={!picked || running}
+           >
             {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
             {running ? 'Traitement en cours…' : `Nettoyer ${picked ? picked.features.length.toLocaleString('fr-FR') + ' polygone(s)' : ''}`}
-          </button>
+          </Button>
           {step && <span className="text-xs text-gray-500">{step}</span>}
         </div>
         {error && <p className="flex items-start gap-2 text-sm text-red-700 bg-red-50 rounded-xl p-3"><AlertTriangle className="w-4 h-4 mt-0.5" /> {error}</p>}
@@ -265,7 +266,7 @@ export default function SelfIntersectionPage() {
               <p className="text-gray-400 mt-2">Calcul : {s.processing_time} s · surface initiale {s.initial_area_ha.toLocaleString('fr-FR')} ha</p>
             </div>
             <div className="flex flex-wrap items-start gap-2 ml-auto max-w-[520px] justify-end">
-              <button onClick={exportReport} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-600 text-white font-medium"><FileSpreadsheet className="w-4 h-4" /> Rapport Excel</button>
+              <Button onClick={exportReport}><FileSpreadsheet className="w-4 h-4" /> Rapport Excel</Button>
               <button onClick={() => exportGeoJSON(outFeatures('kept'), 'polygones_nettoyes.geojson')} className={btn}><Download className="w-4 h-4" /> Nettoyés GeoJSON</button>
               <button onClick={() => exportKML(outFeatures('kept'), 'polygones_nettoyes.kml', opts.id_field || undefined)} className={btn}><Download className="w-4 h-4" /> KML</button>
               <button onClick={() => exportShapefile(outFeatures('kept'), 'polygones_nettoyes_shp.zip', 'polygones_nettoyes')} className={btn}><Download className="w-4 h-4" /> Shapefile</button>

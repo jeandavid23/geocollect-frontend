@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Button from './Button'
 import { Send, X, Loader2, AlertTriangle } from 'lucide-react'
 import { messagesApi, type MessageTarget } from '../../api/notifications'
 import { useAppStore } from '../../store/appStore'
@@ -76,9 +77,9 @@ export default function MessageModal({ open, onClose, defaultTarget, defaultTitl
         {error && <p className="flex items-start gap-2 text-sm text-red-700 bg-red-50 rounded-xl p-3"><AlertTriangle className="w-4 h-4 mt-0.5" /> {error}</p>}
         <div className="flex gap-2 pt-1">
           <button type="button" onClick={onClose} className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50">Annuler</button>
-          <button type="submit" disabled={busy || !target || !title.trim()} className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl">
+          <Button className="flex-1" type="submit" disabled={busy || !target || !title.trim()}>
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Envoyer
-          </button>
+          </Button>
         </div>
       </form>
     </div>

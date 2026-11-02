@@ -1,4 +1,5 @@
 import { saveImportReport, registryImportReport } from '../../utils/report'
+import Button from '../ui/Button'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { X, Upload, Download, CheckCircle2, AlertTriangle, Save, FileSpreadsheet, BookOpen } from 'lucide-react'
 import {
@@ -241,10 +242,10 @@ export default function ProducerImportModal({ cooperativeId, onClose, initialWor
           {/* 1. Fichier */}
           <div className="flex flex-wrap items-center gap-3">
             <input ref={inputRef} type="file" accept=".xlsx,.xls,.xlsm,.csv,.ods" onChange={onFile} className="hidden" />
-            <button onClick={() => inputRef.current?.click()} disabled={busy}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium">
+            <Button onClick={() => inputRef.current?.click()} disabled={busy}
+             >
               <Upload className="w-4 h-4" /> {wb ? 'Changer de fichier' : 'Choisir un fichier Excel'}
-            </button>
+            </Button>
             {wb && <span className="flex items-center gap-1.5 text-sm text-gray-700"><FileSpreadsheet className="w-4 h-4 text-green-600" />{wb.fileName} · {wb.sheets.length} feuille(s)</span>}
             <button onClick={() => downloadBlob(buildProducerTemplate(), 'modele_import_producteurs.xlsx')}
               className="ml-auto inline-flex items-center gap-1.5 text-blue-700 hover:text-blue-900 font-medium text-xs">
@@ -411,12 +412,12 @@ export default function ProducerImportModal({ cooperativeId, onClose, initialWor
                     {matchResult.code_field && <p className="mt-2 text-xs text-gray-500">Code lu dans l'attribut « {matchResult.code_field} » des anciens polygones.</p>}
                   </div>
                 )}
-                <button onClick={doImport} disabled={busy || done || !pendingRows.length}
-                  className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl">
+                <Button className="flex-1" onClick={doImport} disabled={busy || done || !pendingRows.length}
+                 >
                   <Save className="w-4 h-4" /> {busy ? (progress || 'Import…')
                     : savedRows.size && pendingRows.length ? `Renvoyer les ${pendingRows.length} ligne(s) non enregistrée(s)`
                     : `Enregistrer ${pendingRows.length} producteur(s)`}
-                </button>
+                </Button>
               </div>
             </>
           )}

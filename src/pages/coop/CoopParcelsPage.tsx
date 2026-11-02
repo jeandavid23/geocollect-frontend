@@ -108,13 +108,13 @@ export default function CoopParcelsPage() {
           <Layers className="w-4 h-4" /> Importer les anciens polygones (KML, GPKG, SHP)
         </button>
         {coopLegacy.length > 0 && (
-          <button
+          <Button variant="secondary"
             onClick={() => setShowLegacy((v) => !v)}
-            className="flex items-center gap-2 border border-gray-200 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50"
+           
           >
             {showLegacy ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             {showLegacy ? 'Masquer' : 'Afficher'} les anciens polygones
-          </button>
+          </Button>
         )}
       </div>}
 

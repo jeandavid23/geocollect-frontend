@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import Button from '../../components/ui/Button'
 import {
   MapPin, CheckCircle2, Wifi,
   WifiOff, TrendingUp, Play, RefreshCw, Calendar,
@@ -88,9 +89,9 @@ export default function AgentDashboardPage() {
       )}
 
       {/* Quick action */}
-      <button
+      <Button fullWidth
         onClick={() => navigate('/agent/mapping')}
-        className="w-full bg-primary-700 hover:bg-primary-800 text-white rounded-2xl p-6 flex items-center justify-between shadow-lg transition group"
+       
       >
         <div className="text-left">
           <p className="text-lg font-bold">Commencer un Mapping</p>
@@ -99,7 +100,7 @@ export default function AgentDashboardPage() {
         <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition">
           <Play className="w-8 h-8" />
         </div>
-      </button>
+      </Button>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

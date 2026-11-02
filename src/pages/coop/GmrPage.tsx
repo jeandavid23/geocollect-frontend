@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import Button from '../../components/ui/Button'
 import { MapContainer, TileLayer, LayersControl } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Link2, Play, Download, FileSpreadsheet, AlertTriangle, Loader2, BookOpen, Upload, Search, Wand2 } from 'lucide-react'
@@ -322,9 +323,9 @@ export default function GmrPage() {
             </select>
           </label>
           <div className="flex items-end">
-            <button onClick={() => autoDetect()} disabled={!picked || !sheet} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary-200 text-primary-700 text-sm font-medium disabled:opacity-40">
+            <Button variant="secondary" onClick={() => autoDetect()} disabled={!picked || !sheet}>
               <Wand2 className="w-4 h-4" /> Détecter automatiquement
-            </button>
+            </Button>
           </div>
         </div>
         <div className="flex flex-wrap gap-4">
@@ -332,10 +333,10 @@ export default function GmrPage() {
           <label className="flex items-center gap-2 text-xs text-gray-700"><input type="checkbox" checked={addColumns} onChange={(e) => setAddColumns(e.target.checked)} /> Ajouter les colonnes du registre aux polygones (préfixe « xl_ » si le nom existe déjà)</label>
         </div>
         <p className="text-xs text-gray-500">Les clés sont comparées sans espaces autour ; « 12 », « 12.0 » et 12 sont identiques. Si une clé apparaît plusieurs fois dans le registre, la première ligne est retenue.</p>
-        <button onClick={run} disabled={!ready}
-          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">
+        <Button onClick={run} disabled={!ready}
+         >
           <Play className="w-4 h-4" /> Croiser {picked ? `${picked.features.length.toLocaleString('fr-FR')} polygone(s)` : ''} {sheet ? `× ${dataRows.length.toLocaleString('fr-FR')} ligne(s)` : ''}
-        </button>
+        </Button>
       </section>
 
       {s && out && (
@@ -361,7 +362,7 @@ export default function GmrPage() {
             <button onClick={() => exportGeoJSON(matchedFeatures(), 'polygones_registre.geojson')} disabled={!s.matched} className={`${btn} disabled:opacity-40`}><Download className="w-4 h-4" /> GeoJSON</button>
             <button onClick={() => exportKML(matchedFeatures(), 'polygones_registre.kml', polyField)} disabled={!s.matched} className={`${btn} disabled:opacity-40`}><Download className="w-4 h-4" /> KML</button>
             <button onClick={() => exportShapefile(matchedFeatures(), 'polygones_registre_shp.zip', 'polygones_registre')} disabled={!s.matched} className={`${btn} disabled:opacity-40`}><Download className="w-4 h-4" /> Shapefile</button>
-            <button onClick={exportReport} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-600 text-white font-medium"><FileSpreadsheet className="w-4 h-4" /> Rapport Excel</button>
+            <Button onClick={exportReport}><FileSpreadsheet className="w-4 h-4" /> Rapport Excel</Button>
             <span className="text-gray-300 mx-1">|</span>
             <button onClick={() => exportGeoJSON(noMatchFeatures(), 'polygones_sans_registre.geojson')} disabled={!s.no_match} className={`${btn} disabled:opacity-40`}><Download className="w-4 h-4" /> Sans registre</button>
           </section>

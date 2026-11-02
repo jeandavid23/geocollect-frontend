@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Button from '../../components/ui/Button'
 import { KeyRound, Eye, EyeOff, CheckCircle2, AlertTriangle, Camera, Save, Loader2, IdCard, Mail, Phone, User as UserIcon } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
@@ -168,11 +169,11 @@ export default function AccountPage() {
           <input value={form.national_id} onChange={(e) => setField('national_id', e.target.value)} className={inputCls} placeholder="N° de pièce" />
         </div>
 
-        <button type="submit" disabled={savingProfile}
-          className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl transition">
+        <Button fullWidth type="submit" disabled={savingProfile}
+         >
           {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {savingProfile ? 'Enregistrement...' : 'Enregistrer le profil'}
-        </button>
+        </Button>
       </form>
 
       {/* Mot de passe */}

@@ -129,9 +129,9 @@ export default function AccountsPage() {
             <Button variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} loading={deleting} onClick={deleteChecked}>Supprimer</Button>
           </SelectionBar>
         )}
-        <button onClick={load} className="flex items-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-2.5 rounded-xl text-sm font-medium">
+        <Button variant="secondary" onClick={load}>
           <RefreshCw className="w-4 h-4" /> Actualiser
-        </button>
+        </Button>
       </div>
 
       {loading ? (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import Button from '../ui/Button'
 import { Link } from 'react-router-dom'
 import { AlertOctagon, ListTodo, Info, CheckCircle2, ArrowRight, RefreshCw, Loader2, Check, Sparkles, X } from 'lucide-react'
 import { coopActionsApi, type CoopActionsResponse } from '../../api/dashboard'
@@ -84,10 +85,10 @@ export default function NextActions() {
             <p className="font-semibold text-gray-900">Avancement vers l'export EUDR</p>
             <p className="text-xs text-gray-500">{doneSteps}/4 étapes terminées</p>
           </div>
-          <button onClick={() => load(true)} disabled={busy} title="Relancer les contrôles"
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+          <Button variant="secondary" size="sm" onClick={() => load(true)} disabled={busy} label="Relancer les contrôles"
+           >
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Actualiser
-          </button>
+          </Button>
         </div>
         <ol className="grid grid-cols-1 gap-3 md:grid-cols-4">
           {data.steps.map((s, i) => (

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import Button from '../../components/ui/Button'
 import { queryParam } from '../../utils/query'
 import { useNavigate } from 'react-router-dom'
 import { Search, MapPin, Satellite, CheckCircle2, Phone, ChevronDown, Navigation, Wifi, WifiOff, Route, Loader2 } from 'lucide-react'
@@ -109,10 +110,10 @@ export default function AgentProducersPage() {
         </div>
       </div>
 
-      <button onClick={() => navigate('/agent/mapping')}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-700 py-3.5 text-base font-semibold text-white shadow-md transition hover:bg-primary-800 active:scale-[.99] sm:hidden">
+      <Button size="lg" fullWidth className="sm:hidden" onClick={() => navigate('/agent/mapping')}
+       >
         <Satellite className="h-5 w-5" /> Nouveau mapping
-      </button>
+      </Button>
 
       {/* Recherche et tri */}
       <div className="flex flex-wrap items-center gap-2">
@@ -126,9 +127,9 @@ export default function AgentProducersPage() {
           <option value="near" disabled={!here}>Villages : les plus proches</option>
           <option value="name">Villages : ordre alphabétique</option>
         </select>
-        <button onClick={locate} disabled={locating} className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+        <Button variant="secondary" onClick={locate} disabled={locating}>
           {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />} Près de moi
-        </button>
+        </Button>
         <label className="flex items-center gap-2 px-1 text-sm text-gray-600">
           <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} /> Afficher aussi les producteurs déjà mappés
         </label>
@@ -167,10 +168,10 @@ export default function AgentProducersPage() {
                               <Phone className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{p.phone}</span>
                             </a>
                           )}
-                          <button onClick={() => navigate(`/agent/mapping?producer=${p.id}`)}
-                            className="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-primary-700">
+                          <Button size="sm" onClick={() => navigate(`/agent/mapping?producer=${p.id}`)}
+                           >
                             <Satellite className="h-3.5 w-3.5" /> Mapper
-                          </button>
+                          </Button>
                         </div>
                       </li>
                     )

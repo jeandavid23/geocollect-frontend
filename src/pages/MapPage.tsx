@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import Button from '../components/ui/Button'
 import { MapContainer, TileLayer, Polygon, Popup, LayersControl, useMap } from 'react-leaflet'
 import { Search, Filter, X, Layers, Eye, EyeOff } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
@@ -147,14 +148,14 @@ export default function MapPage() {
           </select>
         )}
 
-        <button
+        <Button variant="secondary" size="sm"
           onClick={() => setShowLegacy((v) => !v)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border border-gray-200 hover:bg-gray-50"
+         
           style={{ color: LEGACY_COLOR }}
         >
           {showLegacy ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
           Anciens polygones ({legacy.length})
-        </button>
+        </Button>
         {hasLegacy && (role === 'cooperative' || (isAdmin && filterCoop !== 'all')) && (
           <button
             onClick={() => setShowLegacyImport(true)}

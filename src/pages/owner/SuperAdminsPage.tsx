@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import Button from '../../components/ui/Button'
 import { confirmDialog } from '../../components/ui/dialog'
 import { confirmAccountDeletion } from '../../utils/confirmDeletion'
 import {
@@ -181,9 +182,9 @@ export default function SuperAdminsPage() {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un client, un identifiant…"
             className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
-        <button onClick={openNew} className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium">
+        <Button onClick={openNew}>
           <Plus className="w-4 h-4" /> Nouveau super admin
-        </button>
+        </Button>
       </div>
 
       {loading ? (
@@ -299,10 +300,10 @@ export default function SuperAdminsPage() {
 
               <div className="flex gap-3">
                 <button type="button" onClick={() => setEditing(null)} className="flex-1 border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50">Annuler</button>
-                <button type="submit" disabled={saving} className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl">
+                <Button className="flex-1" type="submit" disabled={saving}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   {editing === 'new' ? "Créer l'accès" : 'Enregistrer'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -339,9 +340,9 @@ export default function SuperAdminsPage() {
                   <p className="text-xs font-semibold text-gray-600 mb-2">Rattacher une de vos coopératives à ce client</p>
                   <div className="space-y-1.5">
                     {cooperatives.filter((c) => !c.managedBy).map((c) => (
-                      <button key={c.id} onClick={() => transfer(c.id, detail.id)} className="w-full flex justify-between items-center px-3 py-2 rounded-lg border border-dashed border-gray-300 text-sm hover:bg-primary-50">
+                      <Button variant="secondary" fullWidth key={c.id} onClick={() => transfer(c.id, detail.id)}>
                         <span>{c.name}</span><span className="text-xs text-primary-700">Rattacher →</span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>

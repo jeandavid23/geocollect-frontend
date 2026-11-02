@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Button from '../ui/Button'
 import { confirmDialog } from '../ui/dialog'
 import { MapContainer, TileLayer, LayersControl, useMap } from 'react-leaflet'
 import type { Map as LMap } from 'leaflet'
@@ -340,10 +341,10 @@ export default function GisWorkspace() {
         {act(<Trash2 className={ic} />, 'Supprimer la sélection — Suppr', deleteSelection, !editMode || !selCount, 'text-red-600 hover:bg-red-50')}
         {act(<Undo2 className={ic} />, `Annuler${undo.current.length ? ' : ' + undo.current[undo.current.length - 1].label : ''} — Ctrl+Z`, doUndo, !undo.current.length)}
         {act(<Redo2 className={ic} />, 'Rétablir — Ctrl+Y', doRedo, !redo.current.length)}
-        <button onClick={save} disabled={!editMode || !changesCount.total || saving} title="Enregistrer les modifications — Ctrl+S"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-600 text-white disabled:bg-gray-200 disabled:text-gray-400 ml-1">
+        <Button size="sm" className="ml-1" onClick={save} disabled={!editMode || !changesCount.total || saving} label="Enregistrer les modifications — Ctrl+S"
+         >
           {saving ? <Loader2 className={`${ic} animate-spin`} /> : <Save className={ic} />} Enregistrer{changesCount.total ? ` (${changesCount.total})` : ''}
-        </button>
+        </Button>
         {act(<RotateCcw className={ic} />, 'Annuler toutes les modifications non enregistrées', rollback, !changesCount.total)}
         {sep}
         {btn('measureLine', <Ruler className={ic} />, 'Mesurer une distance')}
