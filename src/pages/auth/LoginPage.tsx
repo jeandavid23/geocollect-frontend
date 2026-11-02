@@ -1,4 +1,5 @@
 import { useT, useLang, LangSwitch } from '../../i18n'
+import { homeFor } from '../../utils/roleHome'
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Loader2, Shield, ShieldCheck, MapPinned, Lock, ArrowRight, LogIn, Minimize2 } from 'lucide-react'
@@ -29,11 +30,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
 
   const goHome = () => {
-    const currentRole = useAuthStore.getState().user?.role
-    if (currentRole === 'owner') navigate('/owner')
-    else if (currentRole === 'super_admin') navigate('/admin')
-    else if (currentRole === 'cooperative') navigate('/coop')
-    else navigate('/agent')
+    navigate(homeFor(useAuthStore.getState().user?.role))
   }
 
   const handleGoogle = async (credential: string) => {

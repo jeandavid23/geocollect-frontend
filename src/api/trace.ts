@@ -36,6 +36,7 @@ export interface Volumes {
 
 export interface TransportSlip {
   id: string; number: string; cooperative: string; cooperative_name: string; lot: string; lot_code: string
+  plant: string | null; plant_name: string | null
   lot_product: Product; lot_campaign: string; issued_at: string; origin: string; destination: string; consignee: string
   carrier: string; vehicle_plate: string; trailer_plate: string; driver_name: string; driver_phone: string
   driver_licence: string; bags: number; gross_weight_kg: string; seals: string; notes: string
@@ -43,7 +44,7 @@ export interface TransportSlip {
   received_by: string; reception_notes: string; weight_gap_kg: number | null; created_by_name: string
 }
 export type TransportPayload = Pick<TransportSlip, 'lot' | 'origin' | 'destination' | 'consignee' | 'carrier' | 'vehicle_plate'
-  | 'trailer_plate' | 'driver_name' | 'driver_phone' | 'driver_licence' | 'seals' | 'notes'> & { bags: number; gross_weight_kg: number }
+  | 'trailer_plate' | 'driver_name' | 'driver_phone' | 'driver_licence' | 'seals' | 'notes'> & { bags: number; gross_weight_kg: number; plant?: string | null }
 
 export interface DeliveryFilters { campaign?: string; product?: Product; producer?: string; lot?: string; status?: string; free?: boolean; q?: string; page?: number; page_size?: number }
 
@@ -122,3 +123,22 @@ export const processingApi = {
   close: (id: string) => api.patch<ProcessingBatch>(`/lots/processing/${id}/`, { status: 'cloture' }),
   trace: (id: string) => api.get<Trace>(`/lots/processing/${id}/trace/`),
 }
+
+// ── Usines (rôle « usine ») ─────────────────────────────────────────────────────────────────────────
+export interface Plant {
+  id: string; name: string; location: string; is_active: boolean; cooperatives: { id: string; name: string }[]
+  accounts?: { id: string; username: string; full_name: string; is_active: boolean }[]
+}
+export interface Available {
+  lots: { id: string; code: string; cooperative: string; product: Product; campaign: string; net_kg: number; available_kg: number }[]
+  batches: { id: string; code: string; operation: Operation; available_kg: number }[]
+}
+export const plantsApi = {
+  list: () => api.get<Plant[]>('/lots/plants/'),
+  create: (data: { name: string; location?: string; cooperatives: string[] }) => api.post<Plant>('/lots/plants/', data),
+  update: (id: string, data: Partial<{ name: string; location: string; cooperatives: string[]; is_active: boolean }>) =>
+    api.patch<Plant>(`/lots/plants/${id}/`, data),
+  createAccount: (id: string, data: { username: string; full_name?: string; email?: string; phone?: string }) =>
+    api.post<{ id: string; username: string; full_name: string; temporary_password: string }>(`/lots/plants/${id}/account/`, data),
+}
+export const availableForProcessing = () => api.get<Available>('/lots/processing/available/')

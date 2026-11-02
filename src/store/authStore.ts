@@ -70,6 +70,8 @@ function mapApiUser(apiUser: Record<string, unknown>): User {
     isActive: Boolean(apiUser.is_active),
     createdAt: String(apiUser.created_at),
     cooperativeId: apiUser.cooperative_id ? String(apiUser.cooperative_id) : undefined,
+    plantId: apiUser.plant_id ? String(apiUser.plant_id) : undefined,
+    plantName: apiUser.plant_name ? String(apiUser.plant_name) : undefined,
     modules: (apiUser.modules as User['modules']) ?? null,
     license: (apiUser.license as User['license']) ?? null,
     mustChangePassword: Boolean(apiUser.must_change_password),

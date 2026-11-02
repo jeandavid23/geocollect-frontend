@@ -5,7 +5,8 @@ import EmptyState from '../ui/EmptyState'
 import { promptDialog } from '../ui/dialog'
 import { useAppStore } from '../../store/appStore'
 import { lotsApi, type Lot } from '../../api/lots'
-import { SLIP_STATUS, traceApi, type TransportPayload, type TransportSlip } from '../../api/trace'
+import { plantsApi, SLIP_STATUS, traceApi, type Plant, type TransportPayload, type TransportSlip } from '../../api/trace'
+import { useAuthStore } from '../../store/authStore'
 import { transportPdf } from '../../utils/traceSheets'
 import { fr } from '../../utils/lotSheet'
 import { apiErrorMessage } from '../../utils/retry'
@@ -25,11 +26,14 @@ function SlipForm({ lot, onSaved }: { lot: Lot; onSaved: (s: TransportSlip) => v
     bags: String(lot.bags || ''), gross: String(lot.gross_weight_kg ?? lot.checks?.net_weight_kg ?? '') })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [plants, setPlants] = useState<Plant[]>([])
+  const [plant, setPlant] = useState('')
+  useEffect(() => { plantsApi.list().then(({ data }) => setPlants(data)).catch(() => setPlants([])) }, [])
   const save = async () => {
     setBusy(true); setError('')
     try {
       const body = { ...Object.fromEntries(FIELDS.map(([k]) => [k, (f[k] ?? '').trim()])), lot: lot.id, notes: f.notes ?? '',
-        bags: Number(f.bags) || 0, gross_weight_kg: Number((f.gross ?? '').replace(',', '.')) } as TransportPayload
+        bags: Number(f.bags) || 0, gross_weight_kg: Number((f.gross ?? '').replace(',', '.')), plant: plant || null } as TransportPayload
       const { data } = await traceApi.createSlip(body)
       onSaved(data)
     } catch (err) { setError(apiErrorMessage(err)) } finally { setBusy(false) }
@@ -38,7 +42,14 @@ function SlipForm({ lot, onSaved }: { lot: Lot; onSaved: (s: TransportSlip) => v
     <div className="rounded-xl border border-gray-200 p-4">
       <p className="text-sm font-semibold text-gray-900">Nouvelle fiche d'accompagnement</p>
       <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
-        {FIELDS.map(([k, label, ph]) => (
+        {plants.length > 0 && (
+          <label className="text-xs text-gray-600 md:col-span-3">Usine destinataire (elle reçoit la fiche et enregistre la réception dans GeoCollect)
+            <select value={plant} onChange={(e) => setPlant(e.target.value)} className={input}>
+              <option value="">Autre destination (saisie libre)</option>{plants.map((p) => <option key={p.id} value={p.id}>{p.name}{p.location ? ` — ${p.location}` : ''}</option>)}
+            </select>
+          </label>
+        )}
+        {FIELDS.filter(([k]) => !(plant && k === 'destination')).map(([k, label, ph]) => (
           <label key={k} className="text-xs text-gray-600">{label}<input value={f[k] ?? ''} placeholder={ph} onChange={(e) => setF({ ...f, [k]: e.target.value })} className={input} /></label>
         ))}
         <label className="text-xs text-gray-600">Nombre de sacs<input inputMode="numeric" value={f.bags} onChange={(e) => setF({ ...f, bags: e.target.value })} className={input} /></label>
@@ -46,7 +57,7 @@ function SlipForm({ lot, onSaved }: { lot: Lot; onSaved: (s: TransportSlip) => v
       </div>
       {error && <p role="alert" className="mt-2 text-sm text-red-700">{error}</p>}
       <Button className="mt-3" icon={<Truck className="h-4 w-4" />} loading={busy} onClick={save}
-        disabledReason={!f.destination || !f.vehicle_plate || !f.driver_name || !f.gross ? 'Destination, camion, chauffeur et poids obligatoires' : undefined}>
+        disabledReason={(!f.destination && !plant) || !f.vehicle_plate || !f.driver_name || !f.gross ? 'Destination, camion, chauffeur et poids obligatoires' : undefined}>
         Émettre la fiche</Button>
     </div>
   )
@@ -58,13 +69,14 @@ function SlipForm({ lot, onSaved }: { lot: Lot; onSaved: (s: TransportSlip) => v
  */
 export default function TransportSlips({ lot, onLotChanged }: { lot?: Lot; onLotChanged?: () => void }) {
   const { addNotification } = useAppStore()
+  const isPlant = useAuthStore((s) => s.user?.role === 'usine')     // compte usine : réception seulement
   const [slips, setSlips] = useState<TransportSlip[] | null>(null)
   const [adding, setAdding] = useState(false)
   const load = useCallback(() => traceApi.slips(lot?.id).then(({ data }) => setSlips(data)).catch(() => setSlips([])), [lot?.id])
   useEffect(() => { load() }, [load])
 
   const print = async (s: TransportSlip) => {
-    const full = lot ?? (await lotsApi.get(s.lot).then(({ data }) => data).catch(() => null))
+    const full = lot ?? (isPlant ? null : await lotsApi.get(s.lot).then(({ data }) => data).catch(() => null))
     await transportPdf(s, full)
   }
   const receive = async (s: TransportSlip) => {
@@ -106,7 +118,7 @@ export default function TransportSlips({ lot, onLotChanged }: { lot?: Lot; onLot
                 <td className="px-3 py-2 font-mono text-xs">{s.number}</td><td className="px-3 py-2 font-mono text-xs">{s.lot_code}</td>
                 <td className="px-3 py-2">{new Date(s.issued_at).toLocaleDateString('fr-FR')}</td>
                 <td className="px-3 py-2">{s.vehicle_plate}<span className="block text-xs text-gray-400">{s.driver_name}</span></td>
-                <td className="px-3 py-2">{s.destination}</td>
+                <td className="px-3 py-2">{s.destination}{isPlant && <span className="block text-xs text-gray-400">{s.cooperative_name}</span>}</td>
                 <td className="px-3 py-2 tabular-nums">{fr(Number(s.gross_weight_kg))} kg</td>
                 <td className="px-3 py-2 tabular-nums">{s.received_weight_kg ? <>{fr(Number(s.received_weight_kg))} kg<span className={`block text-xs ${Math.abs(s.weight_gap_kg ?? 0) > 0.005 * Number(s.gross_weight_kg) ? 'text-red-700' : 'text-gray-400'}`}>écart {fr(s.weight_gap_kg ?? 0)} kg</span></> : '—'}</td>
                 <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_TONE[s.status]}`}>{SLIP_STATUS[s.status]}</span></td>
@@ -114,7 +126,7 @@ export default function TransportSlips({ lot, onLotChanged }: { lot?: Lot; onLot
                   <Button size="icon" variant="ghost" label="Imprimer la fiche" icon={<Printer className="h-4 w-4" />} onClick={() => print(s)} />
                   {s.status === 'emise' && <>
                     <Button size="icon" variant="ghost" label="Enregistrer la réception" icon={<PackageCheck className="h-4 w-4" />} onClick={() => receive(s)} />
-                    <Button size="icon" variant="ghost" label="Annuler la fiche" icon={<XCircle className="h-4 w-4" />} onClick={() => cancel(s)} />
+                    {!isPlant && <Button size="icon" variant="ghost" label="Annuler la fiche" icon={<XCircle className="h-4 w-4" />} onClick={() => cancel(s)} />}
                   </>}
                 </td>
               </tr>

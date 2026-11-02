@@ -1,7 +1,7 @@
 import { useT, LangSwitch } from '../../i18n'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  Scale,
+  Scale, Factory, Truck,
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
   Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2, Scissors, Link2, Package, Layers, FileCheck2, Route, Trash, Search, Bell, Inbox,
@@ -33,6 +33,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Carte interactive', to: '/map', icon: <Map className="w-5 h-5" />, roles: ['super_admin', 'owner'], group: 'Pilotage' },
   { label: 'Coopératives', to: '/admin/cooperatives', icon: <Building2 className="w-5 h-5" />, roles: ['super_admin', 'owner'], group: 'Organisation' },
   { label: 'Agents mappeurs', to: '/admin/agents', icon: <UserCog className="w-5 h-5" />, roles: ['super_admin', 'owner'], group: 'Organisation' },
+  { label: 'Usines', to: '/admin/plants', icon: <Factory className="w-5 h-5" />, roles: ['super_admin', 'owner'], module: 'lots', group: 'Organisation' },
   { label: 'Comptes & accès', to: '/admin/accounts', icon: <KeyRound className="w-5 h-5" />, roles: ['super_admin', 'owner'], group: 'Organisation' },
   { label: 'Rapports', to: '/admin/reports', icon: <FileBarChart className="w-5 h-5" />, roles: ['super_admin', 'owner'], group: 'Suivi' },
   { label: 'Journaux', to: '/admin/logs', icon: <Activity className="w-5 h-5" />, roles: ['super_admin', 'owner'], group: 'Suivi' },
@@ -57,6 +58,8 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Ma tournée', to: '/agent/producers', icon: <Route className="w-5 h-5" />, roles: ['agent'], group: 'Terrain' },
   { label: 'Nouveau mapping', to: '/agent/mapping', icon: <Satellite className="w-5 h-5" />, roles: ['agent'], group: 'Terrain' },
   { label: 'Carte', to: '/map', icon: <Map className="w-5 h-5" />, roles: ['agent'], group: 'Terrain' },
+  { label: 'Réceptions', to: '/usine', icon: <Truck className="w-5 h-5" />, roles: ['usine'], group: 'Usine' },
+  { label: 'Usinage et transformation', to: '/usine/processing', icon: <Factory className="w-5 h-5" />, roles: ['usine'], group: 'Usine' },
   { label: 'Mon activité', to: '/agent', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['agent'], group: 'Activité' },
   { label: 'Mes parcelles', to: '/agent/parcels', icon: <MapPin className="w-5 h-5" />, roles: ['agent'], group: 'Activité' },
   // Mon compte : tous les rôles
@@ -73,7 +76,7 @@ export const EN: Record<string, string> = {
   'Tableau de bord': 'Dashboard', 'Carte interactive': 'Interactive map', 'Coopératives': 'Cooperatives', 'Agents mappeurs': 'Field agents',
   'Comptes & accès': 'Accounts & access', 'Rapports': 'Reports', 'Journaux': 'Logs', 'Registre': 'Register', 'Producteurs': 'Farmers',
   'Agents': 'Agents', 'Parcelles': 'Plots', 'Contrôle spatial': 'Spatial checks', 'Analyse déforestation': 'Deforestation analysis',
-  'Fiches de lot': 'Lot sheets', 'Traçabilité des volumes': 'Volume traceability', 'Diligence raisonnée': 'Due diligence', 'Export TRACES': 'TRACES export', 'Ma tournée': 'My round', 'Nouveau mapping': 'New mapping', 'Carte': 'Map',
+  'Fiches de lot': 'Lot sheets', 'Usines': 'Plants', 'Réceptions': 'Receptions', 'Usinage et transformation': 'Processing', 'Traçabilité des volumes': 'Volume traceability', 'Diligence raisonnée': 'Due diligence', 'Export TRACES': 'TRACES export', 'Ma tournée': 'My round', 'Nouveau mapping': 'New mapping', 'Carte': 'Map',
   'Mon activité': 'My activity', 'Mes parcelles': 'My plots', 'Notifications': 'Notifications', 'Mon compte': 'My account',
 }
 
@@ -143,7 +146,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
                   to={item.to}
                   onClick={onClose}
                   title={collapsed ? item.label : undefined}
-                  end={item.to === '/admin' || item.to === '/coop' || item.to === '/agent' || item.to === '/owner'}
+                  end={item.to === '/admin' || item.to === '/coop' || item.to === '/agent' || item.to === '/owner' || item.to === '/usine'}
                   className={({ isActive }) =>
                     `relative flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors duration-200 ${
                       active(isActive)
@@ -182,7 +185,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
             <p className="text-xs text-primary-400 capitalize">{
               role === 'owner' ? t('Super Super Admin', 'Platform owner') :
               role === 'super_admin' ? t('Super Administrateur', 'Super administrator') :
-              role === 'cooperative' ? t('Coopérative', 'Cooperative') : t('Agent Mappeur', 'Field agent')
+              role === 'cooperative' ? t('Coopérative', 'Cooperative') :
+              role === 'usine' ? t('Usine', 'Processing plant') : t('Agent Mappeur', 'Field agent')
             }</p>
           </div>
         )}

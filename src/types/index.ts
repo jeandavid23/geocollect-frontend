@@ -1,7 +1,7 @@
 // ─── User & Authentication ───────────────────────────────────────────────────
 
 // owner = Super Super Admin (propriétaire de la plateforme) ; super_admin = client
-export type UserRole = 'owner' | 'super_admin' | 'cooperative' | 'agent'
+export type UserRole = 'owner' | 'super_admin' | 'cooperative' | 'agent' | 'usine'
 
 export type ModuleId = 'deforestation' | 'rdue' | 'validator' | 'registry' | 'legacy' | 'selfintersection' | 'gmr' | 'lots' | 'due_diligence'
 
@@ -28,6 +28,9 @@ export interface User {
   lastLogin?: string
   createdAt: string
   cooperativeId?: string
+  // Compte « usine » : l'usine représentée
+  plantId?: string
+  plantName?: string
   // Modules autorisés pour l'organisation (null / absent = tous)
   modules?: ModuleId[] | null
   // Licence du super admin (son abonnement)

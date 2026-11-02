@@ -7,7 +7,7 @@ import { trashApi, type TrashItem } from '../../api/platform'
 import { useAppStore } from '../../store/appStore'
 import { apiErrorMessage } from '../../utils/retry'
 
-const ROLE: Record<string, string> = { owner: 'Super Super Admin', super_admin: 'Super admin', cooperative: 'Coopérative', agent: 'Agent' }
+const ROLE: Record<string, string> = { owner: 'Super Super Admin', super_admin: 'Super admin', cooperative: 'Coopérative', agent: 'Agent', usine: 'Usine' }
 const LABELS: [string, string][] = [
   ['cooperatives', 'coopérative(s)'], ['accounts', 'compte(s)'], ['producers', 'producteur(s)'], ['parcels', 'parcelle(s)'],
   ['legacy_polygons', 'ancien(s) polygone(s)'], ['registry_sheets', 'feuille(s) de registre'], ['lots', 'lot(s)'], ['reports', 'rapport(s)'],

@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom'
+import { homeFor } from '../../utils/roleHome'
 import { useAuthStore } from '../../store/authStore'
 import type { UserRole } from '../../types'
 import SecurityGate from './SecurityGate'
@@ -13,8 +14,7 @@ export default function ProtectedRoute({ roles, children }: Props) {
 
   if (!isAuthenticated) return <Navigate to="/login" replace />
   if (roles && user && !roles.includes(user.role)) {
-    const redirect = user.role === 'owner' ? '/owner' : user.role === 'super_admin' ? '/admin' : user.role === 'cooperative' ? '/coop' : '/agent'
-    return <Navigate to={redirect} replace />
+    return <Navigate to={homeFor(user.role)} replace />
   }
 
   // mot de passe provisoire à changer / double authentification à activer avant d'accéder aux pages

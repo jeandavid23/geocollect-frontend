@@ -2,20 +2,23 @@ import { useCallback, useEffect, useState } from 'react'
 import { ArrowLeft, Factory, FileText, Plus, Trash2 } from 'lucide-react'
 import Button from '../ui/Button'
 import EmptyState from '../ui/EmptyState'
-import { lotsApi, type Lot } from '../../api/lots'
-import { OPERATION_LABEL, OUTPUT_PRODUCTS, processingApi, type Operation, type OutputProduct, type ProcessingBatch, type ProcessingPayload, type Trace } from '../../api/trace'
+import { availableForProcessing, OPERATION_LABEL, OUTPUT_PRODUCTS, processingApi, type Available, type Operation, type OutputProduct, type ProcessingBatch, type ProcessingPayload, type Trace } from '../../api/trace'
+import { useAuthStore } from '../../store/authStore'
 import { processingPdf } from '../../utils/traceSheets'
 import { fr } from '../../utils/lotSheet'
 import { apiErrorMessage } from '../../utils/retry'
 import TraceChain from './TraceChain'
 
-const input = 'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600'
+const field = 'rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600'
+const input = `mt-1 w-full ${field}`        // champ de formulaire pleine largeur
+const cell = `${field} min-w-0`             // champ d'une ligne (entrées, produits) : largeur donnée à l'appel
 type InRow = { source: string; weight: string }          // source = « lot:<id> » ou « batch:<id> »
 type OutRow = { product: OutputProduct; weight: string; reference: string }
 
-function BatchForm({ lots, batches, onSaved, onCancel }: { lots: Lot[]; batches: ProcessingBatch[]; onSaved: (b: ProcessingBatch) => void; onCancel: () => void }) {
+function BatchForm({ stock, onSaved, onCancel }: { stock: Available; onSaved: (b: ProcessingBatch) => void; onCancel: () => void }) {
+  const ownPlant = useAuthStore((s) => s.user?.plantName)        // compte usine : toujours son usine
   const [operation, setOperation] = useState<Operation>('usinage')
-  const [plant, setPlant] = useState('')
+  const [plant, setPlant] = useState(ownPlant ?? '')
   const [day, setDay] = useState(new Date().toISOString().slice(0, 10))
   const [ins, setIns] = useState<InRow[]>([{ source: '', weight: '' }])
   const [outs, setOuts] = useState<OutRow[]>([{ product: 'feves_usinees', weight: '', reference: '' }])
@@ -27,8 +30,8 @@ function BatchForm({ lots, batches, onSaved, onCancel }: { lots: Lot[]; batches:
   const totalOut = outs.reduce((s, r) => s + n(r.weight), 0)
   const loss = totalIn - totalOut
   const sources = [
-    ...lots.map((l) => ({ key: `lot:${l.id}`, label: `Lot ${l.code} — ${fr(l.net_weight_kg)} kg net (${l.cooperative_name})` })),
-    ...batches.filter((b) => b.outputs.some((o) => !o.byproduct)).map((b) => ({ key: `batch:${b.id}`, label: `${OPERATION_LABEL[b.operation]} ${b.code} — ${fr(b.outputs.filter((o) => !o.byproduct).reduce((s, o) => s + o.weight_kg, 0))} kg de produits` })),
+    ...stock.lots.map((l) => ({ key: `lot:${l.id}`, label: `Lot ${l.code} (${l.cooperative}) — ${fr(l.available_kg)} kg disponibles sur ${fr(l.net_kg)}` })),
+    ...stock.batches.map((b) => ({ key: `batch:${b.id}`, label: `${OPERATION_LABEL[b.operation]} ${b.code} — ${fr(b.available_kg)} kg de produits disponibles` })),
   ]
   const save = async () => {
     setBusy(true); setError('')
@@ -44,30 +47,30 @@ function BatchForm({ lots, batches, onSaved, onCancel }: { lots: Lot[]; batches:
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <label className="text-xs text-gray-600">Opération<select value={operation} onChange={(e) => setOperation(e.target.value as Operation)} className={input}>
           <option value="usinage">Usinage (nettoyage, tri, calibrage, ensachage export)</option><option value="transformation">Transformation (broyage, pressage, poudre)</option></select></label>
-        <label className="text-xs text-gray-600">Usine<input value={plant} onChange={(e) => setPlant(e.target.value)} className={input} placeholder="Usine, ville" /></label>
+        <label className="text-xs text-gray-600">Usine<input value={plant} onChange={(e) => setPlant(e.target.value)} disabled={!!ownPlant} className={`${input} disabled:bg-gray-50`} placeholder="Usine, ville" /></label>
         <label className="text-xs text-gray-600">Date<input type="date" value={day} onChange={(e) => setDay(e.target.value)} className={input} /></label>
       </div>
       <div>
         <p className="text-sm font-medium text-gray-800">Entrées <span className="font-normal text-gray-500">— lots expédiés de la coopérative, ou produits d'un usinage précédent</span></p>
         {ins.map((r, i) => (
           <div key={i} className="mt-2 flex gap-2">
-            <select value={r.source} onChange={(e) => setIns(ins.map((x, j) => (j === i ? { ...x, source: e.target.value } : x)))} className={`${input} mt-0 flex-1`}>
+            <select value={r.source} onChange={(e) => setIns(ins.map((x, j) => (j === i ? { ...x, source: e.target.value } : x)))} className={`${cell} flex-1`}>
               <option value="">Choisir un lot…</option>{sources.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}</select>
-            <input inputMode="decimal" placeholder="kg" value={r.weight} onChange={(e) => setIns(ins.map((x, j) => (j === i ? { ...x, weight: e.target.value } : x)))} className={`${input} mt-0 w-32`} />
+            <input inputMode="decimal" placeholder="kg" value={r.weight} onChange={(e) => setIns(ins.map((x, j) => (j === i ? { ...x, weight: e.target.value } : x)))} className={`${cell} w-32`} />
             <Button size="icon" variant="ghost" label="Retirer" icon={<Trash2 className="h-4 w-4" />} onClick={() => setIns(ins.filter((_, j) => j !== i))} />
           </div>
         ))}
         <Button className="mt-2" size="sm" variant="ghost" icon={<Plus className="h-4 w-4" />} onClick={() => setIns([...ins, { source: '', weight: '' }])}>Ajouter une entrée</Button>
-        {sources.length === 0 && <p className="mt-1 text-xs text-amber-700">Aucun lot expédié : émettez d'abord une fiche d'accompagnement depuis la fiche du lot.</p>}
+        {sources.length === 0 && <p className="mt-1 text-xs text-amber-700">Aucun lot disponible : un lot devient disponible quand sa fiche d'accompagnement est émise (vers cette usine pour un compte usine).</p>}
       </div>
       <div>
         <p className="text-sm font-medium text-gray-800">Produits obtenus</p>
         {outs.map((o, i) => (
           <div key={i} className="mt-2 flex gap-2">
-            <select value={o.product} onChange={(e) => setOuts(outs.map((x, j) => (j === i ? { ...x, product: e.target.value as OutputProduct } : x)))} className={`${input} mt-0 flex-1`}>
+            <select value={o.product} onChange={(e) => setOuts(outs.map((x, j) => (j === i ? { ...x, product: e.target.value as OutputProduct } : x)))} className={`${cell} flex-1`}>
               {Object.entries(OUTPUT_PRODUCTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-            <input placeholder="Référence (grade, n° client)" value={o.reference} onChange={(e) => setOuts(outs.map((x, j) => (j === i ? { ...x, reference: e.target.value } : x)))} className={`${input} mt-0 w-48`} />
-            <input inputMode="decimal" placeholder="kg" value={o.weight} onChange={(e) => setOuts(outs.map((x, j) => (j === i ? { ...x, weight: e.target.value } : x)))} className={`${input} mt-0 w-32`} />
+            <input placeholder="Référence (grade, n° client)" value={o.reference} onChange={(e) => setOuts(outs.map((x, j) => (j === i ? { ...x, reference: e.target.value } : x)))} className={`${cell} w-48`} />
+            <input inputMode="decimal" placeholder="kg" value={o.weight} onChange={(e) => setOuts(outs.map((x, j) => (j === i ? { ...x, weight: e.target.value } : x)))} className={`${cell} w-32`} />
             <Button size="icon" variant="ghost" label="Retirer" icon={<Trash2 className="h-4 w-4" />} onClick={() => setOuts(outs.filter((_, j) => j !== i))} />
           </div>
         ))}
@@ -116,15 +119,15 @@ function BatchDetail({ batch, onBack }: { batch: ProcessingBatch; onBack: () => 
 
 export default function ProcessingTab() {
   const [batches, setBatches] = useState<ProcessingBatch[] | null>(null)
-  const [lots, setLots] = useState<Lot[]>([])
+  const [stock, setStock] = useState<Available>({ lots: [], batches: [] })
   const [mode, setMode] = useState<'list' | 'new' | ProcessingBatch>('list')
   const load = useCallback(() => {
     processingApi.list().then(({ data }) => setBatches(data)).catch(() => setBatches([]))
-    lotsApi.list().then(({ data }) => setLots(data.filter((l) => l.status === 'expedie'))).catch(() => setLots([]))
+    availableForProcessing().then(({ data }) => setStock(data)).catch(() => setStock({ lots: [], batches: [] }))
   }, [])
   useEffect(() => { load() }, [load])
 
-  if (mode === 'new') return <BatchForm lots={lots} batches={batches ?? []} onCancel={() => setMode('list')} onSaved={(b) => { load(); setMode(b) }} />
+  if (mode === 'new') return <BatchForm stock={stock} onCancel={() => setMode('list')} onSaved={(b) => { load(); setMode(b) }} />
   if (typeof mode === 'object') return <BatchDetail batch={mode} onBack={() => setMode('list')} />
   return (
     <div className="space-y-4">

@@ -47,7 +47,8 @@ export default function AccountPage() {
 
   const roleLabel = user?.role === 'owner' ? 'Super Super Admin (propriétaire)'
     : user?.role === 'super_admin' ? 'Super Administrateur'
-    : user?.role === 'cooperative' ? 'Coopérative' : 'Agent Mappeur'
+    : user?.role === 'cooperative' ? 'Coopérative'
+    : user?.role === 'usine' ? `Usine${user.plantName ? ` — ${user.plantName}` : ''}` : 'Agent Mappeur'
 
   // Charge le profil complet depuis le backend
   useEffect(() => {

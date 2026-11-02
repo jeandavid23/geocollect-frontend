@@ -1,4 +1,5 @@
 import { apiErrorMessage } from '../../utils/retry'
+import { homeFor } from '../../utils/roleHome'
 import Button from '../../components/ui/Button'
 import { useStickyState, useSort, SortTh, SelectionBar } from '../../components/ui/table'
 import { queryParam } from '../../utils/query'
@@ -14,9 +15,10 @@ import { useAppStore } from '../../store/appStore'
 import { confirmAccountDeletion } from '../../utils/confirmDeletion'
 
 const ROLE_LABEL: Record<string, string> = {
-  owner: 'Super Super Admin', super_admin: 'Super Admin', cooperative: 'Coopérative', agent: 'Agent',
+  owner: 'Super Super Admin', super_admin: 'Super Admin', cooperative: 'Coopérative', agent: 'Agent', usine: 'Usine',
 }
 const ROLE_COLOR: Record<string, string> = {
+  usine: 'bg-blue-100 text-blue-800',
   owner: 'bg-amber-100 text-amber-800',
   super_admin: 'bg-purple-100 text-purple-700',
   cooperative: 'bg-blue-100 text-blue-700',
@@ -190,7 +192,7 @@ export default function AccountsPage() {
                             try {
                               useAppStore.getState().clearData()
                               await useAuthStore.getState().startImpersonation(u.id)
-                              window.location.replace(({ super_admin: '/admin', cooperative: '/coop', agent: '/agent' } as Record<string, string>)[u.role] ?? '/')
+                              window.location.replace(homeFor(u.role))
                             } catch (err) { await alertDialog({ tone: 'danger', title: 'Consultation impossible', message: apiErrorMessage(err) }) }
                           }} title="Ouvrir son espace en lecture seule (support)" className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 font-medium">
                             <Eye className="w-3.5 h-3.5" /> Voir comme

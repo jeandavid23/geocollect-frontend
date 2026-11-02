@@ -1,8 +1,8 @@
 import { Eye, LogOut } from 'lucide-react'
+import { homeFor } from '../../utils/roleHome'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 
-const HOME: Record<string, string> = { owner: '/owner', super_admin: '/admin', cooperative: '/coop', agent: '/agent' }
 
 /** Bandeau du mode « Voir comme » : consultation en lecture seule, retour au compte d'origine. */
 export default function ImpersonationBanner() {
@@ -11,7 +11,7 @@ export default function ImpersonationBanner() {
   const back = () => {
     useAppStore.getState().clearData()
     useAuthStore.getState().stopImpersonation()
-    window.location.replace(HOME[useAuthStore.getState().user?.role ?? ''] ?? '/')
+    window.location.replace(homeFor(useAuthStore.getState().user?.role))
   }
   return (
     <div className="flex flex-wrap items-center gap-3 bg-[#e9c98b] px-4 py-2 text-sm text-[#3b2a12]">

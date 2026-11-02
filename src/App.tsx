@@ -65,6 +65,9 @@ const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const ProspectsPage = lazy(() => import('./pages/owner/ProspectsPage'))
 const DueDiligencePage = lazy(() => import('./pages/coop/DueDiligencePage'))
 const TraceabilityPage = lazy(() => import('./pages/coop/TraceabilityPage'))
+const PlantsPage = lazy(() => import('./pages/admin/PlantsPage'))
+const PlantReceptionsPage = lazy(() => import('./pages/usine/PlantReceptionsPage'))
+const PlantProcessingPage = lazy(() => import('./pages/usine/PlantProcessingPage'))
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuthStore()
@@ -95,11 +98,12 @@ export default function App() {
   // Charge les données réelles depuis la base dès qu'on est connecté avec un vrai compte (token JWT, pas mock)
   useEffect(() => {
     if (isAuthenticated && token && !token.startsWith('mock')) {
-      loadFromApi(user?.id)
+      // un compte usine n'a pas accès aux producteurs ni aux parcelles : rien à précharger
+      if (user?.role !== 'usine') loadFromApi(user?.id)
       // modules / licence à jour (les droits changés par le propriétaire s'appliquent sans reconnexion)
       useAuthStore.getState().refreshMe()
     }
-  }, [isAuthenticated, token, user?.id, loadFromApi])
+  }, [isAuthenticated, token, user?.id, user?.role, loadFromApi])
 
   return (
     <BrowserRouter>
@@ -140,6 +144,7 @@ export default function App() {
           <Route path="/admin/cooperatives" element={<CooperativesPage />} />
           <Route path="/admin/agents" element={<AdminAgentsPage />} />
           <Route path="/admin/accounts" element={<AccountsPage />} />
+          <Route path="/admin/plants" element={<RequireModule module="lots"><PlantsPage /></RequireModule>} />
           <Route path="/admin/logs" element={<LogsPage />} />
           <Route path="/admin/reports" element={<AdminReportsPage />} />
         </Route>
@@ -182,8 +187,30 @@ export default function App() {
           <Route path="/agent/producers" element={<AgentProducersPage />} />
         </Route>
 
+        {/* Usine : réceptions, usinage et transformation des lots qui lui sont adressés */}
+        <Route
+          element={
+            <ProtectedRoute roles={['usine']}>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/usine" element={<PlantReceptionsPage />} />
+          <Route path="/usine/processing" element={<PlantProcessingPage />} />
+        </Route>
+
         {/* Pages communes à tous les rôles (déclarées une seule fois : sinon la première
             déclaration, réservée à l'admin, renvoyait coopérative et agent vers leur accueil) */}
+        <Route
+          element={
+            <ProtectedRoute roles={['owner', 'super_admin', 'cooperative', 'agent', 'usine']}>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+        </Route>
         <Route
           element={
             <ProtectedRoute roles={['owner', 'super_admin', 'cooperative', 'agent']}>
@@ -191,8 +218,6 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/map" element={<MapPage />} />
         </Route>
 
