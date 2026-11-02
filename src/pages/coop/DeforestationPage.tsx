@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, TileLayer, LayersControl, GeoJSON } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import * as XLSX from 'xlsx'
 import { TreePine, Play, Square, Download, FileSpreadsheet, RotateCcw, Search, AlertTriangle, Loader2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
+import HansenExplain from '../../components/defor/HansenExplain'
+import { explainHansen } from '../../utils/deforExplain'
 import api from '../../api/client'
 import PolygonSourcePicker, { type PickedSource } from '../../components/map/PolygonSourcePicker'
 import ResultsLayer, { escapeHtml, type ResultItem } from '../../components/map/ResultsLayer'
@@ -77,6 +79,7 @@ export default function DeforestationPage() {
   const [filter, setFilter] = useState<DefStatus | 'all'>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
+  const [openRow, setOpenRow] = useState<number | null>(null)     // ligne dépliée : explication de la parcelle
   const [version, setVersion] = useState(0)
   const cancelRef = useRef(false)
 
@@ -258,7 +261,8 @@ export default function DeforestationPage() {
 
   return (
     <div className="p-6 space-y-5">
-      <Header title="Analyse déforestation" subtitle="Règles du plugin Deforestation check · Hansen Global Forest Change 2024" />
+      <Header title="Analyse déforestation" subtitle="Règles du plugin Deforestation check · Hansen Global Forest Change 2025 (v1.13)" />
+      <HansenExplain opts={opts} />
 
       <section className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
         <p className="font-semibold text-gray-900">1. Parcelles à analyser</p>
@@ -444,8 +448,8 @@ export default function DeforestationPage() {
                     ...(meta?.rdue ? ['Catégorie foncière', 'Légalité', 'Zéro défor.', 'RDUE'] : [])].map((h) => <th key={h} className="text-left px-4 py-2 font-medium">{h}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {rows.slice(current * PAGE, (current + 1) * PAGE).map(({ f, i, r }) => (
-                    <tr key={i}>
+                  {rows.slice(current * PAGE, (current + 1) * PAGE).map(({ f, i, r }) => (<Fragment key={i}>
+                    <tr onClick={() => setOpenRow(openRow === i ? null : i)} className="cursor-pointer hover:bg-gray-50" title="Cliquer pour l'explication">
                       <td className="px-4 py-2 font-mono text-xs">{f.id}</td>
                       <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLE[r!.status]?.badge}`}>{STATUS_STYLE[r!.status]?.label}</span>
                         {r!.error && <span className="block text-[11px] text-red-600">{r!.error}</span>}
@@ -466,7 +470,13 @@ export default function DeforestationPage() {
                         <td className="px-4 py-2 text-xs" title={r!.legal_note}>{r!.rdue_stat && <span className={`px-2 py-0.5 rounded-full ${RDUE_BADGE[r!.rdue_stat] ?? ''}`}>{r!.rdue_stat}</span>}</td>
                       </>}
                     </tr>
-                  ))}
+                    {openRow === i && (() => { const x = explainHansen(r!, opts); return (
+                      <tr className="bg-blue-50/40"><td colSpan={20} className="px-6 py-3 text-sm text-gray-700">
+                        <p className="font-semibold text-gray-900">Pourquoi « {STATUS_STYLE[r!.status]?.label} » ?</p>
+                        <ul className="mt-1 list-disc space-y-0.5 pl-5">{x.why.map((w, k) => <li key={k}>{w}</li>)}</ul>
+                        <p className="mt-2"><b>Que faire :</b> {x.todo}</p>
+                      </td></tr>) })()}
+                  </Fragment>))}
                 </tbody>
               </table>
             </div>

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, GeoJSON as GeoJSONLayer } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { X, ExternalLink, Paperclip, Loader2 } from 'lucide-react'
-import { ddApi, type DDAnalysis, type DDDecision, type DDResult, RISK_COLOR, RISK_LABEL, FOREST_LABEL, SOURCE_LABEL, CONCORDANCE_LABEL } from '../../api/dd'
+import { ddApi, type DDAnalysis, type DDDecision, type DDExplain, type DDResult, RISK_COLOR, RISK_LABEL, FOREST_LABEL, SOURCE_LABEL, CONCORDANCE_LABEL } from '../../api/dd'
 import Button from '../ui/Button'
 import { useHotkeys } from '../../hooks/useHotkeys'
 import { apiErrorMessage } from '../../utils/retry'
@@ -33,8 +33,8 @@ function Mini({ geometry, year }: { geometry: GeoJSON.Geometry; year: number }) 
 }
 
 /** Fiche de vérification d'une parcelle (art. 11) : preuves, vignettes avant / après 2020, décision humaine tracée. */
-export default function VerificationSheet({ analysis, result, geometry, onClose, onDecided }: {
-  analysis: DDAnalysis; result: DDResult; geometry: GeoJSON.Geometry | null; onClose: () => void; onDecided: (d: DDDecision) => void
+export default function VerificationSheet({ analysis, result, geometry, explain, onClose, onDecided }: {
+  analysis: DDAnalysis; result: DDResult; geometry: GeoJSON.Geometry | null; explain?: DDExplain; onClose: () => void; onDecided: (d: DDDecision) => void
 }) {
   useHotkeys({ escape: onClose })
   const c = result.classification, e = result.evidence
@@ -44,6 +44,8 @@ export default function VerificationSheet({ analysis, result, geometry, onClose,
   const [file, setFile] = useState<{ name: string; type: string; data: string } | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const th = analysis.thresholds
+  const rep = result.geometry_report
   const center = geometry ? L.geoJSON(geometry as GeoJSON.GeoJsonObject).getBounds().getCenter() : null
 
   const pick = (f: File | undefined) => {
@@ -85,6 +87,19 @@ export default function VerificationSheet({ analysis, result, geometry, onClose,
           </div>
         )}
 
+        {c && explain && (
+          <div className="mt-4 space-y-2 rounded-xl bg-blue-50/60 p-4 text-sm text-gray-700">
+            <p className="font-semibold text-gray-900">Pourquoi ce classement</p>
+            {c.reasons.map((code) => (
+              <div key={code}>
+                <p>{explain.reasons[code] ?? code}</p>
+                {explain.actions[code] && <p className="mt-0.5"><b>Que faire :</b> {explain.actions[code]}</p>}
+              </div>
+            ))}
+            {rep && <p className="text-xs text-gray-500">Étape 1 — parcelle {rep.kind === 'point' ? 'déclarée par un point (analysée comme un cercle)' : 'polygone valide'}, {rep.area_ha.toFixed(2)} ha.</p>}
+          </div>
+        )}
+
         {geometry && (
           <div className="mt-4 grid grid-cols-2 gap-3">
             <Mini geometry={geometry} year={BEFORE} />
@@ -107,7 +122,8 @@ export default function VerificationSheet({ analysis, result, geometry, onClose,
         {e && !e.error && (
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <section>
-              <p className="mb-1 text-sm font-semibold text-gray-900">Forêt au 31/12/2020 — {c ? FOREST_LABEL[c.forest2020] : ''}</p>
+              <p className="mb-1 text-sm font-semibold text-gray-900">Étape 2 — forêt au 31/12/2020 : {c ? FOREST_LABEL[c.forest2020] : ''}</p>
+              <p className="mb-1 text-xs text-gray-500">Une carte vote « forêt » si elle en voit sur au moins {String(th.min_forest_share)} % de la parcelle ; {String(th.min_votes)} votes donnent « forêt »{c ? ` (ici ${c.forest2020_votes} vote(s) sur ${c.forest2020_available.length})` : ''}.</p>
               <table className="w-full text-xs">
                 <tbody className="divide-y divide-gray-100">
                   {Object.entries(e.forest2020).map(([s, v]) => (
@@ -118,7 +134,8 @@ export default function VerificationSheet({ analysis, result, geometry, onClose,
               </table>
             </section>
             <section>
-              <p className="mb-1 text-sm font-semibold text-gray-900">Perte après 2020 (dans la forêt 2020)</p>
+              <p className="mb-1 text-sm font-semibold text-gray-900">Étape 3 — perte après 2020 (dans la forêt 2020)</p>
+              <p className="mb-1 text-xs text-gray-500">Une source « signale » une perte au-delà de {String(th.min_loss_ha)} ha ou {String(th.min_loss_pct)} % de la parcelle.</p>
               <table className="w-full text-xs">
                 <tbody className="divide-y divide-gray-100">
                   {Object.entries(e.loss_post2020).map(([s, v]) => (

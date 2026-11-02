@@ -1,6 +1,7 @@
 import { useT, LangSwitch } from '../../i18n'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
+  Scale,
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
   Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2, Scissors, Link2, Package, Layers, FileCheck2, Route, Trash, Search, Bell, Inbox,
@@ -48,6 +49,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Self-intersection', to: '/coop/selfintersection', icon: <Scissors className="w-5 h-5" />, roles: ['cooperative'], module: 'selfintersection', group: 'Parcelles & conformité' },
   { label: 'Polygon & GMR', to: '/coop/gmr', icon: <Link2 className="w-5 h-5" />, roles: ['cooperative'], module: 'gmr', group: 'Parcelles & conformité' },
   { label: 'Diligence raisonnée', to: '/coop/due-diligence', icon: <ShieldCheck className="w-5 h-5" />, roles: ['cooperative'], module: 'due_diligence', group: 'Export' },
+  { label: 'Traçabilité des volumes', to: '/coop/traceability', icon: <Scale className="w-5 h-5" />, roles: ['cooperative'], module: 'lots', group: 'Export' },
   { label: 'Fiches de lot', to: '/coop/lots', icon: <Package className="w-5 h-5" />, roles: ['cooperative'], module: 'lots', group: 'Export' },
   { label: 'Export TRACES', to: '/coop/reports#traces', icon: <FileCheck2 className="w-5 h-5" />, roles: ['cooperative'], group: 'Export' },
   { label: 'Rapports', to: '/coop/reports', icon: <FileBarChart className="w-5 h-5" />, roles: ['cooperative'], group: 'Export' },
@@ -71,7 +73,7 @@ export const EN: Record<string, string> = {
   'Tableau de bord': 'Dashboard', 'Carte interactive': 'Interactive map', 'Coopératives': 'Cooperatives', 'Agents mappeurs': 'Field agents',
   'Comptes & accès': 'Accounts & access', 'Rapports': 'Reports', 'Journaux': 'Logs', 'Registre': 'Register', 'Producteurs': 'Farmers',
   'Agents': 'Agents', 'Parcelles': 'Plots', 'Contrôle spatial': 'Spatial checks', 'Analyse déforestation': 'Deforestation analysis',
-  'Fiches de lot': 'Lot sheets', 'Diligence raisonnée': 'Due diligence', 'Export TRACES': 'TRACES export', 'Ma tournée': 'My round', 'Nouveau mapping': 'New mapping', 'Carte': 'Map',
+  'Fiches de lot': 'Lot sheets', 'Traçabilité des volumes': 'Volume traceability', 'Diligence raisonnée': 'Due diligence', 'Export TRACES': 'TRACES export', 'Ma tournée': 'My round', 'Nouveau mapping': 'New mapping', 'Carte': 'Map',
   'Mon activité': 'My activity', 'Mes parcelles': 'My plots', 'Notifications': 'Notifications', 'Mon compte': 'My account',
 }
 

@@ -9,6 +9,9 @@ import { lotsApi, PRODUCT_LABEL, STATUS_LABEL, type Lot, type LotLine, type LotP
 import { lotPdf, lotTraces } from '../../utils/lotSheet'
 import { exportExcel } from '../../utils/featureExport'
 import { apiErrorMessage } from '../../utils/retry'
+import DeliveryPicker from '../../components/trace/DeliveryPicker'
+import TransportSlips from '../../components/trace/TransportSlips'
+import { OPERATION_LABEL, traceApi } from '../../api/trace'
 
 const STATUS_STYLE = { brouillon: 'bg-gray-100 text-gray-700', valide: 'bg-primary-50 text-primary-800', expedie: 'bg-blue-50 text-blue-800' }
 const thisCampaign = () => { const d = new Date(); const y = d.getMonth() >= 9 ? d.getFullYear() : d.getFullYear() - 1; return `${y}-${y + 1}` }
@@ -19,6 +22,10 @@ function Editor({ lot, onSaved, onCancel }: { lot: Lot | null; onSaved: (l: Lot)
   const { producers, isLoading } = useAppStore()
   const [f, setF] = useState<LotPayload>(lot ?? { campaign: thisCampaign(), product: 'cacao', lot_date: new Date().toISOString().slice(0, 10), bags: 0, gross_weight_kg: null, quality: '', warehouse: '', buyer: '', destination: '', transport: '', notes: '' })
   const [lines, setLines] = useState<LotLine[]>(lot?.lines ?? [])
+  // lot composé de pesées (par défaut) ou de livraisons saisies à la main (ancien fonctionnement)
+  const [fromDeliveries, setFromDeliveries] = useState(!lot || !!lot.delivery_count)
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [pickedLoaded, setPickedLoaded] = useState(!lot?.delivery_count)
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -33,10 +40,19 @@ function Editor({ lot, onSaved, onCancel }: { lot: Lot | null; onSaved: (l: Lot)
   const set = (k: keyof LotPayload) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value })
   const setLine = (i: number, k: keyof LotLine, v: string) => setLines(lines.map((l, j) => (j === i ? { ...l, [k]: k === 'weight_kg' || k === 'bags' ? Number(v) : v } : l)))
 
+  useEffect(() => {
+    if (pickedLoaded || !lot) return
+    traceApi.deliveries({ lot: lot.id, page_size: 2000 })
+      .then(({ data }) => { setPicked(new Set(data.results.map((d) => d.id))); setPickedLoaded(true) }).catch(() => setPickedLoaded(true))
+  }, [lot, pickedLoaded])
+
   const save = async () => {
     setBusy(true); setError('')
     try {
-      const body: LotPayload = { ...f, bags: Number(f.bags) || bags, gross_weight_kg: f.gross_weight_kg ? Number(f.gross_weight_kg) : null,
+      const common: LotPayload = { ...f, gross_weight_kg: f.gross_weight_kg ? Number(f.gross_weight_kg) : null }
+      const body: LotPayload = fromDeliveries
+        ? { ...common, bags: Number(f.bags) || 0, deliveries: [...picked] }
+        : { ...common, bags: Number(f.bags) || bags,
         lines: lines.map((l) => ({ producer: l.producer, weight_kg: Number(l.weight_kg), bags: Number(l.bags) || 0, receipt: l.receipt ?? '', delivery_date: l.delivery_date || null })) }
       const { data } = lot ? await lotsApi.update(lot.id, body) : await lotsApi.create(body)
       onSaved(data)
@@ -62,6 +78,18 @@ function Editor({ lot, onSaved, onCancel }: { lot: Lot | null; onSaved: (l: Lot)
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-semibold text-gray-900">Composition du lot</p>
+          <div className="ml-auto flex rounded-lg bg-gray-100 p-0.5 text-sm">
+            <button type="button" onClick={() => setFromDeliveries(true)} className={`rounded-md px-3 py-1 ${fromDeliveries ? 'bg-white font-semibold shadow-sm' : 'text-gray-600'}`}>À partir des pesées</button>
+            <button type="button" onClick={() => setFromDeliveries(false)} className={`rounded-md px-3 py-1 ${!fromDeliveries ? 'bg-white font-semibold shadow-sm' : 'text-gray-600'}`}>Saisie manuelle</button>
+          </div>
+        </div>
+        {fromDeliveries && <div className="mt-4">{pickedLoaded ? <DeliveryPicker lotId={lot?.id} product={(f.product ?? 'cacao') as Lot['product']} selected={picked} onChange={setPicked} /> : <p className="text-sm text-gray-500">Chargement…</p>}
+          <p className="mt-2 text-xs text-gray-500">Les livraisons du lot sont calculées à partir des pesées cochées (regroupées par producteur, avec les numéros de fiche).</p></div>}
+      </section>
+
+      {!fromDeliveries && <section className="rounded-2xl border border-gray-200 bg-white p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-semibold text-gray-900">Livraisons des producteurs <span className="font-normal text-gray-500">· {lines.length} producteur(s) · {kg(net)} · {bags} sac(s)</span></p>
           <div className="relative w-full max-w-sm">
@@ -104,12 +132,12 @@ function Editor({ lot, onSaved, onCancel }: { lot: Lot | null; onSaved: (l: Lot)
             </tbody>
           </table>
         </div>
-        <label className="mt-4 block text-xs text-gray-600">Notes<textarea rows={2} value={f.notes} onChange={set('notes')} className={input} /></label>
-      </section>
+      </section>}
+      <label className="block text-xs text-gray-600">Notes<textarea rows={2} value={f.notes} onChange={set('notes')} className={input} /></label>
 
       {error && <p role="alert" className="rounded-md border-l-4 border-red-500 bg-red-50 px-3.5 py-2.5 text-sm text-red-800">{error}</p>}
       <div className="flex gap-3">
-        <button onClick={save} disabled={busy || !lines.length} className="flex items-center gap-2 rounded-md bg-primary-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-40">
+        <button onClick={save} disabled={busy || (fromDeliveries ? !picked.size : !lines.length)} className="flex items-center gap-2 rounded-md bg-primary-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-40">
           {busy && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer et contrôler</button>
         <button onClick={onCancel} className="rounded-md border border-gray-300 px-5 py-2.5 text-sm">Annuler</button>
       </div>
@@ -170,7 +198,7 @@ function Detail({ lot, onBack, onEdit, onChanged }: { lot: Lot; onBack: () => vo
           </>}
           {lot.status === 'valide' && <>
             <button onClick={() => setStatus('brouillon')} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Repasser en brouillon</button>
-            <button onClick={() => setStatus('expedie')} className="flex items-center gap-2 rounded-md border border-blue-700 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"><Truck className="h-4 w-4" /> Marquer expédié</button>
+            <span className="flex items-center gap-1.5 text-sm text-gray-500"><Truck className="h-4 w-4" /> Expédition : émettez la fiche d'accompagnement ci-dessous</span>
           </>}
         </div>
       </section>
@@ -190,6 +218,16 @@ function Detail({ lot, onBack, onEdit, onChanged }: { lot: Lot; onBack: () => vo
           </ul>
         )}
       </section>
+
+      <TransportSlips lot={lot} onLotChanged={async () => onChanged((await lotsApi.get(lot.id)).data)} />
+
+      {!!lot.downstream?.batches.length && (
+        <section className="rounded-2xl border border-gray-200 bg-white p-5">
+          <p className="font-semibold text-gray-900">À l'usine</p>
+          <p className="text-sm text-gray-600">{lot.downstream.processed_kg.toLocaleString('fr-FR')} kg usinés ou transformés · {lot.downstream.available_kg.toLocaleString('fr-FR')} kg encore disponibles</p>
+          <ul className="mt-2 space-y-1 text-sm">{lot.downstream.batches.map((b) => <li key={b.id}><span className="font-mono text-xs">{b.code}</span> — {OPERATION_LABEL[b.operation]} à {b.plant}, le {new Date(b.process_date).toLocaleDateString('fr-FR')} : {b.weight_kg.toLocaleString('fr-FR')} kg</li>)}</ul>
+        </section>
+      )}
 
       <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
         <table className="w-full text-sm">

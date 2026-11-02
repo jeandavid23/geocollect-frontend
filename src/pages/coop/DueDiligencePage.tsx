@@ -9,6 +9,7 @@ import { alertDialog } from '../../components/ui/dialog'
 import ResultsLayer, { escapeHtml, type ResultItem } from '../../components/map/ResultsLayer'
 import FitToData from '../../components/map/FitToData'
 import VerificationSheet from '../../components/dd/VerificationSheet'
+import ExplainPanel from '../../components/dd/ExplainPanel'
 import { ddApi, type DDAnalysis, type DDCatalog, type DDResult, type Risk, type ReportMeta, RISK_COLOR, RISK_LABEL, FOREST_LABEL, SOURCE_LABEL, CONCORDANCE_LABEL, WHISP_STATUS_LABEL } from '../../api/dd'
 import { lotsApi } from '../../api/lots'
 import { useAuthStore } from '../../store/authStore'
@@ -150,6 +151,8 @@ export default function DueDiligencePage() {
   return (
     <div className="space-y-5 p-4 sm:p-6">
       <Header title="Diligence raisonnée" subtitle="Convergence de preuves (JRC, TMF, WorldCover, Hansen, aires protégées, domaine forestier) et rapport EUDR" />
+
+      <ExplainPanel explain={catalog?.explain} thresholds={current?.thresholds ?? thresholds} />
 
       {/* Lancement */}
       <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -319,7 +322,7 @@ export default function DueDiligencePage() {
       </div>
 
       {sheet && current && (
-        <VerificationSheet analysis={current} result={sheet} geometry={geomOf(sheet.id)} onClose={() => setSheet(null)}
+        <VerificationSheet analysis={current} result={sheet} geometry={geomOf(sheet.id)} explain={catalog?.explain} onClose={() => setSheet(null)}
           onDecided={(d) => setCurrent((c) => (c ? { ...c, decisions: [...(c.decisions ?? []), d] } : c))} />
       )}
     </div>

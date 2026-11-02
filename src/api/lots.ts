@@ -12,8 +12,9 @@ export interface Lot {
   lot_date: string; bags: number; gross_weight_kg: number | null; net_weight_kg: number; quality: string; warehouse: string
   buyer: string; destination: string; transport: string; notes: string; status: 'brouillon' | 'valide' | 'expedie'
   created_by_name: string; created_at: string; updated_at: string; lines: LotLine[]; checks?: LotChecks
+  delivery_count?: number; downstream?: import('./trace').Downstream
 }
-export type LotPayload = Partial<Omit<Lot, 'id' | 'code' | 'cooperative' | 'cooperative_name' | 'net_weight_kg' | 'checks' | 'created_at' | 'updated_at' | 'created_by_name'>>
+export type LotPayload = Partial<Omit<Lot, 'id' | 'code' | 'cooperative' | 'cooperative_name' | 'net_weight_kg' | 'checks' | 'created_at' | 'updated_at' | 'created_by_name' | 'delivery_count' | 'downstream'>> & { deliveries?: string[] }
 
 export const lotsApi = {
   list: () => api.get<Lot[]>('/lots/'),

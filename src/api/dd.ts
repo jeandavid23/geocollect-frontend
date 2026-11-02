@@ -60,6 +60,12 @@ export interface DDCatalog {
   regulation: { regulation: string; cutoff_date: string; retention_years: number; point_max_area_ha: number
     country_risk: Record<string, string>; application_dates: Record<string, string>; hs_codes: Record<string, string> }
   whisp_configured: boolean
+  /** textes communs à tous les outils (moteur eudr_evidence) : méthode, sens des risques, motifs, actions */
+  explain?: DDExplain
+}
+export interface DDExplain {
+  method: { title: string; text: string }[]; risk: Record<Risk, string>; reasons: Record<string, string>
+  actions: Record<string, string>; thresholds: Record<string, string>; limits: string[]
 }
 
 const p = (cooperative?: string) => (cooperative ? { cooperative } : undefined)

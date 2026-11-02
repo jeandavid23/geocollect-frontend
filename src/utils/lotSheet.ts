@@ -3,10 +3,10 @@ import { PRODUCT_LABEL, STATUS_LABEL } from '../api/lots'
 import { buildTraces } from './traces'
 import { downloadBlob } from './geoExport'
 
-const fr = (n: number, d = 1) => n.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: d }).replace(/ | /g, ' ')
-const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString('fr-FR') : '—')
+export const fr = (n: number, d = 1) => n.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: d }).replace(/ | /g, ' ')
+export const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString('fr-FR') : '—')
 // police standard des PDF (WinAnsi) : symboles hors jeu remplacés
-const t = (v: unknown) => String(v ?? '').replace(/[≤]/g, '<=').replace(/[≥]/g, '>=').replace(/[→]/g, '->').replace(/[  ]/g, ' ')
+export const t = (v: unknown) => String(v ?? '').replace(/[≤]/g, '<=').replace(/[≥]/g, '>=').replace(/[→]/g, '->').replace(/[  ]/g, ' ')
 
 /** Texte du QR code : identifie le lot et son contenu (lisible par n'importe quel lecteur, sans connexion). */
 export function lotQrText(lot: Lot) {
