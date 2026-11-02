@@ -29,27 +29,27 @@ export default function PlatformHealth() {
         <div className={card}>
           <p className="text-xs text-gray-500">Serveur</p>
           <p className={`flex items-center gap-1.5 font-semibold ${down ? 'text-red-700' : 'text-green-700'}`}>{down ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}{down ? 'Injoignable' : h ? 'En service' : '…'}</p>
-          <p className="text-[11px] text-gray-400">version {h?.version?.slice(0, 7) ?? '—'} · depuis {up}</p>
+          <p className="text-xs text-gray-400">version {h?.version?.slice(0, 7) ?? '—'} · depuis {up}</p>
         </div>
         <div className={card}>
           <p className="text-xs text-gray-500">Base de données</p>
           <p className="flex items-center gap-1.5 font-semibold text-gray-900"><Database className="h-4 w-4 text-gray-400" />{h ? `${Math.round(h.db_ms)} ms` : '—'}</p>
-          <p className="text-[11px] text-gray-400">{h?.database === 'ok' ? 'répond normalement' : h ? h.database : ''}</p>
+          <p className="text-xs text-gray-400">{h?.database === 'ok' ? 'répond normalement' : h ? h.database : ''}</p>
         </div>
         <div className={card}>
           <p className="text-xs text-gray-500">Calculs spatiaux</p>
           <p className="font-semibold text-gray-900">{spatial ? (spatial.postgis ? 'PostGIS' : 'Python') : '—'}</p>
-          <p className="text-[11px] text-gray-400">{spatial ? (spatial.postgis ? 'index spatial actif' : 'PostGIS non activé') : ''}</p>
+          <p className="text-xs text-gray-400">{spatial ? (spatial.postgis ? 'index spatial actif' : 'PostGIS non activé') : ''}</p>
         </div>
         <div className={card}>
           <p className="text-xs text-gray-500">Zones foncières</p>
           <p className="flex items-center gap-1.5 font-semibold text-gray-900"><Map className="h-4 w-4 text-gray-400" />{spatial ? spatial.land_zones.toLocaleString('fr-FR') : '—'}</p>
-          <p className="text-[11px] text-gray-400">forêts classées, parcs, enclaves</p>
+          <p className="text-xs text-gray-400">forêts classées, parcs, enclaves</p>
         </div>
         <Link to="/owner/trash" className={`${card} hover:bg-gray-50`}>
           <p className="text-xs text-gray-500">Corbeille</p>
           <p className="flex items-center gap-1.5 font-semibold text-gray-900"><Trash2 className="h-4 w-4 text-gray-400" />{trash ?? '—'}</p>
-          <p className="text-[11px] text-gray-400">compte(s) restaurable(s)</p>
+          <p className="text-xs text-gray-400">compte(s) restaurable(s)</p>
         </Link>
       </div>
     </section>

@@ -1,5 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+// Polices installées dans le site (plus rapides que Google Fonts, disponibles hors ligne sur le terrain)
+import '@fontsource-variable/inter'
+import '@fontsource/source-serif-4/600.css'
+import '@fontsource/source-serif-4/700.css'
 import './index.css'
 import App from './App.tsx'
 import { initMonitoring } from './utils/monitoring'

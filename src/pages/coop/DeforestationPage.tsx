@@ -22,13 +22,14 @@ import type { Report } from '../../utils/report'
 const { BaseLayer } = LayersControl
 
 const STATUS_STYLE: Record<DefStatus, { color: string; label: string; badge: string }> = {
-  'Conforme': { color: '#16a34a', label: 'Conforme', badge: 'bg-green-100 text-green-700' },
-  'A risque': { color: '#f59e0b', label: 'À risque', badge: 'bg-amber-100 text-amber-800' },
-  'Non conforme': { color: '#dc2626', label: 'Non conforme', badge: 'bg-red-100 text-red-700' },
+  'Conforme': { color: '#34c46a', label: 'Conforme', badge: 'bg-green-100 text-green-700' },
+  'A risque': { color: '#f5a524', label: 'À risque', badge: 'bg-amber-100 text-amber-800' },
+  'Non conforme': { color: '#ef4444', label: 'Non conforme', badge: 'bg-red-100 text-red-700' },
   'Indetermine': { color: '#6b7280', label: 'Indéterminé', badge: 'bg-gray-100 text-gray-600' },
 }
 const RISK_LABEL: Record<string, string> = { Faible: 'Faible', Modere: 'Modéré', Eleve: 'Élevé', 'Tres eleve': 'Très élevé' }
-const RISK_COLOR: Record<string, string> = { Faible: '#1B7F4B', Modere: '#F5A623', Eleve: '#EF6C00', 'Tres eleve': '#C62828' }
+// lisibles en texte sur fond blanc (contraste ≥ 4,5:1), du plus clair au plus foncé
+const RISK_COLOR: Record<string, string> = { Faible: '#2c6741', Modere: '#9a520c', Eleve: '#b42318', 'Tres eleve': '#7f1d1d' }
 const STANDARDS: { value: Standard; label: string }[] = [
   { value: 'EUDR', label: 'EUDR — perte après le 31/12/2020' },
   { value: 'RA', label: 'Rainforest Alliance — perte après 2013' },
@@ -179,7 +180,7 @@ export default function DeforestationPage() {
         ${r.years ? `Années de perte : ${escapeHtml(r.years)}<br/>` : ''}
         Forêt 2000 : ${r.forest2000_pct ?? '—'} % · ${r.cover2020 ?? ''}
         ${r.rdue_stat ? `<br/><b>RDUE : ${escapeHtml(r.rdue_stat)}</b> · ${escapeHtml(CAT_STYLE[r.usage_cat ?? '']?.label ?? r.usage_cat)}${r.zone ? ` (${escapeHtml(r.zone)})` : ''}<br/>Légalité ${escapeHtml(r.legalite)} · zéro déforestation ${escapeHtml(r.zero_def)}` : ''}
-        ${r.error ? `<br/><span style="color:#dc2626">${escapeHtml(r.error)}</span>` : ''}</div>`,
+        ${r.error ? `<br/><span style="color:#b42318">${escapeHtml(r.error)}</span>` : ''}</div>`,
     }]
   }), [features, results])
 
@@ -452,9 +453,9 @@ export default function DeforestationPage() {
                     <tr onClick={() => setOpenRow(openRow === i ? null : i)} className="cursor-pointer hover:bg-gray-50" title="Cliquer pour l'explication">
                       <td className="px-4 py-2 font-mono text-xs">{f.id}</td>
                       <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLE[r!.status]?.badge}`}>{STATUS_STYLE[r!.status]?.label}</span>
-                        {r!.error && <span className="block text-[11px] text-red-600">{r!.error}</span>}
-                        {r!.note && <span className="block max-w-[16rem] text-[11px] text-amber-700">{r!.note}</span>}
-                        {r!.jrc_error && <span className="block max-w-[16rem] text-[11px] text-gray-500">{r!.jrc_error}</span>}</td>
+                        {r!.error && <span className="block text-xs text-red-600">{r!.error}</span>}
+                        {r!.note && <span className="block max-w-[16rem] text-xs text-amber-700">{r!.note}</span>}
+                        {r!.jrc_error && <span className="block max-w-[16rem] text-xs text-gray-500">{r!.jrc_error}</span>}</td>
                       <td className="px-4 py-2 text-xs" style={{ color: r!.risk_level ? RISK_COLOR[r!.risk_level] : undefined }}>{r!.risk_level ? RISK_LABEL[r!.risk_level] : '—'}</td>
                       <td className="px-4 py-2">{r!.area_ha ?? '—'}</td>
                       <td className="px-4 py-2">{r!.defor_ha ?? '—'}</td>

@@ -19,9 +19,9 @@ import { useStickyState } from '../components/ui/table'
 const { BaseLayer } = LayersControl
 
 const EUDR_COLORS = {
-  compliant: { fill: '#16a34a', stroke: '#15803d' },
-  non_compliant: { fill: '#dc2626', stroke: '#b91c1c' },
-  pending: { fill: '#f59e0b', stroke: '#d97706' },
+  compliant: { fill: '#34c46a', stroke: '#34c46a' },
+  non_compliant: { fill: '#ef4444', stroke: '#ef4444' },
+  pending: { fill: '#f5a524', stroke: '#f5a524' },
 }
 
 function MapAutoCenter({ lat, lng }: { lat: number; lng: number }) {

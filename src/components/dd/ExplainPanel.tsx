@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
-import { RISK_COLOR, RISK_LABEL, type DDExplain, type Risk } from '../../api/dd'
+import { RISK_COLOR, RISK_TEXT_COLOR, RISK_LABEL, type DDExplain, type Risk } from '../../api/dd'
 
 const fmt = (v: number | boolean) => (typeof v === 'boolean' ? (v ? 'activée' : 'désactivée') : v.toLocaleString('fr-FR'))
 
@@ -26,7 +26,7 @@ export default function ExplainPanel({ explain, thresholds }: { explain?: DDExpl
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             {(Object.keys(explain.risk) as Risk[]).map((k) => (
               <div key={k} className="rounded-xl border bg-white p-3" style={{ borderColor: RISK_COLOR[k] }}>
-                <p className="font-semibold" style={{ color: RISK_COLOR[k] }}>Risque {RISK_LABEL[k].toLowerCase()}</p>
+                <p className="font-semibold" style={{ color: RISK_TEXT_COLOR[k] }}>Risque {RISK_LABEL[k].toLowerCase()}</p>
                 <p className="mt-1 text-[13px]">{explain.risk[k]}</p>
               </div>
             ))}

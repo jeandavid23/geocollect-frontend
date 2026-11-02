@@ -15,7 +15,7 @@ export default function EmptyState({ icon, title, text, actions = [], steps }: {
       {text && <p className="mt-1 max-w-lg text-sm text-gray-500">{text}</p>}
       {steps && (
         <ol className="mt-4 max-w-md space-y-1.5 text-left text-sm text-gray-600">
-          {steps.map((s, i) => <li key={s} className="flex gap-2"><span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-[11px] font-semibold text-primary-800">{i + 1}</span>{s}</li>)}
+          {steps.map((s, i) => <li key={s} className="flex gap-2"><span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-800">{i + 1}</span>{s}</li>)}
         </ol>
       )}
       {actions.length > 0 && (

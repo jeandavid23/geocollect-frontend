@@ -41,7 +41,7 @@ export function SortTh({ label, k, sort, onSort, className = '' }: { label: stri
   const on = sort?.key === k
   return (
     <th className={`text-left px-5 py-3 font-medium ${className}`} aria-sort={on ? (sort!.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
-      <button onClick={() => onSort(k)} className={`group inline-flex items-center gap-1 uppercase hover:text-gray-800 ${on ? 'text-gray-900' : ''}`}>
+      <button onClick={() => onSort(k)} className={`group inline-flex items-center gap-1 hover:text-gray-900 ${on ? 'text-gray-900' : ''}`}>
         {label}
         {on ? (sort!.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-0 group-hover:opacity-60" />}
       </button>

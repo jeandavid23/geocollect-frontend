@@ -70,13 +70,13 @@ export default function VolumesTab({ campaign }: { campaign: string }) {
                     <td className="px-5 py-2 tabular-nums">{p.deliveries}</td>
                     <td className="px-5 py-2 font-semibold tabular-nums">{fr(p.net_kg, 0)} kg</td>
                     <td className="px-5 py-2 tabular-nums">{p.not_in_lot_kg ? `${fr(p.not_in_lot_kg, 0)} kg` : '—'}</td>
-                    <td className="px-5 py-2 tabular-nums">{p.area_ha ? `${fr(p.area_ha, 2)} ha` : '—'}<span className="block text-[10px] text-gray-400">{AREA_SOURCE[p.area_source]}</span></td>
+                    <td className="px-5 py-2 tabular-nums">{p.area_ha ? `${fr(p.area_ha, 2)} ha` : '—'}<span className="block text-xs text-gray-400">{AREA_SOURCE[p.area_source]}</span></td>
                     <td className="px-5 py-2 tabular-nums">{p.yield_kg_ha != null ? `${fr(p.yield_kg_ha, 0)} kg/ha` : '—'}</td>
                     <td className="px-5 py-2">
                       {p.capacity_kg ? (
                         <div className="w-40"><div className="h-2 overflow-hidden rounded-full bg-gray-100">
                           <div className={`h-full rounded-full ${p.status === 'depassement' ? 'bg-red-600' : p.status === 'a_surveiller' ? 'bg-amber-500' : 'bg-primary-600'}`} style={{ width: `${used}%` }} /></div>
-                          <p className="mt-0.5 text-[10px] text-gray-500">{fr(p.net_kg, 0)} / {fr(p.capacity_kg, 0)} kg possibles</p></div>
+                          <p className="mt-0.5 text-xs text-gray-500">{fr(p.net_kg, 0)} / {fr(p.capacity_kg, 0)} kg possibles</p></div>
                       ) : '—'}
                     </td>
                     <td className="px-5 py-2"><span className={`rounded px-2 py-0.5 text-xs font-semibold ${VOLUME_STATUS[p.status].tone}`}>{VOLUME_STATUS[p.status].label}</span></td>

@@ -30,7 +30,7 @@ function TraceScene() {
   const d = 'M' + pts.map((p) => p.join(',')).join(' L') + ' Z'
   return (
     <div className={`${card} w-[300px] p-4`}>
-      <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.16em] text-white/70">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.16em] text-white/70">
         <span className="flex items-center gap-1.5"><span className="mo-blink h-1.5 w-1.5 rounded-full bg-red-400" />Mapping GPS</span>
         <span>± 3 m</span>
       </div>
@@ -46,7 +46,7 @@ function TraceScene() {
           </g>
         ))}
       </svg>
-      <div className="mt-2 grid grid-cols-3 gap-2 border-t border-white/15 pt-3 text-[11px]">
+      <div className="mt-2 grid grid-cols-3 gap-2 border-t border-white/15 pt-3 text-xs">
         <div><p className="text-white/55">Sommets</p><p className="mt-0.5 text-sm font-semibold tabular-nums"><Count to={6} duration={3000} delay={300} /></p></div>
         <div><p className="text-white/55">Surface</p><p className="mt-0.5 text-sm font-semibold tabular-nums"><Count to={2.41} decimals={2} delay={3200} suffix=" ha" /></p></div>
         <div><p className="text-white/55">Position</p><p className="mt-0.5 text-sm font-semibold tabular-nums">6,578° N</p></div>
@@ -60,15 +60,15 @@ function DossierScene() {
   const rows = [['Producteur', 'Kouamé A.', 'CI-TIA-00418'], ['Parcelle', '2,41 ha', 'CI-TIA-00418-P1'], ['Production', '1 240 kg', 'Campagne 2026']]
   return (
     <div className={`${card} w-[300px] p-4`}>
-      <p className="text-[11px] uppercase tracking-[0.16em] text-white/70">Dossier producteur</p>
+      <p className="text-xs uppercase tracking-[0.16em] text-white/70">Dossier producteur</p>
       <div className="relative mt-3 space-y-3">
         <span className="mo-grow-y absolute left-[13px] top-4 bottom-4 w-px bg-white/30" style={{ animationDelay: '.6s' }} />
         {rows.map(([k, v, id], i) => (
           <div key={k} className="mo-slide-in relative flex items-center gap-3" style={{ animationDelay: `${0.3 + i * 0.7}s` }}>
-            <span className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/40 bg-[#183a25] text-[11px] font-semibold">{i + 1}</span>
+            <span className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/40 bg-[#183a25] text-xs font-semibold">{i + 1}</span>
             <div className="flex-1 rounded-md bg-white/10 px-3 py-2">
               <div className="flex justify-between text-xs"><span className="text-white/60">{k}</span><span className="font-semibold">{v}</span></div>
-              <p className="mt-0.5 font-mono text-[10px] text-white/45">{id}</p>
+              <p className="mt-0.5 font-mono text-xs text-white/45">{id}</p>
             </div>
           </div>
         ))}
@@ -85,7 +85,7 @@ function DossierScene() {
 function ScanScene() {
   return (
     <div className={`${card} w-[300px] p-4`}>
-      <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.16em] text-white/70">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.16em] text-white/70">
         <span>Analyse satellite</span><span>2001 → 2024</span>
       </div>
       <div className="relative mt-3 h-[170px] overflow-hidden rounded-md bg-[#1d452c]">
@@ -101,7 +101,7 @@ function ScanScene() {
         <div className="mo-scan absolute inset-x-0 h-14 bg-gradient-to-b from-transparent via-white/25 to-transparent" />
         <div className="mo-scan-line absolute inset-x-0 h-px bg-white/80 shadow-[0_0_12px_2px_rgba(255,255,255,.6)]" />
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
         <div className="rounded-md bg-white/10 px-3 py-2"><p className="text-white/55">Perte après 2020</p><p className="mt-0.5 text-sm font-semibold tabular-nums"><Count to={0} decimals={2} suffix=" ha" /></p></div>
         <div className="rounded-md bg-white/10 px-3 py-2"><p className="text-white/55">Couvert 2000</p><p className="mt-0.5 text-sm font-semibold tabular-nums"><Count to={18} delay={600} suffix=" %" /></p></div>
       </div>
@@ -117,7 +117,7 @@ function LiveScene() {
   const bars = [38, 52, 46, 70, 64, 82, 76]
   return (
     <div className={`${card} w-[300px] p-4`}>
-      <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.16em] text-white/70">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.16em] text-white/70">
         <span>Coopérative · direct</span>
         <span className="flex items-center gap-1.5"><span className="mo-blink h-1.5 w-1.5 rounded-full bg-emerald-400" />en ligne</span>
       </div>
@@ -125,7 +125,7 @@ function LiveScene() {
         {[[1284, 'producteurs', 0], [2210, 'parcelles', 200], [24, 'agents', 400]].map(([n, l, d]) => (
           <div key={l as string} className="rounded-md bg-white/10 py-2">
             <p className="text-lg font-semibold tabular-nums"><Count to={n as number} delay={d as number} duration={1800} /></p>
-            <p className="text-[10px] text-white/55">{l as string}</p>
+            <p className="text-xs text-white/55">{l as string}</p>
           </div>
         ))}
       </div>
@@ -136,7 +136,7 @@ function LiveScene() {
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[10px] text-white/50">Parcelles mappées par jour, 7 derniers jours</p>
+      <p className="mt-2 text-xs text-white/50">Parcelles mappées par jour, 7 derniers jours</p>
     </div>
   )
 }
@@ -147,8 +147,8 @@ function ExportScene() {
   return (
     <div className={`${card} w-[300px] p-4`}>
       <div className="flex items-center justify-between">
-        <p className="text-[11px] uppercase tracking-[0.16em] text-white/70">Lot export</p>
-        <p className="font-mono text-[11px]" style={{ color: gold }}>CI-SBR-2026-0147</p>
+        <p className="text-xs uppercase tracking-[0.16em] text-white/70">Lot export</p>
+        <p className="font-mono text-xs" style={{ color: gold }}>CI-SBR-2026-0147</p>
       </div>
       <div className="mt-3 flex gap-3">
         {/* code du lot (motif type QR) */}

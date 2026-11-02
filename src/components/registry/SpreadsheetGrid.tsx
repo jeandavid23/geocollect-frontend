@@ -289,7 +289,7 @@ export default function SpreadsheetGrid(props: Props) {
           setSel(e.shiftKey ? { ...normalizeSel(sel.ar, 0, r, nCols - 1), ac: sel.ac } : { ar: r, ac: 0, r1: r, c1: 0, r2: r, c2: nCols - 1 })
           scrollRef.current?.focus()
         }}
-        className={`${sticky ? 'sticky' : 'absolute'} left-0 z-[2] border-r border-b border-gray-300 text-[11px] text-center leading-[25px] cursor-pointer ${on ? 'bg-primary-100 text-primary-800 font-semibold' : 'bg-gray-100 text-gray-500'}`}
+        className={`${sticky ? 'sticky' : 'absolute'} left-0 z-[2] border-r border-b border-gray-300 text-xs text-center leading-[25px] cursor-pointer ${on ? 'bg-primary-100 text-primary-800 font-semibold' : 'bg-gray-100 text-gray-500'}`}
         style={{ top, width: ROW_HEAD_W, height: ROW_H, ...(sticky ? {} : {}) }}
       >
         {r + 1}
@@ -343,7 +343,7 @@ export default function SpreadsheetGrid(props: Props) {
                   setSel(e.shiftKey ? { ...normalizeSel(0, sel.ac, r2, c), ar: sel.ar } : { ar: 0, ac: c, r1: 0, c1: c, r2, c2: c })
                   scrollRef.current?.focus()
                 }}
-                className={`absolute top-0 border-r border-b border-gray-300 text-[11px] text-center leading-[25px] cursor-pointer select-none ${on ? 'bg-primary-100 text-primary-800 font-semibold' : 'bg-gray-100 text-gray-500'}`}
+                className={`absolute top-0 border-r border-b border-gray-300 text-xs text-center leading-[25px] cursor-pointer select-none ${on ? 'bg-primary-100 text-primary-800 font-semibold' : 'bg-gray-100 text-gray-500'}`}
                 style={{ left: colLeft[c], width: width(c), height: HEAD_H }}
               >
                 {colName(c)}

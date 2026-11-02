@@ -52,7 +52,7 @@ export default function SavedReports({ showCooperative = false }: { showCooperat
 
   const fmtBtn = (m: SavedReportMeta, f: Format, label: string, icon: React.ReactNode, cls: string, disabled = false) => (
     <button key={f} onClick={() => download(m, f)} disabled={!!busy || disabled}
-      className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium disabled:opacity-35 ${cls}`}>
+      className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium disabled:opacity-35 ${cls}`}>
       {busy === `${m.id}:${f}` ? <Loader2 className="w-3 h-3 animate-spin" /> : icon} {label}
     </button>
   )
@@ -88,7 +88,7 @@ export default function SavedReports({ showCooperative = false }: { showCooperat
                   {m.feature_count ? ` · ${m.feature_count.toLocaleString('fr-FR')} polygone(s)` : ''}
                 </p>
                 {m.summary.length > 0 && (
-                  <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{m.summary.slice(0, 6).map(([k, v]) => `${k} : ${v}`).join(' · ')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{m.summary.slice(0, 6).map(([k, v]) => `${k} : ${v}`).join(' · ')}</p>
                 )}
               </div>
               <div className="flex flex-wrap gap-1">

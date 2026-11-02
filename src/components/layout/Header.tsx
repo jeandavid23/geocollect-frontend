@@ -18,13 +18,13 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const { isOnline, isSyncing, isLoading } = useAppStore()
 
   return (
-    <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+    <header className="bg-white border-b border-gray-100 px-4 py-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 className="font-serif text-[1.45rem] leading-tight font-semibold text-gray-900">{title}</h1>
-        {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+        <h1 className="font-serif text-[1.45rem] leading-tight font-semibold text-gray-900 text-balance">{title}</h1>
+        {subtitle && <p className="text-sm text-gray-600 mt-0.5">{subtitle}</p>}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4 sm:flex-nowrap sm:shrink-0">
         <LiveBadge />
         {/* Date */}
         <span className="text-sm text-gray-500 hidden md:block">
@@ -58,7 +58,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
         </div>
 
         {/* Avatar */}
-        <div className="w-9 h-9 bg-primary-100 rounded-full flex items-center justify-center">
+        <div className="hidden sm:flex w-9 h-9 bg-primary-100 rounded-full items-center justify-center">
           <span className="text-primary-700 font-bold text-sm">
             {user?.fullName?.charAt(0).toUpperCase()}
           </span>

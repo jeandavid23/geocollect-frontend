@@ -71,8 +71,8 @@ export default function CoopCompare() {
               {sorted.map((r) => (
                 <tr key={r.id} className="hover:bg-gray-50">
                   <td className="px-5 py-2.5">
-                    <p className="font-medium text-gray-900">{r.name}{!r.is_active && <span className="ml-2 rounded bg-gray-100 px-1.5 text-[10px] text-gray-500">désactivée</span>}</p>
-                    {role === 'owner' && r.managed_by && <p className="text-[11px] text-gray-500">{r.managed_by}</p>}
+                    <p className="font-medium text-gray-900">{r.name}{!r.is_active && <span className="ml-2 rounded bg-gray-100 px-1.5 text-xs text-gray-500">désactivée</span>}</p>
+                    {role === 'owner' && r.managed_by && <p className="text-xs text-gray-500">{r.managed_by}</p>}
                   </td>
                   <td className="px-5 py-2.5 tabular-nums">{n(r.producers)}</td>
                   <td className="px-5 py-2.5">

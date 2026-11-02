@@ -106,7 +106,7 @@ export default function CommandPalette() {
               else if (e.key === 'Enter' && hits[active]) { e.preventDefault(); go(hits[active]) }
             }}
             className="h-14 flex-1 bg-transparent text-base text-gray-900 placeholder-gray-400 focus:outline-none" />
-          <kbd className="rounded border border-gray-200 px-1.5 py-0.5 text-[10px] text-gray-500">Échap</kbd>
+          <kbd className="rounded border border-gray-200 px-1.5 py-0.5 text-xs text-gray-500">Échap</kbd>
         </div>
         <ul className="max-h-[55vh] overflow-y-auto py-2">
           {hits.length === 0 && <li className="px-4 py-8 text-center text-sm text-gray-500">{q.trim().length < 2 ? tr('Tapez au moins 2 caractères.', 'Type at least 2 characters.') : tr('Aucun résultat.', 'No results.')}</li>}
@@ -114,7 +114,7 @@ export default function CommandPalette() {
             const header = h.group !== lastGroup ? (lastGroup = h.group) : null
             return (
               <li key={h.key}>
-                {header && <p className="px-4 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{header}</p>}
+                {header && <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-400">{header}</p>}
                 <button onMouseEnter={() => setActive(i)} onClick={() => go(h)}
                   className={`flex w-full items-center gap-3 px-4 py-2 text-left ${i === active ? 'bg-primary-50' : ''}`}>
                   <span className="text-gray-500 [&>svg]:h-4 [&>svg]:w-4">{h.icon}</span>
@@ -128,7 +128,7 @@ export default function CommandPalette() {
             )
           })}
         </ul>
-        <div className="flex items-center gap-4 border-t border-gray-100 px-4 py-2 text-[11px] text-gray-500">
+        <div className="flex items-center gap-4 border-t border-gray-100 px-4 py-2 text-xs text-gray-500">
           <span><kbd className="font-mono">↑ ↓</kbd> {tr('choisir', 'select')}</span><span><kbd className="font-mono">{tr('Entrée', 'Enter')}</kbd> {tr('ouvrir', 'open')}</span>
           <button onClick={() => { setOpen(false); setHelp(true) }} className="ml-auto flex items-center gap-1 hover:text-gray-800"><Keyboard className="h-3.5 w-3.5" /> {tr('Raccourcis', 'Shortcuts')}</button>
         </div>

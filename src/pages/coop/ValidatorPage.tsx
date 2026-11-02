@@ -32,10 +32,10 @@ const ERROR_LABEL: Record<string, string> = {
 }
 
 function colorOf(r: ValidatorResult) {
-  if (r.status === 'removed') return '#dc2626'
-  if (r.is_ovlp === 'OUI') return '#f59e0b'
+  if (r.status === 'removed') return '#ef4444'
+  if (r.is_ovlp === 'OUI') return '#f5a524'
   if (r.corrected) return '#2563eb'
-  return '#16a34a'
+  return '#34c46a'
 }
 
 export default function ValidatorPage() {
@@ -95,7 +95,7 @@ export default function ValidatorPage() {
     return [{
       key: String(r.index), geometry: g, color: colorOf(r), dashed: r.status === 'removed',
       popup: () => `<div style="font-size:12px;min-width:180px"><b>${escapeHtml(r.id)}</b><br/>
-        ${r.status === 'kept' ? '<span style="color:#16a34a">Conservé</span>' : `<span style="color:#dc2626">Supprimé : ${escapeHtml(REASON_LABEL[r.reason] ?? r.reason)}</span>`}
+        ${r.status === 'kept' ? '<span style="color:#34c46a">Conservé</span>' : `<span style="color:#ef4444">Supprimé : ${escapeHtml(REASON_LABEL[r.reason] ?? r.reason)}</span>`}
         ${r.ref_id ? `<br/>Référence : ${escapeHtml(r.ref_id)}` : ''}<br/>${r.area_ha} ha · ${r.vertices} sommets
         ${r.corrected ? '<br/><span style="color:#2563eb">Géométrie corrigée</span>' : ''}
         ${r.errors.length ? `<br/>Erreurs : ${escapeHtml(r.errors.map((e) => ERROR_LABEL[e] ?? e).join(', '))}` : ''}
@@ -280,7 +280,7 @@ export default function ValidatorPage() {
               <ResultsLayer items={mapItems} version={`v${mapItems.length}-${s.processing_time}`} />
             </MapContainer>
             <div className="absolute bottom-3 left-3 z-[500] bg-white/95 rounded-xl shadow px-3 py-2 text-xs space-y-0.5">
-              {[['#16a34a', 'Conservé'], ['#2563eb', 'Conservé, corrigé'], ['#f59e0b', 'Superposition ≤ seuil'], ['#dc2626', 'Supprimé']].map(([c, l]) => (
+              {[['#34c46a', 'Conservé'], ['#2563eb', 'Conservé, corrigé'], ['#f5a524', 'Superposition ≤ seuil'], ['#ef4444', 'Supprimé']].map(([c, l]) => (
                 <p key={l} className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm" style={{ background: c }} />{l}</p>
               ))}
             </div>

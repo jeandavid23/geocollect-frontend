@@ -29,7 +29,7 @@ export default function TraceChain({ trace: tr }: { trace: Trace }) {
             <div className={`w-40 rounded-xl border p-3 ${s.tone ?? 'border-gray-200 bg-gray-50'}`}>
               <p className="flex items-center gap-1.5 text-xs font-medium text-gray-600">{s.icon}{s.title}</p>
               <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">{s.value}</p>
-              <p className="truncate text-[11px] text-gray-500" title={s.detail}>{s.detail}</p>
+              <p className="truncate text-xs text-gray-500" title={s.detail}>{s.detail}</p>
             </div>
             {i < steps.length - 1 && <ChevronRight className="h-4 w-4 text-gray-300" aria-hidden />}
           </li>

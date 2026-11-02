@@ -23,17 +23,18 @@ interface Props extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'tit
 }
 
 const VARIANT: Record<ButtonVariant, string> = {
-  primary: 'bg-primary-700 text-white shadow-sm hover:bg-primary-800 focus-visible:ring-primary-600/40',
-  secondary: 'border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 focus-visible:ring-gray-400/40',
-  danger: 'bg-red-600 text-white shadow-sm hover:bg-red-700 focus-visible:ring-red-500/40',
-  ghost: 'text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-400/40',
-  subtle: 'bg-primary-50 text-primary-800 hover:bg-primary-100 focus-visible:ring-primary-600/30',
+  primary: 'bg-primary-700 text-white shadow-sm hover:bg-primary-800 disabled:bg-gray-200 disabled:text-gray-500 disabled:shadow-none',
+  secondary: 'border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-400 disabled:text-gray-500',
+  danger: 'bg-danger-solid text-white shadow-sm hover:bg-[#912018] disabled:bg-gray-200 disabled:text-gray-500 disabled:shadow-none',
+  ghost: 'text-primary-700 hover:bg-primary-50 disabled:text-gray-500',
+  subtle: 'bg-primary-50 text-primary-800 hover:bg-primary-100 disabled:text-gray-500',
 }
+// 3 tailles (32, 40, 48 px) ; « lg » pour les écrans de terrain (agent, usine), utilisés au pouce
 const SIZE: Record<ButtonSize, string> = {
-  sm: 'h-8 gap-1.5 rounded-lg px-3 text-xs',
-  md: 'h-10 gap-2 rounded-lg px-4 text-sm',
-  lg: 'h-12 gap-2 rounded-xl px-5 text-base',
-  icon: 'h-9 w-9 justify-center rounded-lg',
+  sm: 'h-8 gap-1.5 rounded-md px-3 text-[13px]',
+  md: 'h-10 gap-2 rounded-md px-4 text-sm',
+  lg: 'h-12 gap-2 rounded-md px-5 text-base',
+  icon: 'h-9 w-9 justify-center rounded-md',
 }
 
 const Button = forwardRef<HTMLButtonElement, Props>(function Button(
@@ -45,7 +46,7 @@ const Button = forwardRef<HTMLButtonElement, Props>(function Button(
     // l'info-bulle reste visible sur un bouton inactif grâce à l'enveloppe
     <span title={disabledReason ?? label} className={`${fullWidth ? 'flex w-full' : 'inline-flex'} ${off ? 'cursor-not-allowed' : ''}`}>
       <button ref={ref} type={type} disabled={off} aria-label={size === 'icon' ? label : undefined} aria-busy={loading || undefined}
-        className={`inline-flex items-center justify-center font-medium whitespace-nowrap transition active:scale-[.98] focus:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50
+        className={`inline-flex items-center justify-center font-semibold whitespace-nowrap transition active:scale-[.98] disabled:pointer-events-none
           ${VARIANT[variant]} ${SIZE[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
         {...rest}>
         {loading ? <Loader2 className={size === 'sm' ? 'h-3.5 w-3.5 animate-spin' : 'h-4 w-4 animate-spin'} /> : icon}

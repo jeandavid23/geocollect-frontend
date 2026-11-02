@@ -60,7 +60,7 @@ export default function FormatToolbar({ active, onApply, onClear, onTable }: Pro
             {FILL_COLORS.map((col) => (
               <button key={col || 'none'} onClick={() => { onApply({ bg: col }); close() }}
                 className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center" style={{ background: col || 'white' }} title={col || 'Aucun'}>
-                {!col && <span className="text-[9px] text-gray-400">∅</span>}
+                {!col && <span className="text-xs text-gray-400">∅</span>}
               </button>
             ))}
           </div>

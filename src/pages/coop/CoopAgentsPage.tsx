@@ -263,7 +263,7 @@ export default function CoopAgentsPage() {
                     ))}
                   </div>
                 )}
-                <p className="text-[11px] text-gray-400 mt-1">L'agent mappera en priorité les producteurs de ces sections. Vous pourrez les modifier plus tard.</p>
+                <p className="text-xs text-gray-400 mt-1">L'agent mappera en priorité les producteurs de ces sections. Vous pourrez les modifier plus tard.</p>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => { setShowForm(false); setSections([]) }}

@@ -212,7 +212,7 @@ function Detail({ lot, onBack, onEdit, onChanged }: { lot: Lot; onBack: () => vo
         {!!c?.issues.length && (
           <ul className="mt-3 space-y-1.5 text-sm">
             {c.issues.map((i, k) => (
-              <li key={k} className="flex gap-2"><span className={`mt-0.5 h-fit rounded px-1.5 py-0.5 text-[11px] font-semibold ${i.level === 'bloquant' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>{i.level === 'bloquant' ? 'Bloquant' : 'Attention'}</span>
+              <li key={k} className="flex gap-2"><span className={`mt-0.5 h-fit rounded px-1.5 py-0.5 text-xs font-semibold ${i.level === 'bloquant' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>{i.level === 'bloquant' ? 'Bloquant' : 'Attention'}</span>
                 <span>{i.producer && <b>{i.producer} : </b>}{i.message}</span></li>
             ))}
           </ul>

@@ -210,22 +210,22 @@ export default function SuperAdminsPage() {
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-gray-50 rounded-xl p-2">
                     <p className="text-sm font-bold text-gray-800">{quota(l.cooperatives_used, l.max_cooperatives)}</p>
-                    <p className="text-[11px] text-gray-500">Coopératives</p>
+                    <p className="text-xs text-gray-500">Coopératives</p>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-2">
                     <p className="text-sm font-bold text-gray-800">{l.agents_used}</p>
-                    <p className="text-[11px] text-gray-500">Agents ({l.max_agents_per_coop == null ? 'illimité' : `${l.max_agents_per_coop} max/coop`})</p>
+                    <p className="text-xs text-gray-500">Agents ({l.max_agents_per_coop == null ? 'illimité' : `${l.max_agents_per_coop} max/coop`})</p>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-2">
                     <p className="text-sm font-bold text-gray-800">{l.expires_at ? new Date(l.expires_at).toLocaleDateString('fr-FR') : 'Sans fin'}</p>
-                    <p className="text-[11px] text-gray-500">Fin d'abonnement</p>
+                    <p className="text-xs text-gray-500">Fin d'abonnement</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {(l.modules ?? ALL_MODULES).map((m) => (
-                    <span key={m} className="text-[11px] bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full">{MODULE_LABELS[m]}</span>
+                    <span key={m} className="text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full">{MODULE_LABELS[m]}</span>
                   ))}
-                  {l.modules && l.modules.length === 0 && <span className="text-[11px] text-gray-400">Fonctions de base uniquement</span>}
+                  {l.modules && l.modules.length === 0 && <span className="text-xs text-gray-400">Fonctions de base uniquement</span>}
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1 border-t border-gray-50">
                   <button onClick={() => openEdit(a)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-100"><Pencil className="w-3.5 h-3.5" /> Droits</button>
@@ -276,12 +276,12 @@ export default function SuperAdminsPage() {
                   <label className="text-xs text-gray-600">Agents max. par coopérative<input type="number" min="0" value={form.max_agents_per_coop} onChange={(e) => set('max_agents_per_coop', e.target.value)} placeholder="illimité" className={`${input} mt-1`} /></label>
                   <label className="text-xs text-gray-600">Fin d'abonnement<input type="date" value={form.expires_at} onChange={(e) => set('expires_at', e.target.value)} className={`${input} mt-1`} /></label>
                 </div>
-                <p className="text-[11px] text-gray-400">Champs vides = sans limite. À l'échéance, le client et toutes ses coopératives sont bloqués jusqu'au renouvellement.</p>
+                <p className="text-xs text-gray-400">Champs vides = sans limite. À l'échéance, le client et toutes ses coopératives sont bloqués jusqu'au renouvellement.</p>
               </section>
 
               <section className="space-y-2">
                 <p className="text-sm font-semibold text-gray-800">Modules autorisés</p>
-                <p className="text-[11px] text-gray-400">Producteurs, parcelles, cartographie GPS, agents, carte et rapports sont toujours inclus.</p>
+                <p className="text-xs text-gray-400">Producteurs, parcelles, cartographie GPS, agents, carte et rapports sont toujours inclus.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {ALL_MODULES.map((m) => (
                     <label key={m} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer border ${form.modules.includes(m) ? 'border-primary-300 bg-primary-50 text-primary-800' : 'border-gray-200 text-gray-600'}`}>

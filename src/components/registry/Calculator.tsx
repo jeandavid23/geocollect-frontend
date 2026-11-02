@@ -105,7 +105,7 @@ export default function Calculator({ engine, sheetName, selectionRef, onInsert, 
             {quick('SOMME', 'Somme')}{quick('MOYENNE', 'Moyenne')}{quick('NB', 'Nombre')}
             {quick('MAX', 'Max')}{quick('MIN', 'Min')}{quick('MEDIANE', 'Médiane')}
           </div>
-          <p className="text-[11px] text-gray-400 mt-1.5">
+          <p className="text-xs text-gray-400 mt-1.5">
             L'écran accepte aussi les formules et références : <span className="font-mono">B2*1,5</span>,{' '}
             <span className="font-mono">NB.SI(C2:C500;"Femme")</span>, <span className="font-mono">Livraisons!D2</span>…
           </p>

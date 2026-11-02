@@ -23,7 +23,7 @@ const ERROR_LABEL: Record<string, string> = {
   too_few_points: 'Trop peu de sommets', invalid_geometry: 'Géométrie invalide', geometry_collection_error: 'Collection de géométries',
 }
 const STATUS_LABEL = { kept: 'Conservé', deleted: 'Supprimé', dup_code: 'Doublon de code' }
-const STATUS_COLOR = { kept: '#16a34a', deleted: '#dc2626', dup_code: '#9333ea' }
+const STATUS_COLOR = { kept: '#34c46a', deleted: '#ef4444', dup_code: '#9333ea' }
 const ID_GUESS = ['field_id', 'fieldid', 'code', 'code_prod', 'id', 'matricule']
 
 function reasonLabel(r: string) {
@@ -286,7 +286,7 @@ export default function SelfIntersectionPage() {
               <ResultsLayer items={mapItems} version={`si${mapItems.length}-${s.processing_time}`} />
             </MapContainer>
             <div className="absolute bottom-3 left-3 z-[500] bg-white/95 rounded-xl shadow px-3 py-2 text-xs space-y-0.5">
-              {[['#16a34a', 'Conservé'], ['#2563eb', 'Conservé, réparé'], ['#9333ea', 'Doublon de code'], ['#dc2626', 'Supprimé']].map(([c, l]) => (
+              {[['#34c46a', 'Conservé'], ['#2563eb', 'Conservé, réparé'], ['#9333ea', 'Doublon de code'], ['#ef4444', 'Supprimé']].map(([c, l]) => (
                 <p key={l} className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm" style={{ background: c }} />{l}</p>
               ))}
             </div>

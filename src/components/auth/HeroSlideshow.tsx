@@ -154,7 +154,7 @@ export default function HeroSlideshow({ children, headline, footer, reserveRight
         </div>
 
         <div className="mt-auto lg:mt-8">
-          <p key={`m-${index}`} className="lg:hidden mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#e9c98b] animate-fade-up">
+          <p key={`m-${index}`} className="lg:hidden mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#e9c98b] animate-fade-up">
             {s.step} · {s.place}
           </p>
           {/* barres de progression (cliquables) */}
@@ -171,12 +171,12 @@ export default function HeroSlideshow({ children, headline, footer, reserveRight
                     className={`absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-white
                       ${i < index ? 'w-full' : i === index ? (reduced.current ? 'w-full' : 'w-0 animate-progress') : 'w-0'}`}
                     style={i === index ? { animationDuration: `${DURATION}ms`, animationPlayState: paused ? 'paused' : 'running' } : undefined} />
-                  <span className="pointer-events-none absolute bottom-full left-0 mb-1 hidden whitespace-nowrap rounded bg-black/60 px-2 py-0.5 text-[11px] group-hover:block">{sl.step}</span>
+                  <span className="pointer-events-none absolute bottom-full left-0 mb-1 hidden whitespace-nowrap rounded bg-black/60 px-2 py-0.5 text-xs group-hover:block">{sl.step}</span>
                 </button>
               ))}
             </div>
           </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[11px] text-white/55">
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-white/55">
             <p>
               Photo : {s.author}, <a href={`https://commons.wikimedia.org/wiki/File:${encodeURIComponent(s.file)}`} target="_blank" rel="noreferrer" className="underline hover:text-white">Wikimedia Commons</a>, CC BY-SA 4.0
             </p>

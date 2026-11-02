@@ -10,7 +10,7 @@ import ResultsLayer, { escapeHtml, type ResultItem } from '../../components/map/
 import FitToData from '../../components/map/FitToData'
 import VerificationSheet from '../../components/dd/VerificationSheet'
 import ExplainPanel from '../../components/dd/ExplainPanel'
-import { ddApi, type DDAnalysis, type DDCatalog, type DDResult, type Risk, type ReportMeta, RISK_COLOR, RISK_LABEL, FOREST_LABEL, SOURCE_LABEL, CONCORDANCE_LABEL, WHISP_STATUS_LABEL } from '../../api/dd'
+import { ddApi, type DDAnalysis, type DDCatalog, type DDResult, type Risk, type ReportMeta, RISK_COLOR, RISK_MAP_COLOR, RISK_ON_COLOR, RISK_LABEL, FOREST_LABEL, SOURCE_LABEL, CONCORDANCE_LABEL, WHISP_STATUS_LABEL } from '../../api/dd'
 import { lotsApi } from '../../api/lots'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
@@ -114,7 +114,7 @@ export default function DueDiligencePage() {
   }, 'dd')
 
   const mapItems = useMemo<ResultItem[]>(() => (current?.results ?? []).filter((r) => r.classification && geomOf(r.id)).map((r) => ({
-    key: r.id, geometry: geomOf(r.id)!, color: RISK_COLOR[r.classification!.risk],
+    key: r.id, geometry: geomOf(r.id)!, color: RISK_MAP_COLOR[r.classification!.risk],
     popup: () => `<b>${escapeHtml(r.properties.label)}</b> — ${escapeHtml(RISK_LABEL[r.classification!.risk])} (${r.classification!.score}/100)<br>${escapeHtml(r.classification!.justification.fr)}`,
   })), [current, geomOf])
 
@@ -187,7 +187,7 @@ export default function DueDiligencePage() {
                 {typeof defaults[k] === 'boolean'
                   ? <span className="mt-2 flex items-center gap-2"><input type="checkbox" checked={!!thresholds[k]} onChange={(e) => setThresholds({ ...thresholds, [k]: e.target.checked })} /> activée</span>
                   : <input type="number" step="any" value={String(thresholds[k] ?? '')} onChange={(e) => setThresholds({ ...thresholds, [k]: Number(e.target.value) })} className={input} />}
-                <span className="text-[10px] text-gray-400">défaut : {String(defaults[k])}</span>
+                <span className="text-xs text-gray-400">défaut : {String(defaults[k])}</span>
               </label>
             ))}
             <div className="flex items-end gap-2 md:col-span-3">
@@ -251,7 +251,7 @@ export default function DueDiligencePage() {
                     <p className="text-xs text-gray-500">{l}</p><p className="text-xl font-semibold tabular-nums">{v.toLocaleString('fr-FR')}</p>
                   </button>
                 ))}
-                <div className="rounded-xl border bg-white p-3"><p className="text-xs text-gray-500">Concordance WHISP</p><p className="text-xl font-semibold">{s.whisp_concordance_rate != null ? `${s.whisp_concordance_rate} %` : '—'}</p><p className="text-[10px] text-gray-400">{WHISP_STATUS_LABEL[current.whisp_status]}</p></div>
+                <div className="rounded-xl border bg-white p-3"><p className="text-xs text-gray-500">Concordance WHISP</p><p className="text-xl font-semibold">{s.whisp_concordance_rate != null ? `${s.whisp_concordance_rate} %` : '—'}</p><p className="text-xs text-gray-400">{WHISP_STATUS_LABEL[current.whisp_status]}</p></div>
               </div>
               {!!s.layers_unavailable?.length && <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">Sources indisponibles pendant l'analyse : {s.layers_unavailable.join(', ')} — le rapport le signale.</p>}
 
@@ -304,8 +304,8 @@ export default function DueDiligencePage() {
                             <td className="px-5 py-2 text-xs">{c ? <>{FOREST_LABEL[c.forest2020]} <span className="text-gray-400">({c.forest2020_votes}/{c.forest2020_available.length})</span></> : (r.reasons ?? []).join(' ; ')}</td>
                             <td className="px-5 py-2 text-xs">{c && c.loss_sources.length ? <>{r.evidence!.loss_post2020_ha.toFixed(2)} ha <span className="block text-gray-400">{c.loss_sources.map((x) => SOURCE_LABEL[x] ?? x).join(', ')}</span></> : '—'}</td>
                             <td className="px-5 py-2 text-xs">{[...(r.context?.protected ?? []).map((p) => p.name), r.context?.rdue?.legalite === 'Non conforme' ? r.context.rdue.zone : ''].filter(Boolean).join(', ') || '—'}</td>
-                            <td className="px-5 py-2">{c && <span className="rounded-full px-2 py-0.5 text-xs font-semibold text-white" style={{ background: RISK_COLOR[c.risk] }}>{RISK_LABEL[c.risk]}</span>}
-                              {r.whisp_risk && <span className="block text-[10px] text-gray-400">{CONCORDANCE_LABEL[r.whisp_concordance]}</span>}</td>
+                            <td className="px-5 py-2">{c && <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: RISK_COLOR[c.risk], color: RISK_ON_COLOR[c.risk] }}>{RISK_LABEL[c.risk]}</span>}
+                              {r.whisp_risk && <span className="block text-xs text-gray-400">{CONCORDANCE_LABEL[r.whisp_concordance]}</span>}</td>
                             <td className="px-5 py-2 tabular-nums text-xs">{c?.score ?? '—'}</td>
                             <td className="px-5 py-2 text-xs">{d ? d.decision_label : '—'}</td>
                           </tr>

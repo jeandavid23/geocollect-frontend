@@ -68,7 +68,7 @@ export default function NextActions() {
             {guide.map((g, i) => (
               <li key={g.label}>
                 <Link to={g.to} className={`group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-white ${g.done ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                  <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${g.done ? 'bg-green-600 text-white' : 'bg-white text-primary-800 ring-1 ring-primary-300'}`}>{g.done ? <Check className="h-3 w-3" /> : i + 1}</span>
+                  <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold ${g.done ? 'bg-green-600 text-white' : 'bg-white text-primary-800 ring-1 ring-primary-300'}`}>{g.done ? <Check className="h-3 w-3" /> : i + 1}</span>
                   {g.label}
                   {!g.done && <ArrowRight className="ml-auto h-3.5 w-3.5 text-primary-700 opacity-0 transition group-hover:opacity-100" />}
                 </Link>
@@ -117,7 +117,7 @@ export default function NextActions() {
       <div className="rounded-2xl border border-gray-100 bg-white p-5">
         <div className="mb-3 flex items-baseline justify-between gap-3">
           <p className="font-semibold text-gray-900">Prochaines actions</p>
-          <p className="text-[11px] text-gray-400">Contrôles du {new Date(data.spatial_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</p>
+          <p className="text-xs text-gray-400">Contrôles du {new Date(data.spatial_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</p>
         </div>
         {actions.length === 0 ? (
           <p className="flex items-center gap-2 text-sm text-green-700"><CheckCircle2 className="h-4 w-4" />Rien à signaler : vos données sont prêtes.</p>

@@ -186,7 +186,7 @@ export default function LandingPage() {
             <div key={scene}><SlideMotion index={scene} /></div>
           </div>
         </div>
-        <p className="relative mx-auto max-w-6xl px-5 pb-4 text-[11px] text-white/50">{t('Photo : KokoDZ, Wikimedia Commons, CC BY-SA 4.0 · illustrations animées : exemples', 'Photo: KokoDZ, Wikimedia Commons, CC BY-SA 4.0 · animated illustrations: examples')}</p>
+        <p className="relative mx-auto max-w-6xl px-5 pb-4 text-xs text-white/50">{t('Photo : KokoDZ, Wikimedia Commons, CC BY-SA 4.0 · illustrations animées : exemples', 'Photo: KokoDZ, Wikimedia Commons, CC BY-SA 4.0 · animated illustrations: examples')}</p>
       </section>
 
       {/* Contexte réglementaire */}

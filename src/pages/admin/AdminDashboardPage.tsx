@@ -15,7 +15,7 @@ import { useMemo } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { useAuthStore } from '../../store/authStore'
 
-const COLORS = ['#16a34a', '#dc2626', '#f59e0b']
+const COLORS = ['#2c6741', '#b42318', '#e08a1e']
 
 export default function AdminDashboardPage() {
   useLivePolling()

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, GeoJSON as GeoJSONLayer } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { X, ExternalLink, Paperclip, Loader2 } from 'lucide-react'
-import { ddApi, type DDAnalysis, type DDDecision, type DDExplain, type DDResult, RISK_COLOR, RISK_LABEL, FOREST_LABEL, SOURCE_LABEL, CONCORDANCE_LABEL } from '../../api/dd'
+import { ddApi, type DDAnalysis, type DDDecision, type DDExplain, type DDResult, RISK_COLOR, RISK_TEXT_COLOR, RISK_LABEL, FOREST_LABEL, SOURCE_LABEL, CONCORDANCE_LABEL } from '../../api/dd'
 import Button from '../ui/Button'
 import { useHotkeys } from '../../hooks/useHotkeys'
 import { apiErrorMessage } from '../../utils/retry'
@@ -27,7 +27,7 @@ function Mini({ geometry, year }: { geometry: GeoJSON.Geometry; year: number }) 
           <GeoJSONLayer data={geometry as GeoJSON.GeoJsonObject} style={{ color: '#facc15', weight: 2, fillOpacity: 0 }} />
         </MapContainer>
       </div>
-      <figcaption className="bg-gray-50 px-2 py-1 text-[11px] text-gray-600">Sentinel-2 sans nuages {year} (EOX)</figcaption>
+      <figcaption className="bg-gray-50 px-2 py-1 text-xs text-gray-600">Sentinel-2 sans nuages {year} (EOX)</figcaption>
     </figure>
   )
 }
@@ -79,7 +79,7 @@ export default function VerificationSheet({ analysis, result, geometry, explain,
 
         {c && (
           <div className="mt-4 rounded-xl border p-4" style={{ borderColor: RISK_COLOR[c.risk] }}>
-            <p className="flex items-center gap-2 font-semibold" style={{ color: RISK_COLOR[c.risk] }}>
+            <p className="flex items-center gap-2 font-semibold" style={{ color: RISK_TEXT_COLOR[c.risk] }}>
               Risque {RISK_LABEL[c.risk].toLowerCase()} <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">score {c.score}/100</span>
             </p>
             <p className="mt-1 text-sm text-gray-700">{c.justification.fr}</p>

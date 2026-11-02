@@ -465,7 +465,7 @@ export default function MappingPage() {
               }`}
             >
               <div>
-                <p className="font-semibold text-gray-800">{p.fullName}{p.toMap && (parcelCounts.get(p.id) ?? 0) === 0 && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">À mapper</span>}</p>
+                <p className="font-semibold text-gray-800">{p.fullName}{p.toMap && (parcelCounts.get(p.id) ?? 0) === 0 && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-800">À mapper</span>}</p>
                 <p className="text-sm text-gray-500 font-mono">{p.fieldIdBase}</p>
                 <p className="text-xs text-gray-400">{p.village} · {p.section}</p>
               </div>
@@ -567,7 +567,7 @@ export default function MappingPage() {
             <p className="text-primary-300 text-xs font-mono">{nextFieldId(selectedProducer)}</p>
           </div>
           <div className={`flex items-center gap-2 text-sm px-3 py-1 rounded-full ${
-            status === 'active' ? 'bg-green-500/20 text-green-300' :
+            status === 'active' ? 'bg-success-ondark/20 text-success-ondark' :
             status === 'paused' ? 'bg-yellow-500/20 text-yellow-300' :
             'bg-gray-500/20 text-gray-300'
           }`}>

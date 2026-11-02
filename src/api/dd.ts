@@ -1,4 +1,5 @@
 import api from './client'
+import { RISK_MAP, RISK_ON, RISK_TEXT, RISK_UI } from '../theme/tokens'
 
 /** Diligence raisonnée EUDR (moteur commun eudr_evidence : convergence de preuves + WHISP facultatif). */
 export type Risk = 'faible' | 'a_verifier' | 'eleve'
@@ -86,7 +87,11 @@ export const ddApi = {
 }
 
 export const RISK_LABEL: Record<Risk, string> = { faible: 'Faible', a_verifier: 'À vérifier', eleve: 'Élevé' }
-export const RISK_COLOR: Record<Risk, string> = { faible: '#15803d', a_verifier: '#d97706', eleve: '#b91c1c' }
+/** Badges, textes, PDF ; sur la carte satellite : RISK_MAP_COLOR (plus lumineux) */
+export const RISK_COLOR: Record<Risk, string> = RISK_UI
+export const RISK_MAP_COLOR: Record<Risk, string> = RISK_MAP
+export const RISK_ON_COLOR: Record<Risk, string> = RISK_ON
+export const RISK_TEXT_COLOR: Record<Risk, string> = RISK_TEXT
 export const FOREST_LABEL: Record<Forest2020, string> = { oui: 'Forêt', incertain: 'Incertain', non: 'Non forêt' }
 export const SOURCE_LABEL: Record<string, string> = {
   jrc_gfc2020: 'JRC 2020', tmf: 'TMF', worldcover2020: 'WorldCover', hansen: 'Hansen',

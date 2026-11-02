@@ -82,7 +82,7 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
         <Bell className="w-5 h-5 flex-shrink-0" />
         {!collapsed && 'Notifications'}
         {unread > 0 && (
-          <span className="absolute top-1 left-6 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
+          <span className="absolute top-1 left-6 min-w-4 h-4 px-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
             {unread > 9 ? '9+' : unread}
           </span>
         )}
@@ -124,7 +124,7 @@ export default function NotificationsBell({ collapsed }: { collapsed: boolean })
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-800">{n.title}</p>
                   {n.message && <p className="text-xs text-gray-500">{n.message}</p>}
-                  <p className="text-[11px] text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-400 mt-0.5">
                     {n.cooperative_name ? `${n.cooperative_name} · ` : ''}{fmt(n.created_at)}
                   </p>
                 </div>

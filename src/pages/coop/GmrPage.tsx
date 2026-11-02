@@ -233,14 +233,14 @@ export default function GmrPage() {
   const mapItems = useMemo<ResultItem[]>(() => {
     if (!out || !picked) return []
     const items: ResultItem[] = out.matched.map((m) => ({
-      key: `m${m.index}`, geometry: picked.features[m.index].geometry, color: '#16a34a',
+      key: `m${m.index}`, geometry: picked.features[m.index].geometry, color: '#34c46a',
       popup: () => `<div style="font-size:12px;min-width:200px"><b>${escapeHtml(picked.features[m.index].id)}</b><br/>
-        <span style="color:#16a34a">Registre trouvé (ligne ${dataRows[m.row]?.row})</span><br/>${
+        <span style="color:#34c46a">Registre trouvé (ligne ${dataRows[m.row]?.row})</span><br/>${
         headers.slice(0, 8).map((h, j) => `${escapeHtml(h)} : <b>${escapeHtml(String(dataRows[m.row]?.cells[j] ?? ''))}</b>`).join('<br/>')}</div>`,
     }))
     for (const i of out.noMatch) items.push({
       key: `n${i}`, geometry: picked.features[i].geometry, color: '#9ca3af', dashed: true,
-      popup: () => `<div style="font-size:12px"><b>${escapeHtml(picked.features[i].id)}</b><br/><span style="color:#dc2626">Aucune ligne du registre</span><br/>${escapeHtml(polyField)} : ${escapeHtml(String(picked.features[i].properties?.[polyField] ?? '—'))}</div>`,
+      popup: () => `<div style="font-size:12px"><b>${escapeHtml(picked.features[i].id)}</b><br/><span style="color:#ef4444">Aucune ligne du registre</span><br/>${escapeHtml(polyField)} : ${escapeHtml(String(picked.features[i].properties?.[polyField] ?? '—'))}</div>`,
     })
     return items
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -378,7 +378,7 @@ export default function GmrPage() {
               <ResultsLayer items={mapItems} version={`gmr${s.matched}-${s.no_match}-${polyField}-${regCol}`} />
             </MapContainer>
             <div className="absolute bottom-3 left-3 z-[500] bg-white/95 rounded-xl shadow px-3 py-2 text-xs space-y-0.5">
-              {[['#16a34a', 'Registre trouvé'], ['#9ca3af', 'Sans registre']].map(([c, l]) => (
+              {[['#34c46a', 'Registre trouvé'], ['#9ca3af', 'Sans registre']].map(([c, l]) => (
                 <p key={l} className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm" style={{ background: c }} />{l}</p>
               ))}
             </div>

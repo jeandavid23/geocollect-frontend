@@ -67,7 +67,7 @@ export default function NotificationsPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-900">{n.title}</p>
                         {n.message && <p className="mt-0.5 text-sm text-gray-600">{n.message}</p>}
-                        <p className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-gray-400">
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-400">
                           <span className="inline-flex items-center gap-1">{CAT[n.category ?? 'activity']?.icon}{CAT[n.category ?? 'activity']?.label}</span>
                           <span>{new Date(n.created_at).toLocaleString('fr-FR')}</span>
                           {n.cooperative_name && <span>· {n.cooperative_name}</span>}
@@ -93,7 +93,7 @@ export default function NotificationsPage() {
               <span><span className="block text-sm font-medium text-gray-800">{c.label}</span><span className="block text-xs text-gray-500">{c.description}</span></span>
             </label>
           )) : <p className="text-sm text-gray-500">Chargement…</p>}
-          <p className="text-[11px] text-gray-400">L'envoi par SMS sera proposé plus tard. Les notifications restent toujours visibles dans l'application.</p>
+          <p className="text-xs text-gray-400">L'envoi par SMS sera proposé plus tard. Les notifications restent toujours visibles dans l'application.</p>
         </aside>
       </div>
     </div>

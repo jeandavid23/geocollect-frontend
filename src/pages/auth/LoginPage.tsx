@@ -185,7 +185,7 @@ export default function LoginPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-primary-800 disabled:opacity-60">
                 {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> {t('Vérification…', 'Checking…')}</> : t('Valider', 'Verify')}
               </button>
-              <div className="flex justify-between text-[11px]">
+              <div className="flex justify-between text-xs">
                 <button type="button" onClick={() => { setUseRecovery(!useRecovery); setCode(''); setError('') }} className="text-primary-700 hover:underline">
                   {useRecovery ? t('Utiliser le code de l’application', 'Use the app code') : t('Téléphone perdu ? Code de secours', 'Lost phone? Recovery code')}
                 </button>
@@ -230,16 +230,16 @@ export default function LoginPage() {
           <GoogleSignInButton onCredential={handleGoogle} disabled={loading} />
           </>}
 
-          <p className="mt-4 text-[11px] leading-relaxed text-gray-500">
+          <p className="mt-4 text-xs leading-relaxed text-gray-500">
             {t('Mot de passe oublié ? Votre coopérative ou votre administrateur peut vous en attribuer un nouveau.', 'Forgot your password? Your cooperative or administrator can issue a new one.')}
           </p>
 
           {/* Comptes de démonstration : développement local uniquement (jamais affichés en ligne) */}
           {import.meta.env.DEV && <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-200/70 pt-3">
-            <span className="text-[11px] uppercase tracking-wide text-gray-500">Démo</span>
+            <span className="text-xs uppercase tracking-wide text-gray-500">Démo</span>
             {[['admin', 'admin123'], ['coop', 'coop123'], ['agent', 'agent123']].map(([u, pw]) => (
               <button key={u} type="button" onClick={() => { setUsername(u); setPassword(pw) }}
-                className="rounded border border-gray-200 px-2 py-0.5 text-[11px] text-gray-600 hover:bg-gray-50">{u}</button>
+                className="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-50">{u}</button>
             ))}
           </div>}
         </section>

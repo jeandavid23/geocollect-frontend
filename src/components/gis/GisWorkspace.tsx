@@ -21,7 +21,7 @@ import { exportGeoJSON, exportKML, exportShapefile } from '../../utils/featureEx
 import { downloadBlob } from '../../utils/geoExport'
 
 const { BaseLayer } = LayersControl
-const EUDR = { compliant: '#16a34a', non_compliant: '#dc2626', pending: '#f59e0b' } as Record<string, string>
+const EUDR = { compliant: '#34c46a', non_compliant: '#ef4444', pending: '#f5a524' } as Record<string, string>
 const EUDR_LABEL = { compliant: 'Conforme', non_compliant: 'Non conforme', pending: 'En attente' } as Record<string, string>
 const PARCEL_EDITABLE = ['name', 'village', 'section', 'culture']
 const LEGACY_RO = new Set(['surface_ha', 'fichier'])
@@ -378,12 +378,12 @@ export default function GisWorkspace() {
               <button onClick={(e) => { e.stopPropagation(); setVisible((v) => ({ ...v, [l]: !v[l] })) }} title={visible[l] ? 'Masquer' : 'Afficher'}>
                 {visible[l] ? <Eye className="w-3.5 h-3.5 text-gray-600" /> : <EyeOff className="w-3.5 h-3.5 text-gray-400" />}
               </button>
-              <span className="w-3 h-3 rounded-sm" style={{ background: l === 'legacy' ? LEGACY_COLOR : '#16a34a' }} />
+              <span className="w-3 h-3 rounded-sm" style={{ background: l === 'legacy' ? LEGACY_COLOR : '#34c46a' }} />
               <span className="flex-1">{LAYER_LABEL[l]}</span>
               <span className="text-gray-400">{all.filter((f) => f.layer === l).length}</span>
             </div>
           ))}
-          <p className="text-[11px] text-gray-400 px-1">Couche active : sélection globale, table attributaire et zoom.</p>
+          <p className="text-xs text-gray-400 px-1">Couche active : sélection globale, table attributaire et zoom.</p>
           {active === 'parcels' && (
             <div className="pt-2 space-y-0.5">
               {Object.entries(EUDR_LABEL).map(([k, l]) => <p key={k} className="flex items-center gap-1.5 px-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: EUDR[k] }} />{l}</p>)}
@@ -442,7 +442,7 @@ export default function GisWorkspace() {
           </div>
 
           {/* Barre d'état */}
-          <div className="flex flex-wrap items-center gap-4 px-3 py-1 bg-gray-50 border-t border-gray-200 text-[11px] text-gray-600">
+          <div className="flex flex-wrap items-center gap-4 px-3 py-1 bg-gray-50 border-t border-gray-200 text-xs text-gray-600">
             <span>{cursor ? `Coordonnées : ${cursor[1].toFixed(6)}, ${cursor[0].toFixed(6)} (WGS84)` : 'Coordonnées : —'}</span>
             <span>Zoom : {map?.getZoom() ?? '—'}</span>
             <span>{selCount} sélectionné(s)</span>

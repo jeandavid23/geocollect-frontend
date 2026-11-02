@@ -27,7 +27,7 @@ export function LangSwitch({ dark = false, className = '' }: { dark?: boolean; c
   const { lang, setLang } = useLang()
   return (
     <div role="group" aria-label="Langue / Language"
-      className={`inline-flex overflow-hidden rounded-full border text-[11px] font-semibold ${dark ? 'border-white/25 bg-white/10 text-white' : 'border-gray-200 bg-white text-gray-600'} ${className}`}>
+      className={`inline-flex overflow-hidden rounded-full border text-xs font-semibold ${dark ? 'border-white/25 bg-white/10 text-white' : 'border-gray-200 bg-white text-gray-600'} ${className}`}>
       {(['fr', 'en'] as Lang[]).map((l) => (
         <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l}
           className={`px-2.5 py-1 uppercase transition ${lang === l ? (dark ? 'bg-white text-gray-900' : 'bg-primary-700 text-white') : (dark ? 'hover:bg-white/15' : 'hover:bg-gray-50')}`}>{l}</button>

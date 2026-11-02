@@ -38,8 +38,8 @@ interface Props {
 }
 
 const SELECT = { fill: '#facc15', stroke: '#a16207' }   // jaune de sélection, comme QGIS
-const NODE_ICON = L.divIcon({ className: '', html: '<div style="width:10px;height:10px;background:#fff;border:2px solid #dc2626;border-radius:2px;box-shadow:0 0 2px #0008"></div>', iconSize: [10, 10], iconAnchor: [5, 5] })
-const MID_ICON = L.divIcon({ className: '', html: '<div style="width:8px;height:8px;background:#dc2626aa;border:1px solid #fff;border-radius:50%"></div>', iconSize: [8, 8], iconAnchor: [4, 4] })
+const NODE_ICON = L.divIcon({ className: '', html: '<div style="width:10px;height:10px;background:#fff;border:2px solid #ef4444;border-radius:2px;box-shadow:0 0 2px #0008"></div>', iconSize: [10, 10], iconAnchor: [5, 5] })
+const MID_ICON = L.divIcon({ className: '', html: '<div style="width:8px;height:8px;background:#ef4444aa;border:1px solid #fff;border-radius:50%"></div>', iconSize: [8, 8], iconAnchor: [4, 4] })
 
 /** Moteur de la carte d'édition (Leaflet impératif : des milliers de polygones sur un canvas). */
 export default function GisEngine(props: Props) {
@@ -209,7 +209,7 @@ export default function GisEngine(props: Props) {
     tempLayer.current.clearLayers()
     const pts = cursor ? [...sketch.current, cursor] : sketch.current
     const t = p.current.tool
-    const color = t === 'add' ? '#2563eb' : '#ea580c'
+    const color = t === 'add' ? '#2563eb' : '#f5a524'
     if (pts.length >= 3 && t !== 'measureLine') L.polygon(pts, { renderer: renderer.current, color, weight: 2, dashArray: '5 4', fillOpacity: 0.15, interactive: false }).addTo(tempLayer.current)
     else if (pts.length >= 2) L.polyline(pts, { renderer: renderer.current, color, weight: 2, dashArray: '5 4', interactive: false }).addTo(tempLayer.current)
     sketch.current.forEach((q) => L.circleMarker(q, { renderer: renderer.current, radius: 4, color, fillColor: '#fff', fillOpacity: 1, weight: 2, interactive: false }).addTo(tempLayer.current))

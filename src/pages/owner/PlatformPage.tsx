@@ -94,7 +94,7 @@ export default function PlatformPage() {
             <span className={`inline-flex w-9 h-9 rounded-xl items-center justify-center ${k.color}`}>{k.icon}</span>
             <p className="text-2xl font-black text-gray-900 mt-2">{k.value}</p>
             <p className="text-xs text-gray-500">{k.label}</p>
-            {k.sub && <p className="text-[11px] text-gray-400">{k.sub}</p>}
+            {k.sub && <p className="text-xs text-gray-400">{k.sub}</p>}
           </div>
         ))}
       </section>

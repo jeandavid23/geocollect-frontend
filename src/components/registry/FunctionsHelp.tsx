@@ -64,7 +64,7 @@ export default function FunctionsHelp({ onInsert, onClose }: Props) {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="SOMME.SI, RECHERCHEV, date…"
             className="w-full pl-8 pr-2 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
-        <p className="text-[11px] text-gray-400 mt-2">
+        <p className="text-xs text-gray-400 mt-2">
           Saisie en français ou en anglais, séparateur « ; » ou « , ». Les formules sont enregistrées en anglais, comme dans le fichier Excel.
         </p>
       </div>
@@ -73,8 +73,8 @@ export default function FunctionsHelp({ onInsert, onClose }: Props) {
           <button key={f.fr} onClick={() => onInsert(f.fr.split(' ')[0])}
             className="w-full text-left p-2.5 rounded-xl border border-gray-100 hover:border-primary-300 hover:bg-primary-50/40">
             <p className="text-xs"><span className="font-bold text-gray-900">{f.fr}</span> <span className="text-gray-400">· {f.en} · {f.cat}</span></p>
-            <p className="font-mono text-[11px] text-primary-800 mt-0.5 break-all">={f.syntax}</p>
-            <p className="text-[11px] text-gray-500 mt-0.5">{f.desc}</p>
+            <p className="font-mono text-xs text-primary-800 mt-0.5 break-all">={f.syntax}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{f.desc}</p>
           </button>
         ))}
         <div>
@@ -82,7 +82,7 @@ export default function FunctionsHelp({ onInsert, onClose }: Props) {
           <div className="flex flex-wrap gap-1">
             {others.map((n) => (
               <button key={n} onClick={() => onInsert(n)} title={EN_TO_FR[n] ? `En français : ${EN_TO_FR[n]}` : undefined}
-                className="px-1.5 py-0.5 rounded bg-gray-100 hover:bg-primary-100 text-[11px] font-mono text-gray-700">
+                className="px-1.5 py-0.5 rounded bg-gray-100 hover:bg-primary-100 text-xs font-mono text-gray-700">
                 {n}
               </button>
             ))}

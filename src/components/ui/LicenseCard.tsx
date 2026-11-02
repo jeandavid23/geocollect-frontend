@@ -22,7 +22,7 @@ export default function LicenseCard() {
       </p>
       <div className="flex flex-wrap gap-1 w-full">
         {(l.modules ?? ALL_MODULES).map((m) => (
-          <span key={m} className="text-[11px] bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full">{MODULE_LABELS[m]}</span>
+          <span key={m} className="text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full">{MODULE_LABELS[m]}</span>
         ))}
       </div>
     </section>

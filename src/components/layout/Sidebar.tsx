@@ -124,7 +124,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
         <button onClick={() => { onClose?.(); openCommandPalette() }} title="Recherche globale (Ctrl+K)"
           className={`flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-primary-200 transition hover:bg-white/10 hover:text-white ${collapsed ? 'justify-center px-0' : ''}`}>
           <Search className="h-4 w-4 flex-shrink-0" />
-          {!collapsed && <><span className="flex-1 text-left">{t('Rechercher…', 'Search…')}</span><kbd className="rounded border border-white/20 px-1.5 text-[10px] text-primary-300">Ctrl K</kbd></>}
+          {!collapsed && <><span className="flex-1 text-left">{t('Rechercher…', 'Search…')}</span><kbd className="rounded border border-white/20 px-1.5 text-xs text-primary-300">Ctrl K</kbd></>}
         </button>
       </div>
 
@@ -141,7 +141,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
               <div key={item.to + item.label}>
                 {heading && (collapsed
                   ? <div className={`mx-3 ${i ? 'my-2' : 'mb-2'} border-t border-white/10`} />
-                  : <p className={`px-3 pb-1 ${i ? 'pt-4' : 'pt-0'} text-[10px] font-semibold uppercase tracking-[0.14em] text-primary-300/70`}>{t(item.group!, EN[item.group!])}</p>)}
+                  : <p className={`px-3 pb-1 ${i ? 'pt-4' : 'pt-0'} text-xs font-semibold uppercase tracking-[0.14em] text-primary-300/70`}>{t(item.group!, EN[item.group!])}</p>)}
                 <NavLink
                   to={item.to}
                   onClick={onClose}
@@ -168,7 +168,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
       <div className="border-t border-primary-700 p-3 space-y-2">
         {/* Online status */}
         <div className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs ${
-          isOnline ? 'text-green-300' : 'text-red-300'
+          isOnline ? 'text-success-ondark' : 'text-red-300'
         }`}>
           {isOnline ? <Wifi className="w-4 h-4 flex-shrink-0" /> : <WifiOff className="w-4 h-4 flex-shrink-0" />}
           {!collapsed && (isOnline ? t('En ligne', 'Online') : t('Hors ligne', 'Offline'))}

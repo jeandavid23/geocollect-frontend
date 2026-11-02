@@ -93,7 +93,7 @@ function ForcePasswordChange() {
       </label>
       <div>
         <div className="flex gap-1">{[0, 1, 2, 3].map((i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i < s.ok ? (s.ok >= 4 ? 'bg-green-500' : s.ok === 3 ? 'bg-amber-400' : 'bg-red-400') : 'bg-gray-200'}`} />)}</div>
-        <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
+        <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
           {s.rules.map(([ok, label]) => <li key={label} className={ok ? 'text-green-700' : 'text-gray-400'}>{ok ? '✓' : '○'} {label}</li>)}
         </ul>
       </div>
@@ -174,7 +174,7 @@ export function MfaSetup({ forced = false, onDone }: { forced?: boolean; onDone?
       </ol>
       <div className="flex flex-col items-center gap-2">
         {qr ? <img src={qr} alt="QR code de la double authentification" className="h-[200px] w-[200px] rounded-lg border border-gray-200" /> : <div className="h-[200px] w-[200px] animate-pulse rounded-lg bg-gray-100" />}
-        {setup && <p className="text-center text-[11px] text-gray-500">Ou saisissez la clé : <span className="select-all font-mono text-gray-800">{setup.secret.replace(/(.{4})/g, '$1 ').trim()}</span></p>}
+        {setup && <p className="text-center text-xs text-gray-500">Ou saisissez la clé : <span className="select-all font-mono text-gray-800">{setup.secret.replace(/(.{4})/g, '$1 ').trim()}</span></p>}
       </div>
       <label className="block text-sm text-gray-700">3. Saisissez le code à 6 chiffres affiché :
         <input inputMode="numeric" autoComplete="one-time-code" maxLength={7} value={code} onChange={(e) => setCode(e.target.value.replace(/[^\d ]/g, ''))}
