@@ -164,7 +164,7 @@ export default function LoginPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="font-serif text-2xl font-semibold text-gray-900"><SplitText key={lang} text={t('Connexion', 'Sign in')} by="char" delay={600} step={40} variant="rise" /></h2>
-              <p className="mt-1 text-xs text-gray-500">{t('Espace coopérative, administrateur ou agent de terrain.', 'Cooperative, administrator or field agent workspace.')}</p>
+              <p className="mt-1 text-xs text-gray-500">{t('Espace coopérative, administrateur, agent de terrain ou usine.', 'Cooperative, administrator, field agent or processing plant workspace.')}</p>
             </div>
             <button type="button" onClick={() => setCollapsed(true)} title={t('Réduire pour voir les photos', 'Minimise to see the photos')}
               className="rounded-full p-1.5 text-gray-400 transition hover:bg-gray-900/5 hover:text-gray-700"><Minimize2 className="h-4 w-4" /></button>
