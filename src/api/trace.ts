@@ -75,7 +75,7 @@ export const traceApi = {
   createDelivery: (data: DeliveryPayload) => api.post<Delivery>('/lots/deliveries/', data),
   cancelDelivery: (id: string, reason: string) => api.post<Delivery>(`/lots/deliveries/${id}/cancel/`, { reason }),
   volumes: (campaign: string, product: Product = 'cacao') => api.get<Volumes>('/lots/volumes/', { params: { campaign, product } }),
-  slips: (lot?: string) => api.get<TransportSlip[]>('/lots/transport/', { params: { lot } }),
+  slips: (lot?: string, plant?: string) => api.get<TransportSlip[]>('/lots/transport/', { params: { lot, plant } }),
   createSlip: (data: TransportPayload) => api.post<TransportSlip>('/lots/transport/', data),
   receiveSlip: (id: string, data: ReceptionPayload) =>
     api.patch<TransportSlip>(`/lots/transport/${id}/`, data),
@@ -139,7 +139,7 @@ export interface Downstream {
 }
 
 export const processingApi = {
-  list: () => api.get<ProcessingBatch[]>('/lots/processing/'),
+  list: (plant?: string) => api.get<ProcessingBatch[]>('/lots/processing/', { params: plant ? { plant } : {} }),
   get: (id: string) => api.get<ProcessingBatch>(`/lots/processing/${id}/`),
   create: (data: ProcessingPayload) => api.post<ProcessingBatch>('/lots/processing/', data),
   close: (id: string) => api.patch<ProcessingBatch>(`/lots/processing/${id}/`, { status: 'cloture' }),

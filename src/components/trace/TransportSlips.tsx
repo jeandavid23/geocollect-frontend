@@ -81,13 +81,14 @@ function SlipForm({ lot, onSaved }: { lot: Lot; onSaved: (s: TransportSlip) => v
  * Fiches d'accompagnement : celles d'un lot (avec émission) si `lot` est fourni, sinon toutes celles de la coopérative.
  * Le lot doit être validé (contrôles EUDR levés) ; la première fiche le fait passer « expédié ».
  */
-export default function TransportSlips({ lot, onLotChanged }: { lot?: Lot; onLotChanged?: () => void }) {
+export default function TransportSlips({ lot, onLotChanged, plant }: { lot?: Lot; onLotChanged?: () => void; plant?: string }) {
   const { addNotification } = useAppStore()
   const isPlant = useAuthStore((s) => s.user?.role === 'usine')     // compte usine : réception seulement
   const [slips, setSlips] = useState<TransportSlip[] | null>(null)
   const [adding, setAdding] = useState(false)
   const [receiving, setReceiving] = useState<TransportSlip | null>(null)
-  const load = useCallback(() => traceApi.slips(lot?.id).then(({ data }) => setSlips(data)).catch(() => setSlips([])), [lot?.id])
+  const readOnly = !!plant                                         // consultation des réceptions d'une usine
+  const load = useCallback(() => traceApi.slips(lot?.id, plant).then(({ data }) => setSlips(data)).catch(() => setSlips([])), [lot?.id, plant])
   useEffect(() => { load() }, [load])
 
   const print = async (s: TransportSlip) => {
@@ -133,7 +134,7 @@ export default function TransportSlips({ lot, onLotChanged }: { lot?: Lot; onLot
                 <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{s.number}</td><td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{s.lot_code}</td>
                 <td className="px-3 py-2">{new Date(s.issued_at).toLocaleDateString('fr-FR')}</td>
                 <td className="px-3 py-2">{s.vehicle_plate}<span className="block text-xs text-gray-400">{s.driver_name}</span></td>
-                <td className="px-3 py-2">{s.destination}{isPlant && <span className="block text-xs text-gray-400">{s.cooperative_name}</span>}</td>
+                <td className="px-3 py-2">{s.destination}{(isPlant || readOnly) && <span className="block text-xs text-gray-400">{s.cooperative_name}</span>}</td>
                 <td className="whitespace-nowrap px-3 py-2 tabular-nums">{fr(Number(s.gross_weight_kg))} kg</td>
                 <td className="whitespace-nowrap px-3 py-2 tabular-nums">{s.received_weight_kg ? <>{fr(Number(s.received_weight_kg))} kg<span className={`block text-xs ${Math.abs(s.weight_gap_pct ?? 0) > GAP_ALERT_PCT ? 'font-semibold text-danger-text' : 'text-gray-400'}`}>écart {fr(s.weight_gap_kg ?? 0)} kg</span></> : '—'}</td>
                 <td className="px-3 py-2 text-xs">{s.quality?.grade ?? (s.decision ? '' : '—')}
@@ -141,7 +142,7 @@ export default function TransportSlips({ lot, onLotChanged }: { lot?: Lot; onLot
                 <td className="px-3 py-2"><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_TONE[s.status]}`}>{SLIP_STATUS[s.status]}</span></td>
                 <td className="whitespace-nowrap px-3 py-2">
                   <Button size="icon" variant="ghost" label="Imprimer la fiche" icon={<Printer className="h-4 w-4" />} onClick={() => print(s)} />
-                  {s.status === 'emise' && <>
+                  {s.status === 'emise' && !readOnly && <>
                     <Button size="icon" variant="ghost" label="Enregistrer la réception" icon={<PackageCheck className="h-4 w-4" />} onClick={() => setReceiving(s)} />
                     {!isPlant && <Button size="icon" variant="ghost" label="Annuler la fiche" icon={<XCircle className="h-4 w-4" />} onClick={() => cancel(s)} />}
                   </>}

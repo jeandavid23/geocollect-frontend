@@ -72,6 +72,7 @@ const PlantStockPage = lazy(() => import('./pages/usine/PlantStockPage'))
 const PlantShipmentsPage = lazy(() => import('./pages/usine/PlantShipmentsPage'))
 const PlantDashboardPage = lazy(() => import('./pages/usine/PlantDashboardPage'))
 const PlantDetailPage = lazy(() => import('./pages/admin/PlantDetailPage'))
+const CoopPlantsPage = lazy(() => import('./pages/coop/CoopPlantsPage'))
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuthStore()
@@ -175,6 +176,7 @@ export default function App() {
           <Route path="/coop/due-diligence" element={<RequireModule module="due_diligence"><DueDiligencePage /></RequireModule>} />
           <Route path="/coop/lots" element={<RequireModule module="lots"><LotsPage /></RequireModule>} />
           <Route path="/coop/traceability" element={<RequireModule module="lots"><TraceabilityPage /></RequireModule>} />
+          <Route path="/coop/plants" element={<RequireModule module="lots"><CoopPlantsPage /></RequireModule>} />
           <Route path="/coop/registry" element={<RequireModule module="registry"><Suspense fallback={<p className="p-6 text-gray-500">Chargement du registre…</p>}><RegistryPage /></Suspense></RequireModule>} />
         </Route>
 

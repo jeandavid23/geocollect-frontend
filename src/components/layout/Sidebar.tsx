@@ -53,6 +53,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Diligence raisonnée', to: '/coop/due-diligence', icon: <ShieldCheck className="w-5 h-5" />, roles: ['cooperative'], module: 'due_diligence', group: 'Export' },
   { label: 'Traçabilité des volumes', to: '/coop/traceability', icon: <Scale className="w-5 h-5" />, roles: ['cooperative'], module: 'lots', group: 'Export' },
   { label: 'Fiches de lot', to: '/coop/lots', icon: <Package className="w-5 h-5" />, roles: ['cooperative'], module: 'lots', group: 'Export' },
+  { label: 'Usines', to: '/coop/plants', icon: <Factory className="w-5 h-5" />, roles: ['cooperative'], module: 'lots', group: 'Export' },
   { label: 'Export TRACES', to: '/coop/reports#traces', icon: <FileCheck2 className="w-5 h-5" />, roles: ['cooperative'], group: 'Export' },
   { label: 'Rapports', to: '/coop/reports', icon: <FileBarChart className="w-5 h-5" />, roles: ['cooperative'], group: 'Export' },
   // Agent : la tournée d'abord

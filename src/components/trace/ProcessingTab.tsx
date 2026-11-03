@@ -128,14 +128,15 @@ function excelRows(batches: ProcessingBatch[]) {
   }))
 }
 
-export default function ProcessingTab() {
+/** Lots d'usinage ; avec `plant`, consultation de ceux d'une usine (sans saisie). */
+export default function ProcessingTab({ plant }: { plant?: string } = {}) {
   const [batches, setBatches] = useState<ProcessingBatch[] | null>(null)
   const [stock, setStock] = useState<Available>({ lots: [], batches: [] })
   const [mode, setMode] = useState<'list' | 'new' | ProcessingBatch>('list')
   const load = useCallback(() => {
-    processingApi.list().then(({ data }) => setBatches(data)).catch(() => setBatches([]))
-    availableForProcessing().then(({ data }) => setStock(data)).catch(() => setStock({ lots: [], batches: [] }))
-  }, [])
+    processingApi.list(plant).then(({ data }) => setBatches(data)).catch(() => setBatches([]))
+    if (!plant) availableForProcessing().then(({ data }) => setStock(data)).catch(() => setStock({ lots: [], batches: [] }))
+  }, [plant])
   useEffect(() => { load() }, [load])
 
   if (mode === 'new') return <BatchForm stock={stock} onCancel={() => setMode('list')} onSaved={(b) => { load(); setMode(b) }} />
@@ -143,7 +144,7 @@ export default function ProcessingTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setMode('new')}>Nouveau lot d'usinage / transformation</Button>
+        {!plant && <Button icon={<Plus className="h-4 w-4" />} onClick={() => setMode('new')}>Nouveau lot d'usinage / transformation</Button>}
         {batches && batches.length > 0 && <Button variant="secondary" icon={<FileSpreadsheet className="h-4 w-4" />}
           onClick={() => exportExcel([{ name: "Lots d'usinage", rows: excelRows(batches) }], `usinage_${new Date().toISOString().slice(0, 10)}.xlsx`)}>Excel</Button>}
       </div>
