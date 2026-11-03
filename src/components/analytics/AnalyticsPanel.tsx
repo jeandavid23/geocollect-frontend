@@ -25,7 +25,10 @@ function excel(a: Analytics) {
       { indicateur: 'dont anciens polygones', valeur: a.parcels.legacy }, { indicateur: 'Surface (ha)', valeur: a.parcels.hectares },
       { indicateur: 'Producteurs', valeur: a.producers.total }, { indicateur: 'Producteurs avec parcelle (%)', valeur: a.producers.coverage_pct },
       { indicateur: `Volume net ${a.campaign} (kg)`, valeur: a.volumes.net_kg }, { indicateur: 'Montant payé (FCFA)', valeur: a.volumes.amount_fcfa },
-      { indicateur: 'Prix moyen (FCFA/kg)', valeur: a.volumes.avg_price }, { indicateur: 'Rendement (kg/ha)', valeur: a.volumes.yield_kg_ha } ] },
+      { indicateur: 'Prix moyen (FCFA/kg)', valeur: a.volumes.avg_price }, { indicateur: 'Rendement réel (kg/ha)', valeur: a.volumes.yield_kg_ha },
+      { indicateur: 'Production estimée du registre (kg)', valeur: a.volumes.estimated_kg },
+      { indicateur: 'Rendement estimé du registre (kg/ha)', valeur: a.volumes.estimated_yield_kg_ha },
+      { indicateur: 'Production estimée déjà livrée (%)', valeur: a.volumes.realisation_pct } ] },
     { name: 'Par mois', rows: a.monthly.map((m) => ({ mois: m.month, poids_net_kg: m.net_kg, montant_fcfa: m.amount_fcfa, pesees: m.deliveries })) },
     { name: 'Producteurs', rows: a.top_producers.map((p) => ({ code: p.code, producteur: p.name, village: p.village, pesees: p.deliveries, poids_net_kg: p.net_kg, montant_fcfa: p.amount_fcfa })) },
   ]
@@ -72,8 +75,10 @@ export default function AnalyticsPanel({ cooperative }: { cooperative?: string }
         <Kpi label={`Cacao pesé ${v.campaign}`} value={tonnes(v.net_kg)} trend={v.growth_pct}
           hint={`${fr(v.deliveries, 0)} pesées · ${fr(v.producers_delivering, 0)} producteurs`} />
         <Kpi label="Montant payé" value={fcfa(v.amount_fcfa)} hint={v.avg_price ? `${fr(v.avg_price, 0)} FCFA/kg en moyenne` : 'prix non saisi'} />
-        <Kpi label="Rendement" value={v.yield_kg_ha != null ? `${fr(v.yield_kg_ha, 0)} kg/ha` : '—'} hint="producteurs livreurs, sur leurs parcelles" />
-        <Kpi label="Par producteur livreur" value={tonnes(v.kg_per_producer)} hint="sur la campagne" />
+        <Kpi label="Rendement estimé (registre)" value={v.estimated_yield_kg_ha != null ? `${fr(v.estimated_yield_kg_ha, 0)} kg/ha` : '—'}
+          hint={`${v.estimated_yield_kg_ha == null ? 'production estimée absente du registre · ' : ''}réel ${v.yield_kg_ha != null ? `${fr(v.yield_kg_ha, 0)} kg/ha` : '—'} (livreurs)`} />
+        <Kpi label="Production estimée (registre)" value={v.estimated_kg != null ? tonnes(v.estimated_kg) : '—'}
+          hint={v.estimated_kg != null ? `${fr(v.realisation_pct ?? 0, 1)} % déjà livré · ${fr(v.producers_with_estimate, 0)} producteurs` : 'colonne « Total estimate production (current year) »'} />
         <Kpi label="Risque élevé (diligence)" value={fr(a.risk.counts.eleve, 0)} tone={a.risk.counts.eleve ? 'danger' : undefined}
           hint={a.risk.last_analysis ? `dernière analyse le ${new Date(a.risk.last_analysis).toLocaleDateString('fr-FR')}` : 'aucune analyse terminée'} />
       </div>

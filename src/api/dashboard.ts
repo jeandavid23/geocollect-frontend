@@ -42,7 +42,8 @@ export interface Analytics {
   risk: { analysed: number; counts: Record<RiskLevel, number>; area_ha: Record<RiskLevel, number>; last_analysis: string | null }
   volumes: { campaign: string; net_kg: number; deliveries: number; producers_delivering: number; amount_fcfa: number
     avg_price: number | null; kg_per_producer: number; yield_kg_ha: number | null; previous_campaign: string
-    previous_net_kg: number; growth_pct: number | null }
+    previous_net_kg: number; growth_pct: number | null
+    estimated_kg: number | null; producers_with_estimate: number; estimated_yield_kg_ha: number | null; realisation_pct: number | null }
   monthly: { month: string; net_kg: number; amount_fcfa: number; deliveries: number }[]
   pipeline: { weighed_kg: number; in_lots_kg: number; shipped_kg: number; received_kg: number; processed_kg: number }
   lots: Record<'brouillon' | 'valide' | 'expedie', number>

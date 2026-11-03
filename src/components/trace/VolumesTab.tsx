@@ -26,7 +26,10 @@ export default function VolumesTab({ campaign }: { campaign: string }) {
   const excel = () => exportExcel([{ name: 'Volumes', rows: v.producers.map((p) => ({
     producteur: p.name, code: p.code, village: p.village, pesees: p.deliveries, sacs: p.bags, poids_net_kg: p.net_kg,
     dans_les_lots_kg: p.in_lots_kg, hors_lot_kg: p.not_in_lot_kg, montant_fcfa: p.amount, surface_ha: p.area_ha,
-    source_surface: AREA_SOURCE[p.area_source], rendement_kg_ha: p.yield_kg_ha, capacite_kg: p.capacity_kg, statut: VOLUME_STATUS[p.status].label })) }],
+    source_surface: AREA_SOURCE[p.area_source], rendement_kg_ha: p.yield_kg_ha, production_estimee_kg: p.estimated_kg,
+    rendement_estime_kg_ha: p.estimated_yield_kg_ha, realisation_pct: p.realisation_pct, capacite_kg: p.capacity_kg,
+    source_capacite: p.capacity_source === 'registre' ? 'production estimée (registre)' : 'surface × rendement maximal',
+    statut: VOLUME_STATUS[p.status].label })) }],
   `volumes_${campaign}.xlsx`)
 
   return (
@@ -42,10 +45,12 @@ export default function VolumesTab({ campaign }: { campaign: string }) {
       </div>
       <p className="flex gap-2 rounded-xl bg-blue-50 p-3 text-sm text-blue-900">
         <Info className="mt-0.5 h-4 w-4 flex-none" />
-        <span>Chaque producteur ne peut livrer que ce que ses parcelles produisent. Au-delà de <b>{fr(v.thresholds.watch_kg_ha, 0)} kg/ha</b> sur la
-          campagne, le volume est <b>à surveiller</b> ; au-delà de <b>{fr(v.thresholds.max_kg_ha, 0)} kg/ha</b>, c'est un <b>dépassement</b> :
-          du cacao d'une autre origine a pu être mélangé (le règlement EUDR exige que tout le cacao vienne de parcelles géolocalisées).
-          La surface vient des parcelles cartographiées, sinon des anciens polygones, sinon de la surface déclarée.</span>
+        <span>Chaque producteur ne peut livrer que ce que ses parcelles produisent. La référence est la <b>production totale estimée
+          de l'année en cours</b> inscrite au registre ({t.producers_with_estimate} producteur(s) sur {t.producers}) : au-delà, le volume est{' '}
+          <b>à surveiller</b> ; au-delà de {v.thresholds.estimate_tolerance_pct} % de plus, c'est un <b>dépassement</b>. Sans estimation au registre,
+          la référence est la surface : au-delà de <b>{fr(v.thresholds.watch_kg_ha, 0)} kg/ha</b> à surveiller, de <b>{fr(v.thresholds.max_kg_ha, 0)} kg/ha</b>{' '}
+          dépassement. Un dépassement signale du cacao d'une autre origine possiblement mélangé (le règlement EUDR exige que tout le cacao vienne
+          de parcelles géolocalisées).</span>
       </p>
       <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
         <div className="flex items-center gap-2 border-b border-gray-100 p-3">
@@ -71,12 +76,13 @@ export default function VolumesTab({ campaign }: { campaign: string }) {
                     <td className="px-5 py-2 font-semibold tabular-nums">{fr(p.net_kg, 0)} kg</td>
                     <td className="px-5 py-2 tabular-nums">{p.not_in_lot_kg ? `${fr(p.not_in_lot_kg, 0)} kg` : '—'}</td>
                     <td className="px-5 py-2 tabular-nums">{p.area_ha ? `${fr(p.area_ha, 2)} ha` : '—'}<span className="block text-xs text-gray-400">{AREA_SOURCE[p.area_source]}</span></td>
-                    <td className="px-5 py-2 tabular-nums">{p.yield_kg_ha != null ? `${fr(p.yield_kg_ha, 0)} kg/ha` : '—'}</td>
+                    <td className="px-5 py-2 tabular-nums">{p.yield_kg_ha != null ? `${fr(p.yield_kg_ha, 0)} kg/ha` : '—'}
+                      {p.estimated_yield_kg_ha != null && <span className="block text-xs text-gray-400">estimé {fr(p.estimated_yield_kg_ha, 0)} kg/ha</span>}</td>
                     <td className="px-5 py-2">
                       {p.capacity_kg ? (
                         <div className="w-40"><div className="h-2 overflow-hidden rounded-full bg-gray-100">
                           <div className={`h-full rounded-full ${p.status === 'depassement' ? 'bg-red-600' : p.status === 'a_surveiller' ? 'bg-amber-500' : 'bg-primary-600'}`} style={{ width: `${used}%` }} /></div>
-                          <p className="mt-0.5 text-xs text-gray-500">{fr(p.net_kg, 0)} / {fr(p.capacity_kg, 0)} kg possibles</p></div>
+                          <p className="mt-0.5 text-xs text-gray-500">{fr(p.net_kg, 0)} / {fr(p.capacity_kg, 0)} kg {p.capacity_source === 'registre' ? 'estimés (registre)' : 'possibles (surface)'}</p></div>
                       ) : '—'}
                     </td>
                     <td className="px-5 py-2"><span className={`rounded px-2 py-0.5 text-xs font-semibold ${VOLUME_STATUS[p.status].tone}`}>{VOLUME_STATUS[p.status].label}</span></td>

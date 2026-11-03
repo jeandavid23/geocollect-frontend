@@ -26,12 +26,15 @@ export interface ProducerVolume {
   net_kg: number; in_lots_kg: number; not_in_lot_kg: number; amount: number; last_delivery: string | null
   area_ha: number; area_source: 'cartographiee' | 'anciens_polygones' | 'declaree' | 'inconnue'
   yield_kg_ha: number | null; capacity_kg: number | null; status: VolumeStatus
+  capacity_source: 'registre' | 'surface'; estimated_kg: number | null; estimated_yield_kg_ha: number | null
+  realisation_pct: number | null
 }
 export interface Volumes {
-  campaign: string; product: Product; thresholds: { watch_kg_ha: number; max_kg_ha: number }
+  campaign: string; product: Product; thresholds: { watch_kg_ha: number; max_kg_ha: number; estimate_tolerance_pct: number }
   producers: ProducerVolume[]
   totals: { producers: number; deliveries: number; net_kg: number; in_lots_kg: number; not_in_lot_kg: number; amount: number
-    producers_over_capacity: number; producers_to_watch: number; producers_without_area: number }
+    producers_over_capacity: number; producers_to_watch: number; producers_without_area: number
+    producers_with_estimate: number; estimated_kg: number }
 }
 
 export interface TransportSlip {

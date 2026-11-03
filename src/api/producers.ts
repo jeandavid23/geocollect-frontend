@@ -18,6 +18,7 @@ export interface CreateProducerPayload {
   code?: string            // code du producteur TEL QUE DANS LE REGISTRE (devient son identifiant)
   district?: string
   total_area_ha?: number
+  estimated_production_kg?: number | string | null   // « Total estimate production (current year) » du registre
   farm_type?: 'small' | 'large'
   num_units?: number
   certification_year?: number
