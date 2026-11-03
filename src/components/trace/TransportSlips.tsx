@@ -1,18 +1,32 @@
 import { useCallback, useEffect, useState } from 'react'
-import { PackageCheck, Printer, Truck, XCircle } from 'lucide-react'
+import { FileSpreadsheet, PackageCheck, Printer, Truck, XCircle } from 'lucide-react'
 import Button from '../ui/Button'
 import EmptyState from '../ui/EmptyState'
 import { promptDialog } from '../ui/dialog'
 import { useAppStore } from '../../store/appStore'
 import { lotsApi, type Lot } from '../../api/lots'
-import { plantsApi, SLIP_STATUS, traceApi, type Plant, type TransportPayload, type TransportSlip } from '../../api/trace'
+import { DECISIONS, plantsApi, QUALITY_FIELDS, SLIP_STATUS, traceApi, type Plant, type SlipStatus, type TransportPayload, type TransportSlip } from '../../api/trace'
+import ReceptionDialog from './ReceptionDialog'
+import { exportExcel } from '../../utils/featureExport'
 import { useAuthStore } from '../../store/authStore'
 import { transportPdf } from '../../utils/traceSheets'
 import { fr } from '../../utils/lotSheet'
 import { apiErrorMessage } from '../../utils/retry'
 
 const input = 'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600'
-const STATUS_TONE = { emise: 'bg-blue-50 text-blue-800', livree: 'bg-primary-50 text-primary-800', annulee: 'bg-gray-100 text-gray-500' }
+const STATUS_TONE: Record<SlipStatus, string> = { emise: 'bg-info-bg text-info-text', livree: 'bg-success-bg text-success-text', refusee: 'bg-danger-bg text-danger-text', annulee: 'bg-gray-100 text-gray-500' }
+const GAP_ALERT_PCT = 1
+
+function excelRows(slips: TransportSlip[]) {
+  return slips.map((s) => ({
+    fiche: s.number, lot: s.lot_code, cooperative: s.cooperative_name, emise_le: s.issued_at.slice(0, 10), camion: s.vehicle_plate,
+    chauffeur: s.driver_name, plombs: s.seals, destination: s.destination, sacs: s.bags, poids_depart_kg: Number(s.gross_weight_kg),
+    poids_arrivee_kg: s.received_weight_kg != null ? Number(s.received_weight_kg) : null, ecart_kg: s.weight_gap_kg, ecart_pct: s.weight_gap_pct,
+    ...Object.fromEntries(QUALITY_FIELDS.map((f) => [f.label.toLowerCase(), s[f.key] != null ? Number(s[f.key]) : null])),
+    grade: s.quality?.grade ?? '', decision: s.decision ? DECISIONS[s.decision] : '', motif: s.decision_reason,
+    recu_le: s.received_at?.slice(0, 10) ?? '', recu_par: s.received_by, statut: SLIP_STATUS[s.status],
+  }))
+}
 const FIELDS: [keyof TransportPayload, string, string][] = [
   ['destination', 'Destination', 'Usine, port de San Pedro…'], ['consignee', 'Destinataire', 'Acheteur / exportateur'],
   ['origin', 'Lieu de départ', 'Magasin de la coopérative'], ['carrier', 'Transporteur', ''],
@@ -72,6 +86,7 @@ export default function TransportSlips({ lot, onLotChanged }: { lot?: Lot; onLot
   const isPlant = useAuthStore((s) => s.user?.role === 'usine')     // compte usine : réception seulement
   const [slips, setSlips] = useState<TransportSlip[] | null>(null)
   const [adding, setAdding] = useState(false)
+  const [receiving, setReceiving] = useState<TransportSlip | null>(null)
   const load = useCallback(() => traceApi.slips(lot?.id).then(({ data }) => setSlips(data)).catch(() => setSlips([])), [lot?.id])
   useEffect(() => { load() }, [load])
 
@@ -79,16 +94,14 @@ export default function TransportSlips({ lot, onLotChanged }: { lot?: Lot; onLot
     const full = lot ?? (isPlant ? null : await lotsApi.get(s.lot).then(({ data }) => data).catch(() => null))
     await transportPdf(s, full)
   }
-  const receive = async (s: TransportSlip) => {
-    const v = await promptDialog({ title: `Réception de ${s.number}`, label: "Poids pesé à l'arrivée (kg)", defaultValue: s.gross_weight_kg,
-      confirmLabel: 'Enregistrer la réception', validate: (x) => (Number(x.replace(',', '.')) > 0 ? null : 'Poids attendu en kg.') })
-    if (!v) return
-    try {
-      const { data } = await traceApi.receiveSlip(s.id, { received_weight_kg: Number(v.replace(',', '.')) })
-      addNotification({ type: Math.abs(data.weight_gap_kg ?? 0) > 0.005 * Number(s.gross_weight_kg) ? 'warning' : 'success',
-        title: `Livraison ${s.number} reçue`, message: `Écart : ${fr(data.weight_gap_kg ?? 0)} kg par rapport au départ.` })
-      load()
-    } catch (err) { addNotification({ type: 'error', title: 'Réception impossible', message: apiErrorMessage(err) }) }
+  const received = (data: TransportSlip) => {
+    setReceiving(null)
+    const refused = data.status === 'refusee'
+    addNotification({ type: refused ? 'error' : Math.abs(data.weight_gap_pct ?? 0) > GAP_ALERT_PCT || data.decision === 'reserve' ? 'warning' : 'success',
+      title: `${data.number} : ${refused ? 'lot refusé' : 'réception enregistrée'}`,
+      message: refused ? 'La coopérative est prévenue ; le lot lui revient.'
+        : `Écart : ${fr(data.weight_gap_kg ?? 0)} kg${data.quality?.grade ? ` · ${data.quality.grade}` : ''}. La coopérative est prévenue.` })
+    load()
   }
   const cancel = async (s: TransportSlip) => {
     const reason = await promptDialog({ title: `Annuler ${s.number} ?`, label: 'Motif', confirmLabel: 'Annuler la fiche', validate: (x) => (x.trim() ? null : 'Indiquez le motif.') })
@@ -102,6 +115,8 @@ export default function TransportSlips({ lot, onLotChanged }: { lot?: Lot; onLot
       <div className="flex flex-wrap items-center gap-3">
         <p className="flex items-center gap-2 font-semibold text-gray-900"><Truck className="h-5 w-5 text-primary-700" /> Fiches d'accompagnement</p>
         <span className="flex-1" />
+        {slips && slips.length > 0 && <Button size="sm" variant="secondary" icon={<FileSpreadsheet className="h-4 w-4" />}
+          onClick={() => exportExcel([{ name: 'Fiches', rows: excelRows(slips) }], `fiches_accompagnement_${new Date().toISOString().slice(0, 10)}.xlsx`)}>Excel</Button>}
         {lot && (lot.status === 'valide' || lot.status === 'expedie') && !adding && <Button size="sm" onClick={() => setAdding(true)}>Émettre une fiche</Button>}
         {lot && lot.status === 'brouillon' && <span className="text-xs text-gray-500">Validez le lot pour émettre une fiche d'accompagnement.</span>}
       </div>
@@ -110,30 +125,33 @@ export default function TransportSlips({ lot, onLotChanged }: { lot?: Lot; onLot
         !adding && <EmptyState icon={<Truck className="h-7 w-7" />} title="Aucune fiche d'accompagnement"
           text="La fiche d'accompagnement suit le lot dans le camion jusqu'à l'usine ou l'exportateur : chauffeur, plombs, poids au départ, puis poids reçu à l'arrivée." />
       ) : (
-        <table className="mt-4 w-full text-sm">
-          <thead className="bg-gray-50 text-xs text-gray-500"><tr>{['N°', 'Lot', 'Émise', 'Camion · chauffeur', 'Destination', 'Départ', 'Arrivée', 'Statut', ''].map((h) => <th key={h} className="px-3 py-2 text-left font-medium">{h}</th>)}</tr></thead>
+        <div className="mt-4 overflow-x-auto"><table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs text-gray-500"><tr>{['N°', 'Lot', 'Émise', 'Camion · chauffeur', 'Destination', 'Départ', 'Arrivée', 'Qualité', 'Statut', ''].map((h) => <th key={h} className="px-3 py-2 text-left font-medium">{h}</th>)}</tr></thead>
           <tbody className="divide-y divide-gray-100">
             {slips.map((s) => (
               <tr key={s.id}>
-                <td className="px-3 py-2 font-mono text-xs">{s.number}</td><td className="px-3 py-2 font-mono text-xs">{s.lot_code}</td>
+                <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{s.number}</td><td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{s.lot_code}</td>
                 <td className="px-3 py-2">{new Date(s.issued_at).toLocaleDateString('fr-FR')}</td>
                 <td className="px-3 py-2">{s.vehicle_plate}<span className="block text-xs text-gray-400">{s.driver_name}</span></td>
                 <td className="px-3 py-2">{s.destination}{isPlant && <span className="block text-xs text-gray-400">{s.cooperative_name}</span>}</td>
-                <td className="px-3 py-2 tabular-nums">{fr(Number(s.gross_weight_kg))} kg</td>
-                <td className="px-3 py-2 tabular-nums">{s.received_weight_kg ? <>{fr(Number(s.received_weight_kg))} kg<span className={`block text-xs ${Math.abs(s.weight_gap_kg ?? 0) > 0.005 * Number(s.gross_weight_kg) ? 'text-red-700' : 'text-gray-400'}`}>écart {fr(s.weight_gap_kg ?? 0)} kg</span></> : '—'}</td>
-                <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_TONE[s.status]}`}>{SLIP_STATUS[s.status]}</span></td>
+                <td className="whitespace-nowrap px-3 py-2 tabular-nums">{fr(Number(s.gross_weight_kg))} kg</td>
+                <td className="whitespace-nowrap px-3 py-2 tabular-nums">{s.received_weight_kg ? <>{fr(Number(s.received_weight_kg))} kg<span className={`block text-xs ${Math.abs(s.weight_gap_pct ?? 0) > GAP_ALERT_PCT ? 'font-semibold text-danger-text' : 'text-gray-400'}`}>écart {fr(s.weight_gap_kg ?? 0)} kg</span></> : '—'}</td>
+                <td className="px-3 py-2 text-xs">{s.quality?.grade ?? (s.decision ? '' : '—')}
+                  {s.decision && s.decision !== 'accepte' && <span className="block text-gray-500" title={s.decision_reason}>{DECISIONS[s.decision]}</span>}</td>
+                <td className="px-3 py-2"><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_TONE[s.status]}`}>{SLIP_STATUS[s.status]}</span></td>
                 <td className="whitespace-nowrap px-3 py-2">
                   <Button size="icon" variant="ghost" label="Imprimer la fiche" icon={<Printer className="h-4 w-4" />} onClick={() => print(s)} />
                   {s.status === 'emise' && <>
-                    <Button size="icon" variant="ghost" label="Enregistrer la réception" icon={<PackageCheck className="h-4 w-4" />} onClick={() => receive(s)} />
+                    <Button size="icon" variant="ghost" label="Enregistrer la réception" icon={<PackageCheck className="h-4 w-4" />} onClick={() => setReceiving(s)} />
                     {!isPlant && <Button size="icon" variant="ghost" label="Annuler la fiche" icon={<XCircle className="h-4 w-4" />} onClick={() => cancel(s)} />}
                   </>}
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
+      {receiving && <ReceptionDialog slip={receiving} onClose={() => setReceiving(null)} onSaved={received} />}
     </section>
   )
 }

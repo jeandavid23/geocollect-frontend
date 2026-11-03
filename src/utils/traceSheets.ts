@@ -4,8 +4,8 @@
  *  - fiche d'accompagnement : document qui suit un lot pendant le transport jusqu'à l'acheteur.
  * Chaque document porte un QR code lisible sans connexion (numéro, poids, origine).
  */
-import type { Delivery, ProcessingBatch, Trace, TransportSlip } from '../api/trace'
-import { OPERATION_LABEL, SLIP_STATUS } from '../api/trace'
+import type { Delivery, ProcessingBatch, Shipment, Trace, TransportSlip } from '../api/trace'
+import { OPERATION_LABEL, SHIPMENT_STATUS, SLIP_STATUS } from '../api/trace'
 import type { Lot } from '../api/lots'
 import { PRODUCT_LABEL } from '../api/lots'
 import { date, fr, t } from './lotSheet'
@@ -170,24 +170,12 @@ export async function transportPdf(s: TransportSlip, lot: Lot | null) {
   doc.save(`fiche_accompagnement_${s.number}.pdf`)
 }
 
-/** Certificat de traçabilité d'un lot d'usinage ou de transformation : produits, bilan matière et toute la chaîne d'origine. */
-export async function processingPdf(b: ProcessingBatch, tr: Trace) {
-  const { jsPDF, autoTable, QR } = await libs()
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
-  const W = doc.internal.pageSize.getWidth()
+type Lib = Awaited<ReturnType<typeof libs>>
+type Doc = InstanceType<Lib['jsPDF']>
+
+/** Tableaux et titres de section d'un certificat (saut de page automatique). */
+function writer(doc: Doc, autoTable: Lib['autoTable']) {
   const H = doc.internal.pageSize.getHeight()
-  const qrText = [`${OPERATION_LABEL[b.operation].toUpperCase()} ${b.code}`, `Usine: ${b.plant}`, `Date: ${date(b.process_date)}`,
-    ...b.outputs.map((o) => `${o.product_label}: ${fr(o.weight_kg)} kg`), `Lots d'origine: ${tr.lots.map((l) => l.code).join(', ')}`,
-    `Producteurs: ${tr.producers.length}`, `Parcelles: ${tr.eudr.parcels} (${fr(tr.eudr.area_ha, 2)} ha)`, 'GeoCollect EUDR'].join('\n')
-  const qr = await QR.toDataURL(qrText, { margin: 0, width: 300, errorCorrectionLevel: 'M' })
-
-  doc.setFillColor(...GREEN); doc.rect(0, 0, W, 30, 'F')
-  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('CERTIFICAT DE TRAÇABILITÉ', MARGIN, 13)
-  doc.setFontSize(11); doc.setTextColor(...GOLD); doc.text(t(`${OPERATION_LABEL[b.operation]} ${b.code}`), MARGIN, 20)
-  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'normal'); doc.setFontSize(9)
-  doc.text(t(`${b.plant} · ${date(b.process_date)} · coopérative(s) : ${b.cooperatives.join(', ')}`), MARGIN, 26)
-  doc.setFillColor(255, 255, 255); doc.rect(W - 40, 3, 26, 26, 'F'); doc.addImage(qr, 'PNG', W - 39, 4, 24, 24)
-
   const table = (startY: number, head: string[], body: string[][], foot?: string[]) => {
     autoTable(doc, { startY, theme: 'striped', headStyles: { fillColor: GREEN, fontSize: 8.5 }, styles: { fontSize: 8, cellPadding: 1.4 },
       head: [head], body, foot: foot ? [foot] : undefined, footStyles: { fillColor: [241, 246, 242], textColor: GREEN, fontStyle: 'bold' },
@@ -198,30 +186,88 @@ export async function processingPdf(b: ProcessingBatch, tr: Trace) {
     if (y > H - 40) { doc.addPage(); y = 18 }
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(...GREEN); doc.text(t(title), MARGIN, y); return y + 3
   }
-  let y = section(38, '1. Produits obtenus et bilan matière')
-  y = table(y, ['Produit', 'Référence', 'Poids'], b.outputs.map((o) => [t(o.product_label), t(o.reference || '—'), kg(o.weight_kg)]),
-    ['Total', `entrées ${fr(b.input_kg)} kg`, `${fr(b.output_kg)} kg (perte ${fr(b.loss_kg)} kg, ${fr(b.loss_pct)} %)`])
-  y = section(y, '2. Chaîne de traitement (du produit vers l\'origine)')
-  y = table(y, ['Étape', 'Référence', 'Lieu', 'Date'], [
+  return { table, section }
+}
+
+/** En-tête vert d'un certificat, avec QR code. */
+async function certificateHeader(doc: Doc, QR: Lib['QR'], title: string, subtitle: string, line: string, qrText: string) {
+  const W = doc.internal.pageSize.getWidth()
+  const qr = await QR.toDataURL(qrText, { margin: 0, width: 300, errorCorrectionLevel: 'M' })
+  doc.setFillColor(...GREEN); doc.rect(0, 0, W, 30, 'F')
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(t(title), MARGIN, 13)
+  doc.setFontSize(11); doc.setTextColor(...GOLD); doc.text(t(subtitle), MARGIN, 20)
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(t(line), MARGIN, 26)
+  doc.setFillColor(255, 255, 255); doc.rect(W - 40, 3, 26, 26, 'F'); doc.addImage(qr, 'PNG', W - 39, 4, 24, 24)
+}
+
+/** Chaîne d'origine commune aux certificats : traitements, transport, lots, producteurs, parcelles, pesées. */
+function originSections(w: ReturnType<typeof writer>, tr: Trace, y: number, first: number) {
+  const n = (i: number) => `${first + i}.`
+  y = w.section(y, `${n(0)} Chaîne de traitement (du produit vers l'origine)`)
+  y = w.table(y, ['Étape', 'Référence', 'Lieu', 'Date'], [
     ...tr.batches.map((x) => [OPERATION_LABEL[x.operation], t(x.code), t(x.plant), date(x.process_date)]),
     ...tr.transport.map((s) => ['Transport', t(`${s.number} (lot ${s.lot__code})`), t(`${s.vehicle_plate} -> ${s.destination}`),
       t(`${date(s.issued_at)}${s.received_weight_kg != null ? ` · reçu ${fr(s.received_weight_kg)} kg` : ''}`)]),
     ...tr.lots.map((l) => ['Lot de coopérative', t(l.code), t(l.cooperative), date(l.lot_date)]),
   ])
-  y = section(y, `3. Producteurs d'origine (${tr.producers.length})`)
-  y = table(y, ['Producteur', 'Code', 'Village', 'Lots', 'Poids livré'],
+  y = w.section(y, `${n(1)} Producteurs d'origine (${tr.producers.length})`)
+  y = w.table(y, ['Producteur', 'Code', 'Village', 'Lots', 'Poids livré'],
     tr.producers.map((p) => [t(p.name), t(p.code), t(p.village), t(p.lots.join(', ')), kg(p.weight_kg)]))
-  y = section(y, `4. Parcelles d'origine : ${tr.eudr.parcels} (${fr(tr.eudr.area_ha, 2)} ha) — ${tr.eudr.compliant_parcels} conforme(s), ${tr.eudr.non_compliant_parcels} non conforme(s)`)
-  y = table(y, ['Parcelle', 'Village', 'Surface (ha)', 'Statut EUDR'], tr.parcels.map((p) => [t(p.field_id), t(p.village), fr(p.area_hectares || 0, 2),
+  y = w.section(y, `${n(2)} Parcelles d'origine : ${tr.eudr.parcels} (${fr(tr.eudr.area_ha, 2)} ha) — ${tr.eudr.compliant_parcels} conforme(s), ${tr.eudr.non_compliant_parcels} non conforme(s)`)
+  y = w.table(y, ['Parcelle', 'Village', 'Surface (ha)', 'Statut EUDR'], tr.parcels.map((p) => [t(p.field_id), t(p.village), fr(p.area_hectares || 0, 2),
     p.eudr_status === 'compliant' ? 'Conforme' : p.eudr_status === 'non_compliant' ? 'Non conforme' : 'En attente']))
-  y = section(y, `5. Fiches de pesée (${tr.deliveries.length})`)
-  table(y, ['N° de fiche', 'Date', 'Producteur', 'Lot', 'Poids net'],
+  y = w.section(y, `${n(3)} Fiches de pesée (${tr.deliveries.length})`)
+  w.table(y, ['N° de fiche', 'Date', 'Producteur', 'Lot', 'Poids net'],
     tr.deliveries.map((d) => [t(d.number), date(d.date), t(d.producer_code), t(d.lot), kg(d.net_kg)]))
+}
 
+function footer(doc: Doc, text: string) {
+  const H = doc.internal.pageSize.getHeight()
   const n = doc.getNumberOfPages()
   for (let i = 1; i <= n; i++) {
     doc.setPage(i); doc.setFontSize(7); doc.setTextColor(140, 140, 140)
-    doc.text(t(`Certificat de traçabilité ${b.code} · édité le ${new Date().toLocaleString('fr-FR')} · GeoCollect EUDR · page ${i}/${n}`), MARGIN, H - 7)
+    doc.text(t(`${text} · édité le ${new Date().toLocaleString('fr-FR')} · GeoCollect EUDR · page ${i}/${n}`), MARGIN, H - 7)
   }
+}
+
+/** Certificat de traçabilité d'un lot d'usinage ou de transformation : produits, bilan matière et toute la chaîne d'origine. */
+export async function processingPdf(b: ProcessingBatch, tr: Trace) {
+  const { jsPDF, autoTable, QR } = await libs()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
+  await certificateHeader(doc, QR, 'CERTIFICAT DE TRAÇABILITÉ', `${OPERATION_LABEL[b.operation]} ${b.code}`,
+    `${b.plant} · ${date(b.process_date)} · coopérative(s) : ${b.cooperatives.join(', ')}`,
+    [`${OPERATION_LABEL[b.operation].toUpperCase()} ${b.code}`, `Usine: ${b.plant}`, `Date: ${date(b.process_date)}`,
+      ...b.outputs.map((o) => `${o.product_label}: ${fr(o.weight_kg)} kg`), `Lots d'origine: ${tr.lots.map((l) => l.code).join(', ')}`,
+      `Producteurs: ${tr.producers.length}`, `Parcelles: ${tr.eudr.parcels} (${fr(tr.eudr.area_ha, 2)} ha)`, 'GeoCollect EUDR'].join('\n'))
+  const w = writer(doc, autoTable)
+  const y = w.section(38, '1. Produits obtenus et bilan matière')
+  const verified = b.compliant_share_pct != null ? ` · origine vérifiée ${fr(b.compliant_share_pct)} %` : ''
+  originSections(w, tr, w.table(y, ['Produit', 'Référence', 'Poids'], b.outputs.map((o) => [t(o.product_label), t(o.reference || '—'), kg(o.weight_kg)]),
+    ['Total', `entrées ${fr(b.input_kg)} kg`, t(`${fr(b.output_kg)} kg (perte ${fr(b.loss_kg)} kg, ${fr(b.loss_pct)} %${verified})`)]), 2)
+  footer(doc, `Certificat de traçabilité ${b.code}`)
   doc.save(`tracabilite_${b.code}.pdf`)
+}
+
+/** Certificat d'expédition : documents de transport, référence DDS (TRACES), produits et toute la chaîne d'origine. */
+export async function shipmentPdf(sh: Shipment, tr: Trace) {
+  const { jsPDF, autoTable, QR } = await libs()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
+  await certificateHeader(doc, QR, "CERTIFICAT D'EXPÉDITION", `Expédition ${sh.number}${sh.dds_reference ? ` · DDS ${sh.dds_reference}` : ''}`,
+    `${sh.plant_name} · ${date(sh.ship_date)} · ${sh.client}${sh.destination_country ? ` (${sh.destination_country})` : ''}`,
+    [`EXPEDITION ${sh.number}`, `Usine: ${sh.plant_name}`, `Date: ${date(sh.ship_date)}`, `Client: ${sh.client}`,
+      `DDS: ${sh.dds_reference || 'non renseignee'}`, `Conteneur: ${sh.container || '-'}`, `Poids: ${fr(sh.total_kg)} kg`,
+      `Producteurs: ${tr.producers.length}`, `Parcelles: ${tr.eudr.parcels}`, 'GeoCollect EUDR'].join('\n'))
+  const w = writer(doc, autoTable)
+  let y = w.section(38, '1. Expédition et déclaration de diligence raisonnée')
+  y = w.table(y, ['Rubrique', 'Valeur'], [
+    ['Statut', SHIPMENT_STATUS[sh.status]], ['Client / acheteur', t(sh.client)], ['Pays de destination', t(sh.destination_country || '—')],
+    ['Conteneur · plomb', t(`${sh.container || '—'} · ${sh.seal || '—'}`)], ['Connaissement · navire', t(`${sh.bill_of_lading || '—'} · ${sh.vessel || '—'}`)],
+    ['Référence DDS (TRACES)', t(sh.dds_reference || 'non renseignée')], ['N° de vérification DDS', t(sh.dds_verification || '—')],
+  ])
+  y = w.section(y, '2. Produits expédiés')
+  y = w.table(y, ['Produit', "Lot d'usinage", 'Sacs', 'Poids'], sh.items.map((i) => [t(i.product_label), t(i.batch_code), String(i.bags || '—'), kg(i.weight_kg)]),
+    ['Total', '', String(sh.items.reduce((s, i) => s + i.bags, 0) || '—'), kg(sh.total_kg)])
+  originSections(w, tr, y, 3)
+  footer(doc, `Certificat d'expédition ${sh.number}`)
+  doc.save(`expedition_${sh.number}.pdf`)
 }

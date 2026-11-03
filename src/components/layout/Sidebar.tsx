@@ -1,7 +1,7 @@
 import { useT, LangSwitch } from '../../i18n'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  Scale, Factory, Truck,
+  Scale, Factory, Truck, Warehouse, Ship, BarChart3,
   LayoutDashboard, Map, Users, MapPin, Building2, UserCog,
   FileBarChart, Leaf, LogOut, ChevronLeft, ChevronRight,
   Activity, Wifi, WifiOff, Satellite, KeyRound, UserCircle, TreePine, BookOpen, ShieldCheck, Crown, Globe2, Scissors, Link2, Package, Layers, FileCheck2, Route, Trash, Search, Bell, Inbox,
@@ -20,6 +20,7 @@ export interface NavItem {
   roles: UserRole[]
   module?: ModuleId // masqué si le module n'est pas dans la licence de l'organisation
   group?: string    // rubrique du menu (titre affiché au-dessus du premier lien de la rubrique)
+  managerOnly?: boolean // compte usine : masqué pour l'opérateur de pesée
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -59,12 +60,15 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Nouveau mapping', to: '/agent/mapping', icon: <Satellite className="w-5 h-5" />, roles: ['agent'], group: 'Terrain' },
   { label: 'Carte', to: '/map', icon: <Map className="w-5 h-5" />, roles: ['agent'], group: 'Terrain' },
   { label: 'Réceptions', to: '/usine', icon: <Truck className="w-5 h-5" />, roles: ['usine'], group: 'Usine' },
-  { label: 'Usinage et transformation', to: '/usine/processing', icon: <Factory className="w-5 h-5" />, roles: ['usine'], group: 'Usine' },
+  { label: 'Stock', to: '/usine/stock', icon: <Warehouse className="w-5 h-5" />, roles: ['usine'], group: 'Usine' },
+  { label: 'Usinage et transformation', to: '/usine/processing', icon: <Factory className="w-5 h-5" />, roles: ['usine'], group: 'Usine', managerOnly: true },
+  { label: 'Expéditions', to: '/usine/shipments', icon: <Ship className="w-5 h-5" />, roles: ['usine'], group: 'Usine', managerOnly: true },
+  { label: 'Tableau de bord', to: '/usine/dashboard', icon: <BarChart3 className="w-5 h-5" />, roles: ['usine'], group: 'Usine', managerOnly: true },
   { label: 'Mon activité', to: '/agent', icon: <LayoutDashboard className="w-5 h-5" />, roles: ['agent'], group: 'Activité' },
   { label: 'Mes parcelles', to: '/agent/parcels', icon: <MapPin className="w-5 h-5" />, roles: ['agent'], group: 'Activité' },
   // Mon compte : tous les rôles
-  { label: 'Notifications', to: '/notifications', icon: <Bell className="w-5 h-5" />, roles: ['owner', 'super_admin', 'cooperative', 'agent'], group: 'Compte' },
-  { label: 'Mon compte', to: '/account', icon: <UserCircle className="w-5 h-5" />, roles: ['owner', 'super_admin', 'cooperative', 'agent'], group: 'Compte' },
+  { label: 'Notifications', to: '/notifications', icon: <Bell className="w-5 h-5" />, roles: ['owner', 'super_admin', 'cooperative', 'agent', 'usine'], group: 'Compte' },
+  { label: 'Mon compte', to: '/account', icon: <UserCircle className="w-5 h-5" />, roles: ['owner', 'super_admin', 'cooperative', 'agent', 'usine'], group: 'Compte' },
 ]
 
 /** Menu latéral ; sur téléphone (< 768 px) c'est un tiroir ouvert par le bouton ☰ de la barre du haut. */
@@ -90,8 +94,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
 
   const role = user?.role ?? 'agent'
   const modules = user?.modules ?? null // null = tous
+  const operator = role === 'usine' && user?.plantRole === 'pesee'
   const filtered = NAV_ITEMS.filter((item) =>
-    item.roles.includes(role) && (!item.module || modules === null || modules.includes(item.module)))
+    item.roles.includes(role) && (!item.module || modules === null || modules.includes(item.module)) && !(operator && item.managerOnly))
 
   const handleLogout = async () => {
     useAppStore.getState().clearData()
@@ -186,7 +191,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
               role === 'owner' ? t('Super Super Admin', 'Platform owner') :
               role === 'super_admin' ? t('Super Administrateur', 'Super administrator') :
               role === 'cooperative' ? t('Coopérative', 'Cooperative') :
-              role === 'usine' ? t('Usine', 'Processing plant') : t('Agent Mappeur', 'Field agent')
+              role === 'usine' ? (user?.plantRole === 'pesee' ? t('Usine · pesée', 'Plant · weighbridge') : t('Usine', 'Processing plant')) : t('Agent Mappeur', 'Field agent')
             }</p>
           </div>
         )}

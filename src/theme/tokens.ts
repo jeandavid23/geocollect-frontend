@@ -24,3 +24,13 @@ export const RISK_TEXT = { faible: '#2c6741', a_verifier: '#9a520c', eleve: '#9b
 
 /** Marque */
 export const BRAND = { forest: '#235535', forestDark: '#183a25', gold: '#e9c98b' } as const
+
+/**
+ * Séries des graphiques (validées daltonisme : protan, deutan, tritan, et contraste ≥ 3:1 sur fond clair).
+ * Les deux natures de parcelles ne prennent pas les couleurs de risque, réservées aux statuts.
+ */
+export const CHART = {
+  series1: '#2e8b4f', series2: '#3b6fd4',                    // ordre fixe : 1re série verte, 2e série bleue
+  mapped: '#2e8b4f', legacy: '#3b6fd4', received: '#2e8b4f', shipped: '#3b6fd4', volume: '#2e8b4f',
+  grid: '#e5e7eb', axis: '#5b6472', track: '#eef0f3',
+} as const

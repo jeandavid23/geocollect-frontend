@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Factory, KeyRound, Plus } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { BarChart3, Factory, KeyRound, Plus } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import { alertDialog, promptDialog } from '../../components/ui/dialog'
 import { useAppStore } from '../../store/appStore'
-import { plantsApi, type Plant } from '../../api/trace'
+import { PLANT_ROLES, plantsApi, TRACE_MODES, type Plant, type PlantRole, type TraceMode } from '../../api/trace'
 import { apiErrorMessage } from '../../utils/retry'
 
 const input = 'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600'
@@ -21,6 +22,30 @@ function CoopPicker({ selected, onChange }: { selected: Set<string>; onChange: (
             onChange={() => { const s = new Set(selected); if (s.has(c.id)) s.delete(c.id); else s.add(c.id); onChange(s) }} />{c.name}
         </label>
       ))}
+    </div>
+  )
+}
+
+/** Mode de traçabilité et seuils d'alerte d'une usine (enregistrés dès qu'ils changent). */
+function PlantSettings({ plant, onSave }: { plant: Plant; onSave: (data: Parameters<typeof plantsApi.update>[1]) => void }) {
+  const [gap, setGap] = useState(String(plant.gap_alert_pct))
+  const [loss, setLoss] = useState(String(plant.loss_alert_pct))
+  const commit = (field: 'gap_alert_pct' | 'loss_alert_pct', v: string, current: number) => {
+    const n = Number(v.replace(',', '.'))
+    if (n > 0 && n !== current) onSave({ [field]: n })
+  }
+  return (
+    <div className="grid grid-cols-1 gap-3 rounded-xl bg-gray-50 p-3 sm:grid-cols-3">
+      <label className="text-xs text-gray-600 sm:col-span-3">Mode de traçabilité
+        <select value={plant.traceability_mode} onChange={(e) => onSave({ traceability_mode: e.target.value as TraceMode })} className={input}>
+          {(Object.keys(TRACE_MODES) as TraceMode[]).map((m) => <option key={m} value={m}>{TRACE_MODES[m].label}</option>)}
+        </select>
+        <span className="mt-1 block text-gray-500">{TRACE_MODES[plant.traceability_mode].help}</span>
+      </label>
+      <label className="text-xs text-gray-600">Alerte écart de transport (%)
+        <input inputMode="decimal" value={gap} onChange={(e) => setGap(e.target.value)} onBlur={() => commit('gap_alert_pct', gap, plant.gap_alert_pct)} className={input} /></label>
+      <label className="text-xs text-gray-600">Alerte perte à l'usinage (%)
+        <input inputMode="decimal" value={loss} onChange={(e) => setLoss(e.target.value)} onBlur={() => commit('loss_alert_pct', loss, plant.loss_alert_pct)} className={input} /></label>
     </div>
   )
 }
@@ -44,12 +69,15 @@ export default function PlantsPage() {
   const update = async (p: Plant, data: Parameters<typeof plantsApi.update>[1]) => {
     try { await plantsApi.update(p.id, data); load() } catch (err) { await alertDialog({ tone: 'danger', title: 'Modification impossible', message: apiErrorMessage(err) }) }
   }
-  const account = async (p: Plant) => {
-    const username = await promptDialog({ title: `Compte pour ${p.name}`, label: 'Identifiant de connexion', placeholder: 'usine.sanpedro',
+  const setRole = async (p: Plant, user: string, role: PlantRole) => {
+    try { await plantsApi.setRole(p.id, user, role); load() } catch (err) { await alertDialog({ tone: 'danger', title: 'Modification impossible', message: apiErrorMessage(err) }) }
+  }
+  const account = async (p: Plant, role: PlantRole) => {
+    const username = await promptDialog({ title: `${PLANT_ROLES[role].label} — ${p.name}`, label: 'Identifiant de connexion', placeholder: 'usine.sanpedro',
       confirmLabel: 'Créer le compte', validate: (v) => (/^[\w.@+-]{3,}$/.test(v.trim()) ? null : '3 caractères au moins, sans espace.') })
     if (!username) return
     try {
-      const { data } = await plantsApi.createAccount(p.id, { username: username.trim(), full_name: p.name })
+      const { data } = await plantsApi.createAccount(p.id, { username: username.trim(), full_name: p.name, plant_role: role })
       await alertDialog({ tone: 'success', title: 'Compte usine créé', message: `Identifiant : ${data.username}\nMot de passe provisoire : ${data.temporary_password}\n\nTransmettez-le à l'usine : il devra être changé à la première connexion. Il ne sera plus affiché.` })
       load()
     } catch (err) { await alertDialog({ tone: 'danger', title: 'Création impossible', message: apiErrorMessage(err) }) }
@@ -59,8 +87,9 @@ export default function PlantsPage() {
     <div className="space-y-5 p-4 sm:p-6">
       <Header title="Usines" subtitle="Usines et magasins d'exportation qui reçoivent les lots de vos coopératives" />
       <p className="rounded-xl bg-blue-50 p-3 text-sm text-blue-900">
-        Un compte usine voit uniquement les fiches d'accompagnement qui lui sont adressées : il enregistre la réception, l'usinage et la
-        transformation, et édite le certificat de traçabilité. Il n'a pas accès aux producteurs ni aux autres données des coopératives.
+        Un compte usine voit uniquement les fiches d'accompagnement qui lui sont adressées. Le <b>responsable d'usine</b> enregistre la réception
+        (poids, contrôle qualité), l'usinage, la transformation et les expéditions, et édite les certificats ; l'<b>opérateur de pesée</b> ne fait que
+        réceptionner les camions. Aucun n'a accès aux producteurs ni aux autres données des coopératives.
       </p>
       {!adding && <Button icon={<Plus className="h-4 w-4" />} onClick={() => setAdding(true)}>Nouvelle usine</Button>}
       {adding && (
@@ -86,16 +115,29 @@ export default function PlantsPage() {
                 <Factory className="mt-1 h-5 w-5 text-primary-700" />
                 <div><p className="font-semibold text-gray-900">{p.name}</p><p className="text-sm text-gray-500">{p.location || '—'}</p></div>
                 <span className="flex-1" />
+                <Link to={`/admin/plants/${p.id}`} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-primary-700 hover:bg-primary-50"><BarChart3 className="h-4 w-4" />Activité</Link>
                 <Button size="sm" variant={p.is_active ? 'secondary' : 'subtle'} onClick={() => update(p, { is_active: !p.is_active })}>{p.is_active ? 'Désactiver' : 'Réactiver'}</Button>
               </div>
               <div><p className="mb-1 text-xs text-gray-500">Coopératives qui la livrent</p>
                 <CoopPicker selected={new Set(p.cooperatives.map((c) => c.id))} onChange={(s) => update(p, { cooperatives: [...s] })} /></div>
               <div>
                 <p className="mb-1 text-xs text-gray-500">Comptes</p>
-                {(p.accounts ?? []).length ? <ul className="text-sm">{p.accounts!.map((a) => <li key={a.id}>{a.full_name} <span className="text-gray-400">· {a.username}{a.is_active ? '' : ' (désactivé)'}</span></li>)}</ul>
+                {(p.accounts ?? []).length ? <ul className="divide-y divide-gray-100 text-sm">{p.accounts!.map((a) => (
+                  <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
+                    <span>{a.full_name} <span className="text-gray-400">· {a.username}{a.is_active ? '' : ' (désactivé)'}</span></span>
+                    <select aria-label={`Rôle de ${a.username}`} value={a.plant_role} onChange={(e) => setRole(p, a.id, e.target.value as PlantRole)}
+                      className="rounded-md border border-gray-300 px-2 py-1 text-xs">
+                      {(Object.keys(PLANT_ROLES) as PlantRole[]).map((r) => <option key={r} value={r}>{PLANT_ROLES[r].label}</option>)}
+                    </select>
+                  </li>))}</ul>
                   : <p className="text-sm text-gray-500">Aucun compte.</p>}
-                <Button className="mt-2" size="sm" variant="ghost" icon={<KeyRound className="h-4 w-4" />} onClick={() => account(p)}>Créer un compte usine</Button>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {(Object.keys(PLANT_ROLES) as PlantRole[]).map((r) => (
+                    <Button key={r} size="sm" variant="ghost" icon={<KeyRound className="h-4 w-4" />} onClick={() => account(p, r)}>Compte {PLANT_ROLES[r].label.toLowerCase()}</Button>
+                  ))}
+                </div>
               </div>
+              <PlantSettings key={`${p.traceability_mode}${p.gap_alert_pct}${p.loss_alert_pct}`} plant={p} onSave={(data) => update(p, data)} />
             </section>
           ))}
         </div>

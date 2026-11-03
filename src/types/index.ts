@@ -31,6 +31,7 @@ export interface User {
   // Compte « usine » : l'usine représentée
   plantId?: string
   plantName?: string
+  plantRole?: 'responsable' | 'pesee'      // compte usine : l'opérateur de pesée ne fait que réceptionner
   // Modules autorisés pour l'organisation (null / absent = tous)
   modules?: ModuleId[] | null
   // Licence du super admin (son abonnement)

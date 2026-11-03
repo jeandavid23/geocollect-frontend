@@ -68,6 +68,10 @@ const TraceabilityPage = lazy(() => import('./pages/coop/TraceabilityPage'))
 const PlantsPage = lazy(() => import('./pages/admin/PlantsPage'))
 const PlantReceptionsPage = lazy(() => import('./pages/usine/PlantReceptionsPage'))
 const PlantProcessingPage = lazy(() => import('./pages/usine/PlantProcessingPage'))
+const PlantStockPage = lazy(() => import('./pages/usine/PlantStockPage'))
+const PlantShipmentsPage = lazy(() => import('./pages/usine/PlantShipmentsPage'))
+const PlantDashboardPage = lazy(() => import('./pages/usine/PlantDashboardPage'))
+const PlantDetailPage = lazy(() => import('./pages/admin/PlantDetailPage'))
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuthStore()
@@ -145,6 +149,7 @@ export default function App() {
           <Route path="/admin/agents" element={<AdminAgentsPage />} />
           <Route path="/admin/accounts" element={<AccountsPage />} />
           <Route path="/admin/plants" element={<RequireModule module="lots"><PlantsPage /></RequireModule>} />
+          <Route path="/admin/plants/:id" element={<RequireModule module="lots"><PlantDetailPage /></RequireModule>} />
           <Route path="/admin/logs" element={<LogsPage />} />
           <Route path="/admin/reports" element={<AdminReportsPage />} />
         </Route>
@@ -197,6 +202,9 @@ export default function App() {
         >
           <Route path="/usine" element={<PlantReceptionsPage />} />
           <Route path="/usine/processing" element={<PlantProcessingPage />} />
+          <Route path="/usine/stock" element={<PlantStockPage />} />
+          <Route path="/usine/shipments" element={<PlantShipmentsPage />} />
+          <Route path="/usine/dashboard" element={<PlantDashboardPage />} />
         </Route>
 
         {/* Pages communes à tous les rôles (déclarées une seule fois : sinon la première

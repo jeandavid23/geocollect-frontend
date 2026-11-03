@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, Factory, FileText, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Factory, FileSpreadsheet, FileText, Plus, Trash2 } from 'lucide-react'
 import Button from '../ui/Button'
 import EmptyState from '../ui/EmptyState'
 import { availableForProcessing, OPERATION_LABEL, OUTPUT_PRODUCTS, processingApi, type Available, type Operation, type OutputProduct, type ProcessingBatch, type ProcessingPayload, type Trace } from '../../api/trace'
 import { useAuthStore } from '../../store/authStore'
 import { processingPdf } from '../../utils/traceSheets'
+import { exportExcel } from '../../utils/featureExport'
 import { fr } from '../../utils/lotSheet'
 import { apiErrorMessage } from '../../utils/retry'
 import TraceChain from './TraceChain'
@@ -101,8 +102,9 @@ function BatchDetail({ batch, onBack }: { batch: ProcessingBatch; onBack: () => 
           <div>
             <p className="font-mono text-sm text-gray-500">{batch.code}</p>
             <p className="font-serif text-2xl font-semibold text-gray-900">{OPERATION_LABEL[batch.operation]} · {batch.plant}</p>
-            <p className="mt-1 text-sm text-gray-600">{new Date(batch.process_date).toLocaleDateString('fr-FR')} · {fr(batch.input_kg)} kg entrés · {fr(batch.output_kg)} kg obtenus · perte {fr(batch.loss_pct)} %</p>
-            {batch.loss_warning && <p className="mt-1 text-sm text-amber-700">Perte supérieure à 15 % : à justifier (humidité, tri, déchets).</p>}
+            <p className="mt-1 text-sm text-gray-600">{new Date(batch.process_date).toLocaleDateString('fr-FR')} · {fr(batch.input_kg)} kg entrés · {fr(batch.output_kg)} kg obtenus · perte {fr(batch.loss_pct)} %
+              {batch.compliant_share_pct != null && <> · origine vérifiée {fr(batch.compliant_share_pct)} %</>}</p>
+            {batch.loss_warning && <p className="mt-1 text-sm text-warning-text">Perte au-delà du seuil d'alerte de l'usine : à justifier (humidité, tri, déchets).</p>}
           </div>
           <span className="flex-1" />
           <Button icon={<FileText className="h-4 w-4" />} loading={busy} disabledReason={!trace ? 'Chaîne en cours de chargement' : undefined}
@@ -115,6 +117,15 @@ function BatchDetail({ batch, onBack }: { batch: ProcessingBatch; onBack: () => 
       {trace ? <TraceChain trace={trace} /> : <p className="text-sm text-gray-500">Remontée de la chaîne…</p>}
     </div>
   )
+}
+
+function excelRows(batches: ProcessingBatch[]) {
+  return batches.map((b) => ({
+    lot_usinage: b.code, operation: OPERATION_LABEL[b.operation], usine: b.plant, date: b.process_date, statut: b.status,
+    cooperatives: b.cooperatives.join(', '), entrees: b.inputs.map((i) => `${i.lot_code ?? i.batch_code} (${i.weight_kg} kg)`).join(', '),
+    produits: b.outputs.map((o) => `${o.product_label} (${o.weight_kg} kg)`).join(', '), entre_kg: b.input_kg, obtenu_kg: b.output_kg,
+    perte_kg: b.loss_kg, perte_pct: b.loss_pct, origine_verifiee_pct: b.compliant_share_pct,
+  }))
 }
 
 export default function ProcessingTab() {
@@ -131,7 +142,11 @@ export default function ProcessingTab() {
   if (typeof mode === 'object') return <BatchDetail batch={mode} onBack={() => setMode('list')} />
   return (
     <div className="space-y-4">
-      <Button icon={<Plus className="h-4 w-4" />} onClick={() => setMode('new')}>Nouveau lot d'usinage / transformation</Button>
+      <div className="flex flex-wrap gap-2">
+        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setMode('new')}>Nouveau lot d'usinage / transformation</Button>
+        {batches && batches.length > 0 && <Button variant="secondary" icon={<FileSpreadsheet className="h-4 w-4" />}
+          onClick={() => exportExcel([{ name: "Lots d'usinage", rows: excelRows(batches) }], `usinage_${new Date().toISOString().slice(0, 10)}.xlsx`)}>Excel</Button>}
+      </div>
       <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
         {batches === null ? <p className="p-6 text-sm text-gray-500">Chargement…</p> : batches.length === 0 ? (
           <EmptyState icon={<Factory className="h-7 w-7" />} title="Aucun lot d'usinage"
@@ -146,7 +161,7 @@ export default function ProcessingTab() {
                   <td className="px-4 py-2.5">{b.plant}</td><td className="px-4 py-2.5">{new Date(b.process_date).toLocaleDateString('fr-FR')}</td>
                   <td className="px-4 py-2.5 text-xs">{b.inputs.map((i) => i.lot_code ?? i.batch_code).join(', ')}<span className="block text-gray-500">{fr(b.input_kg)} kg</span></td>
                   <td className="px-4 py-2.5 text-xs">{b.outputs.filter((o) => !o.byproduct).map((o) => o.product_label).join(', ')}<span className="block text-gray-500">{fr(b.output_kg)} kg</span></td>
-                  <td className={`px-4 py-2.5 tabular-nums ${b.loss_warning ? 'text-amber-700' : ''}`}>{fr(b.loss_pct)} %</td>
+                  <td className={`px-4 py-2.5 tabular-nums ${b.loss_warning ? 'font-semibold text-warning-text' : ''}`}>{fr(b.loss_pct)} %</td>
                 </tr>
               ))}
             </tbody>
