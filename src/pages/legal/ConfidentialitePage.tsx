@@ -32,7 +32,9 @@ export default function ConfidentialitePage() {
       <h3>Utilisateurs de la Plateforme</h3>
       <ul>
         <li>identifiant de connexion, nom, e-mail, téléphone, rôle, photo de profil (facultative) ;</li>
-        <li>journaux techniques : date de connexion et adresse IP, à des fins de sécurité.</li>
+        <li>journaux techniques : date de connexion et adresse IP, à des fins de sécurité ;</li>
+        <li>statistiques d'utilisation : pages de l'application ouvertes, date et heure, type d'appareil (sans identifiant de
+          parcelle ni de producteur dans l'adresse). Elles sont calculées par GeoCollect, sans service tiers ni cookie publicitaire.</li>
       </ul>
 
       <h2>3. Finalités</h2>
@@ -40,6 +42,8 @@ export default function ConfidentialitePage() {
         <li>la cartographie et le suivi des parcelles et des producteurs ;</li>
         <li>le contrôle de conformité au règlement EUDR / RDUE et la traçabilité ;</li>
         <li>la gestion des comptes et de la sécurité ;</li>
+        <li>le suivi de l'utilisation de la Plateforme par les comptes, consultable par le propriétaire, le super admin
+          (client) et la coopérative pour leurs propres comptes ;</li>
         <li>la production de rapports et d'exports pour la coopérative et ses acheteurs.</li>
       </ul>
 
@@ -62,6 +66,7 @@ export default function ConfidentialitePage() {
       <p>
         Les données sont conservées tant que la coopérative utilise la Plateforme et aussi longtemps que nécessaire au
         respect des obligations de traçabilité EUDR, puis supprimées ou anonymisées sur demande du responsable du traitement.
+        Les statistiques d'utilisation (pages vues) sont effacées automatiquement après 180 jours.
       </p>
 
       <h2>7. Partage des données</h2>

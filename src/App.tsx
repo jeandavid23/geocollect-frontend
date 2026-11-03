@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import UsageTracker from './components/layout/UsageTracker'
 import { DialogHost } from './components/ui/dialog'
 import { useEffect, lazy, Suspense } from 'react'
 import { useAppStore } from './store/appStore'
@@ -73,6 +74,7 @@ const PlantShipmentsPage = lazy(() => import('./pages/usine/PlantShipmentsPage')
 const PlantDashboardPage = lazy(() => import('./pages/usine/PlantDashboardPage'))
 const PlantDetailPage = lazy(() => import('./pages/admin/PlantDetailPage'))
 const CoopPlantsPage = lazy(() => import('./pages/coop/CoopPlantsPage'))
+const UsagePage = lazy(() => import('./pages/shared/UsagePage'))
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuthStore()
@@ -112,6 +114,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <UsageTracker />
       <DialogHost />
       {/* chaque page est chargée à l'ouverture (premier affichage plus rapide sur réseau mobile) */}
       <Suspense fallback={<PageLoader />}>
@@ -151,6 +154,7 @@ export default function App() {
           <Route path="/admin/accounts" element={<AccountsPage />} />
           <Route path="/admin/plants" element={<RequireModule module="lots"><PlantsPage /></RequireModule>} />
           <Route path="/admin/plants/:id" element={<RequireModule module="lots"><PlantDetailPage /></RequireModule>} />
+          <Route path="/admin/usage" element={<UsagePage />} />
           <Route path="/admin/logs" element={<LogsPage />} />
           <Route path="/admin/reports" element={<AdminReportsPage />} />
         </Route>
@@ -177,6 +181,7 @@ export default function App() {
           <Route path="/coop/lots" element={<RequireModule module="lots"><LotsPage /></RequireModule>} />
           <Route path="/coop/traceability" element={<RequireModule module="lots"><TraceabilityPage /></RequireModule>} />
           <Route path="/coop/plants" element={<RequireModule module="lots"><CoopPlantsPage /></RequireModule>} />
+          <Route path="/coop/usage" element={<UsagePage />} />
           <Route path="/coop/registry" element={<RequireModule module="registry"><Suspense fallback={<p className="p-6 text-gray-500">Chargement du registre…</p>}><RegistryPage /></Suspense></RequireModule>} />
         </Route>
 
