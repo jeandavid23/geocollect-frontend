@@ -42,7 +42,11 @@ function SlipForm({ lot, onSaved }: { lot: Lot; onSaved: (s: TransportSlip) => v
   const [error, setError] = useState('')
   const [plants, setPlants] = useState<Plant[]>([])
   const [plant, setPlant] = useState('')
-  useEffect(() => { plantsApi.list().then(({ data }) => setPlants(data)).catch(() => setPlants([])) }, [])
+  const [plantsLoaded, setPlantsLoaded] = useState(false)
+  useEffect(() => {
+    plantsApi.list().then(({ data }) => { setPlants(data); if (data.length) setPlant(data[0].id) })    // l'usine rattachée par défaut
+      .catch(() => setPlants([])).finally(() => setPlantsLoaded(true))
+  }, [])
   const save = async () => {
     setBusy(true); setError('')
     try {
@@ -56,10 +60,15 @@ function SlipForm({ lot, onSaved }: { lot: Lot; onSaved: (s: TransportSlip) => v
     <div className="rounded-xl border border-gray-200 p-4">
       <p className="text-sm font-semibold text-gray-900">Nouvelle fiche d'accompagnement</p>
       <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
+        {plantsLoaded && plants.length === 0 && (
+          <p className="rounded-lg bg-warning-bg p-3 text-sm text-warning-text md:col-span-3">Aucune usine n'est rattachée à votre coopérative dans
+            GeoCollect : cette fiche partira vers une destination libre et <b>aucune usine ne la recevra</b>. Demandez à votre super admin de rattacher
+            l'usine à votre coopérative (menu Usines).</p>
+        )}
         {plants.length > 0 && (
           <label className="text-xs text-gray-600 md:col-span-3">Usine destinataire (elle reçoit la fiche et enregistre la réception dans GeoCollect)
             <select value={plant} onChange={(e) => setPlant(e.target.value)} className={input}>
-              <option value="">Autre destination (saisie libre)</option>{plants.map((p) => <option key={p.id} value={p.id}>{p.name}{p.location ? ` — ${p.location}` : ''}</option>)}
+              <option value="">Autre destination, hors GeoCollect (l'usine ne la recevra pas)</option>{plants.map((p) => <option key={p.id} value={p.id}>{p.name}{p.location ? ` — ${p.location}` : ''}</option>)}
             </select>
           </label>
         )}
@@ -134,7 +143,8 @@ export default function TransportSlips({ lot, onLotChanged, plant }: { lot?: Lot
                 <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{s.number}</td><td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{s.lot_code}</td>
                 <td className="px-3 py-2">{new Date(s.issued_at).toLocaleDateString('fr-FR')}</td>
                 <td className="px-3 py-2">{s.vehicle_plate}<span className="block text-xs text-gray-400">{s.driver_name}</span></td>
-                <td className="px-3 py-2">{s.destination}{(isPlant || readOnly) && <span className="block text-xs text-gray-400">{s.cooperative_name}</span>}</td>
+                <td className="px-3 py-2">{s.destination}{(isPlant || readOnly) && <span className="block text-xs text-gray-400">{s.cooperative_name}</span>}
+                  {!s.plant && !isPlant && <span className="block text-xs text-warning-text" title="Destination libre : aucune usine ne reçoit cette fiche dans GeoCollect">hors GeoCollect</span>}</td>
                 <td className="whitespace-nowrap px-3 py-2 tabular-nums">{fr(Number(s.gross_weight_kg))} kg</td>
                 <td className="whitespace-nowrap px-3 py-2 tabular-nums">{s.received_weight_kg ? <>{fr(Number(s.received_weight_kg))} kg<span className={`block text-xs ${Math.abs(s.weight_gap_pct ?? 0) > GAP_ALERT_PCT ? 'font-semibold text-danger-text' : 'text-gray-400'}`}>écart {fr(s.weight_gap_kg ?? 0)} kg</span></> : '—'}</td>
                 <td className="px-3 py-2 text-xs">{s.quality?.grade ?? (s.decision ? '' : '—')}

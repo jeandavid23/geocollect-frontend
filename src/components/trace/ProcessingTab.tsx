@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ArrowLeft, Factory, FileSpreadsheet, FileText, Plus, Trash2 } from 'lucide-react'
 import Button from '../ui/Button'
 import EmptyState from '../ui/EmptyState'
-import { availableForProcessing, OPERATION_LABEL, OUTPUT_PRODUCTS, processingApi, type Available, type Operation, type OutputProduct, type ProcessingBatch, type ProcessingPayload, type Trace } from '../../api/trace'
+import { availableForProcessing, OPERATION_LABEL, OUTPUT_PRODUCTS, plantOpsApi, processingApi, type Available, type PlantStock, type Operation, type OutputProduct, type ProcessingBatch, type ProcessingPayload, type Trace } from '../../api/trace'
 import { useAuthStore } from '../../store/authStore'
 import { processingPdf } from '../../utils/traceSheets'
 import { exportExcel } from '../../utils/featureExport'
@@ -15,6 +16,32 @@ const input = `mt-1 w-full ${field}`        // champ de formulaire pleine largeu
 const cell = `${field} min-w-0`             // champ d'une ligne (entrées, produits) : largeur donnée à l'appel
 type InRow = { source: string; weight: string }          // source = « lot:<id> » ou « batch:<id> »
 type OutRow = { product: OutputProduct; weight: string; reference: string }
+
+/** Pourquoi aucun lot n'est usinable, et quoi faire (compte usine : camions en route à réceptionner). */
+function NoLotsHint() {
+  const isPlant = useAuthStore((s) => s.user?.role === 'usine')
+  const [onTheWay, setOnTheWay] = useState<PlantStock['on_the_way'] | null>(null)
+  useEffect(() => { if (isPlant) plantOpsApi.stock().then(({ data }) => setOnTheWay(data.on_the_way)).catch(() => setOnTheWay([])) }, [isPlant])
+  const box = 'mt-2 rounded-lg bg-warning-bg p-3 text-sm text-warning-text'
+  if (!isPlant) return <p className={box}>Aucun lot disponible : un lot devient usinable quand il est validé puis expédié (fiche d'accompagnement émise).</p>
+  if (onTheWay === null) return null
+  if (onTheWay.length) return (
+    <p className={box}>{onTheWay.length} camion(s) en route vers votre usine ({onTheWay.map((s) => `lot ${s.lot}`).join(', ')}) :
+      enregistrez d'abord leur réception (poids à l'arrivée) dans <Link to="/usine" className="font-semibold underline">Réceptions</Link>.
+      Le lot devient alors disponible ici.</p>
+  )
+  return (
+    <div className={box}>
+      <p className="font-semibold">Aucune fiche d'accompagnement n'est adressée à votre usine.</p>
+      <ol className="mt-1 list-decimal pl-5">
+        <li>la coopérative valide le lot (fiche de lot, contrôles EUDR levés) ;</li>
+        <li>elle émet la fiche d'accompagnement en choisissant <b>votre usine</b> comme destination (pas une destination libre) ;</li>
+        <li>vous enregistrez la réception du camion dans <Link to="/usine" className="font-semibold underline">Réceptions</Link>.</li>
+      </ol>
+      <p className="mt-1">Si votre usine n'apparaît pas dans la liste de la coopérative, son super admin doit la rattacher à la coopérative (menu Usines).</p>
+    </div>
+  )
+}
 
 function BatchForm({ stock, onSaved, onCancel }: { stock: Available; onSaved: (b: ProcessingBatch) => void; onCancel: () => void }) {
   const ownPlant = useAuthStore((s) => s.user?.plantName)        // compte usine : toujours son usine
@@ -62,7 +89,7 @@ function BatchForm({ stock, onSaved, onCancel }: { stock: Available; onSaved: (b
           </div>
         ))}
         <Button className="mt-2" size="sm" variant="ghost" icon={<Plus className="h-4 w-4" />} onClick={() => setIns([...ins, { source: '', weight: '' }])}>Ajouter une entrée</Button>
-        {sources.length === 0 && <p className="mt-1 text-xs text-amber-700">Aucun lot disponible : un lot devient disponible quand sa fiche d'accompagnement est émise (vers cette usine pour un compte usine).</p>}
+        {sources.length === 0 && <NoLotsHint />}
       </div>
       <div>
         <p className="text-sm font-medium text-gray-800">Produits obtenus</p>
