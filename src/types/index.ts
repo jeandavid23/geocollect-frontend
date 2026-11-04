@@ -128,6 +128,7 @@ export interface Producer {
   totalHectares?: number
   legacyPolygonCount?: number   // anciens polygones rattachés par le code du registre
   polygonCount?: number         // parcelles mappées + anciens polygones
+  registryParcelCount?: number  // parcelles du registre (une ligne par parcelle : code parcelle)
   toMap?: boolean               // aucun polygone : à cartographier par les agents
   // Toutes les colonnes du fichier Excel importé, sous leur entête d'origine
   extraData?: Record<string, unknown>
@@ -143,6 +144,10 @@ export interface LegacyParcel {
   properties: Record<string, unknown>
   areaHectares: number | null
   sourceFile: string
+  code?: string                 // code producteur lu dans les attributs
+  parcelCode?: string           // code parcelle lu dans les attributs
+  producerId?: string | null    // producteur du registre rattaché
+  registryParcelId?: string | null
   createdAt: string
 }
 

@@ -16,6 +16,7 @@ export interface CreateProducerPayload {
   // Champs GMR facultatifs
   national_farm_id?: string
   code?: string            // code du producteur TEL QUE DANS LE REGISTRE (devient son identifiant)
+  parcel_code?: string     // code parcelle (registre : une ligne par parcelle, le code producteur se répète)
   district?: string
   total_area_ha?: number
   estimated_production_kg?: number | string | null   // « Total estimate production (current year) » du registre
@@ -40,6 +41,19 @@ export interface MatchStats {
   legacy_polygons: number; linked_polygons: number; orphan_polygons: number; polygons_without_code: number
   fields?: string[]; suggested_field?: string | null; suggested_matches?: number
   unmatched_codes?: string[]; ambiguous_codes?: string[]
+  registry_parcels?: number; registry_parcels_with_polygon?: number; registry_parcels_without_polygon?: number
+}
+
+export interface ProducerParcels {
+  registry_parcels: { id: string; parcel_code: string; area_ha: number | null; estimated_production_kg: number | null
+    polygons: number; polygon_area_ha: number }[]
+  unassigned_polygons: { id: string; code: string; parcel_code: string; area_ha: number | null; source_file: string }[]
+  mapped_parcels: { field_id: string; area_ha: number | null; eudr_status: string }[]
+}
+export interface RegistryExport {
+  cooperative: string
+  rows: Record<string, string | number | null>[]
+  unlinked_polygons: Record<string, string | number | null>[]
 }
 
 export interface BulkImportResult {
@@ -53,7 +67,13 @@ export const producersApi = {
   update: (id: string, data: Record<string, unknown>) => api.patch<Record<string, unknown>>(`/producers/${id}/`, data),
   remove: (id: string) => api.delete(`/producers/${id}/`),
   bulkDelete: (ids: string[]) => api.post<{ deleted: number; protected: number; protected_codes: string[] }>('/producers/bulk-delete/', { ids }, { timeout: 120000 }),
-  match: (codeField?: string | null, cooperative?: string) => api.post<MatchStats>('/producers/match/', { code_field: codeField ?? null, cooperative }, { timeout: 180000 }),
+  // parcelles du registre d'un producteur et polygones rattachés
+  parcels: (id: string) => api.get<ProducerParcels>(`/producers/${id}/parcels/`),
+  // registre normalisé de la coopérative (une ligne par parcelle)
+  registryExport: (cooperative?: string) =>
+    api.get<RegistryExport>('/producers/registry-export/', { params: cooperative ? { cooperative } : undefined, timeout: 180000 }),
+  match: (codeField?: string | null, cooperative?: string, parcelField?: string | null) =>
+    api.post<MatchStats>('/producers/match/', { code_field: codeField ?? null, parcel_field: parcelField ?? null, cooperative }, { timeout: 180000 }),
   recodeInfo: (cooperative?: string) => api.get<{ columns: { name: string; filled: number }[]; suggested: string | null; preview: RecodeReport | null }>('/producers/recode/', { params: cooperative ? { cooperative } : undefined }),
   recode: (column: string, apply: boolean, cooperative?: string) => api.post<RecodeReport & { applied: boolean; match?: MatchStats }>('/producers/recode/', { column, apply, cooperative }, { timeout: 180000 }),
   purgeInfo: (cooperative?: string) => api.get<{ cooperative: string; producers: number; protected: number; registry_sheets: number }>('/producers/purge/', { params: cooperative ? { cooperative } : undefined }),

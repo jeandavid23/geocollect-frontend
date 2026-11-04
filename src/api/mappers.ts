@@ -84,6 +84,7 @@ export function mapProducer(p: Any): Producer {
     totalHectares: n(p.total_hectares),
     legacyPolygonCount: n(p.legacy_polygon_count),
     polygonCount: n(p.polygon_count),
+    registryParcelCount: n(p.registry_parcel_count),
     // ancien serveur sans ce champ : « à mapper » si aucune parcelle mappée
     toMap: p.to_map === undefined ? n(p.parcel_count) === 0 : p.to_map === true,
     extraData: (p.extra_data && typeof p.extra_data === 'object') ? p.extra_data as Record<string, unknown> : undefined,
@@ -99,6 +100,10 @@ export function mapLegacyParcel(p: Any): LegacyParcel {
     properties: (p.properties as Record<string, unknown>) ?? {},
     areaHectares: p.area_hectares != null ? n(p.area_hectares) : null,
     sourceFile: s(p.source_file),
+    code: s(p.code),
+    parcelCode: s(p.parcel_code),
+    producerId: p.producer ? s(p.producer) : null,
+    registryParcelId: p.registry_parcel ? s(p.registry_parcel) : null,
     createdAt: s(p.created_at),
   }
 }

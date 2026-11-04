@@ -93,9 +93,13 @@ export interface ProducerField {
 export const PRODUCER_FIELDS: ProducerField[] = [
   // Code du registre : devient l'identifiant du producteur (jamais régénéré) et sert au croisement avec les polygones
   { key: 'producerCode', label: 'Code producteur (registre)', api: 'code', kind: 'code',
-    aliases: ['code producteur', 'code planteur', 'code du producteur', 'code agriculteur', 'code membre', 'code parcelle',
-      'code', 'id producteur', 'matricule', 'numero producteur', 'n producteur', 'field id', 'fieldid', 'field_id', 'code prod', 'codeproducteur',
+    aliases: ['code producteur', 'code planteur', 'code du producteur', 'code agriculteur', 'code membre',
+      'code', 'id producteur', 'matricule', 'numero producteur', 'n producteur', 'code prod', 'codeproducteur', 'farmer id', 'farmer code',
       'identifiant interne unique', 'identifiant interne unique d exploitation agricole', 'identifiant interne'] },
+  // Registre une ligne par parcelle : le code parcelle relie la ligne au polygone de la parcelle
+  { key: 'parcelCode', label: 'Code parcelle', api: 'parcel_code', kind: 'text',
+    aliases: ['code parcelle', 'code parcel', 'code de la parcelle', 'code parc', 'parcel code', 'parcel id', 'id parcelle', 'plot id',
+      'plot code', 'farm plot id', 'field id', 'fieldid', 'field_id', 'numero parcelle', 'n parcelle'] },
   { key: 'lastName', label: 'Nom', api: 'last_name', kind: 'text',
     aliases: ['nom', 'nom producteur', 'nom du producteur', 'nom planteur', 'last name', 'lastname', 'surname', 'nom de famille'] },
   { key: 'firstName', label: 'Prénom(s)', api: 'first_name', kind: 'text',

@@ -10,6 +10,13 @@ import { LEGACY_COLOR } from './LegacyParcelsLayer'
 import { withRetry, apiErrorMessage } from '../../utils/retry'
 
 const CHUNK = 1000
+// colonnes reconnues d'office (le registre : une ligne par parcelle, code producteur + code parcelle)
+const PRODUCER_COLUMNS = ['code producteur', 'code planteur', 'code prod', 'farmer id', 'farmer code', 'producer code', 'matricule',
+  'id producteur', 'prod', 'code']
+const PARCEL_COLUMNS = ['code parcelle', 'code parcel', 'code parc', 'parcel code', 'parcel id', 'id parcelle', 'plot id', 'plot code',
+  'farm plot id', 'field id', 'fieldid', 'farm id']
+const normCol = (k: string) => k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+const guessColumn = (keys: string[], names: string[]) => names.map((n) => keys.find((k) => normCol(k) === n)).find(Boolean)
 
 interface Props {
   onClose: () => void
@@ -29,6 +36,7 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
   const [sources, setSources] = useState<LegacySource[]>([])
   const [progress, setProgress] = useState('')
   const [codeField, setCodeField] = useState('')
+  const [parcelField, setParcelField] = useState('')
 
   const refreshSources = async () => {
     try {
@@ -49,11 +57,12 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
       if (!result.features.length) throw new Error('Aucun polygone trouvé dans ce fichier.')
       setParsed(result)
       const keys = Object.keys(result.features[0]?.properties ?? {})
-      const norm = (k: string) => k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
-      const pref = ['code producteur', 'code planteur', 'farmer id', 'prod', 'code parcelle', 'farm id', 'field id', 'fieldid', 'code', 'matricule', 'id producteur']
+      const parcel = guessColumn(keys, PARCEL_COLUMNS) ?? keys.find((k) => /parc|plot/.test(normCol(k))) ?? ''
+      setParcelField(parcel)
       // à défaut, « Name » (shapefiles et KML) porte souvent le code de parcelle : SPAM-BE-001-P1
-      setCodeField(pref.map((p) => keys.find((k) => norm(k) === p)).find(Boolean) ?? keys.find((k) => norm(k).includes('code'))
-        ?? keys.find((k) => ['name', 'nom'].includes(norm(k))) ?? '')
+      setCodeField(guessColumn(keys.filter((k) => k !== parcel), PRODUCER_COLUMNS)
+        ?? keys.find((k) => k !== parcel && normCol(k).includes('code'))
+        ?? (parcel ? '' : keys.find((k) => ['name', 'nom'].includes(normCol(k)))) ?? '')
     } catch (err) {
       setError(errorMessage(err))
     } finally {
@@ -77,19 +86,19 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
         const label = `Enregistrement… ${Math.min(start + CHUNK, total)}/${total}`
         setProgress(label)
         const { data } = await withRetry(
-          () => legacyApi.import(parsed.sourceName, chunk, start === 0, cooperativeId, start === 0, codeField),
+          () => legacyApi.import(parsed.sourceName, chunk, start === 0, cooperativeId, start === 0, codeField, parcelField),
           3,
           (n) => setProgress(`${label} (nouvelle tentative ${n}/2)`),
         )
         created += data.created
       }
       // croisement complet registre ↔ polygones (producteurs avec polygones / à mapper)
-      if (codeField) {
+      if (codeField || parcelField) {
         setProgress('Croisement avec le registre des producteurs…')
         try {
-          const { data: m } = await producersApi.match(codeField, cooperativeId)
+          const { data: m } = await producersApi.match(codeField || null, cooperativeId, parcelField || null)
           addNotification({ type: 'success', title: 'Croisement avec le registre',
-            message: `${m.linked_polygons} polygone(s) rattaché(s) · ${m.mapped_producers} producteur(s) cartographié(s) · ${m.to_map} à mapper par les agents${m.orphan_polygons ? ` · ${m.orphan_polygons} polygone(s) sans producteur` : ''}${m.unmatched_codes?.length ? ` (codes absents du registre : ${m.unmatched_codes.slice(0, 8).join(', ')}${m.unmatched_codes.length > 8 ? '…' : ''})` : ''}${m.ambiguous_codes?.length ? ` · ${m.ambiguous_codes.length} code(s) ambigu(s) non rattaché(s) : ${m.ambiguous_codes.slice(0, 5).join(', ')}` : ''}.` })
+            message: `${m.linked_polygons} polygone(s) rattaché(s)${m.registry_parcels ? ` · ${m.registry_parcels_with_polygon}/${m.registry_parcels} parcelle(s) du registre avec polygone` : ''} · ${m.mapped_producers} producteur(s) cartographié(s) · ${m.to_map} à mapper par les agents${m.orphan_polygons ? ` · ${m.orphan_polygons} polygone(s) sans producteur` : ''}${m.unmatched_codes?.length ? ` (codes absents du registre : ${m.unmatched_codes.slice(0, 8).join(', ')}${m.unmatched_codes.length > 8 ? '…' : ''})` : ''}${m.ambiguous_codes?.length ? ` · ${m.ambiguous_codes.length} code(s) ambigu(s) non rattaché(s) : ${m.ambiguous_codes.slice(0, 5).join(', ')}` : ''}.` })
         } catch { /* le croisement pourra être relancé depuis le Registre */ }
       }
       setProgress('Chargement sur la carte…')
@@ -141,8 +150,8 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <div>
-            <h3 className="font-bold text-gray-900">Anciens polygones de la coopérative</h3>
-            <p className="text-xs text-gray-500">Affichés sur les cartes à côté des parcelles mappées par les agents</p>
+            <h3 className="font-bold text-gray-900">Polygones de la coopérative</h3>
+            <p className="text-xs text-gray-500">Rattachés au registre par le code producteur et le code parcelle ; affichés sur les cartes</p>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
         </div>
@@ -211,13 +220,24 @@ export default function LegacyImportModal({ onClose, cooperativeId }: Props) {
                 </table>
               </div>
               {parsed.features.length > 100 && <p className="text-xs text-gray-400">Aperçu des 100 premiers.</p>}
-              <label className="block text-sm text-gray-700">Attribut du code producteur / code parcelle
-                <select value={codeField} onChange={(e) => setCodeField(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm">
-                  <option value="">— Aucun (pas de croisement avec le registre) —</option>
-                  {attrKeys.map((k) => <option key={k} value={k}>{k}</option>)}
-                </select>
-                <span className="mt-1 block text-xs text-gray-500">Chaque polygone est rattaché au producteur du registre qui a ce code (2 ou 3 polygones possibles par producteur, suffixes « -P2 » acceptés). Les producteurs sans polygone partent chez les agents « à mapper ».</span>
-              </label>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="block text-sm text-gray-700">Colonne « code producteur »
+                  <select value={codeField} onChange={(e) => setCodeField(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm">
+                    <option value="">— Aucune —</option>
+                    {attrKeys.map((k) => <option key={k} value={k}>{k}</option>)}
+                  </select>
+                </label>
+                <label className="block text-sm text-gray-700">Colonne « code parcelle »
+                  <select value={parcelField} onChange={(e) => setParcelField(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm">
+                    <option value="">— Aucune —</option>
+                    {attrKeys.map((k) => <option key={k} value={k}>{k}</option>)}
+                  </select>
+                </label>
+              </div>
+              <p className="text-xs text-gray-500">Chaque polygone est rattaché à la <b>parcelle du registre</b> qui a son code parcelle, donc à son
+                producteur ; à défaut, au <b>producteur</b> qui a son code producteur (suffixes « -P2 » acceptés). Les producteurs sans polygone
+                partent chez les agents « à mapper ».</p>
+              {!codeField && !parcelField && <p className="text-xs text-warning-text">Sans colonne de code, les polygones ne seront rattachés à aucun producteur.</p>}
               <button
                 onClick={doImport}
                 disabled={busy}

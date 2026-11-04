@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { confirmDialog, alertDialog, promptDialog } from '../../components/ui/dialog'
 import { saveImportReport, registryImportReport } from '../../utils/report'
-import * as XLSX from 'xlsx'
 import {
   Users,
   Save, Undo2, Redo2, Upload, Download, Calculator as CalcIcon, FunctionSquare, Plus, Trash2,
@@ -14,18 +13,19 @@ import SpreadsheetGrid, {
 import Calculator from '../../components/registry/Calculator'
 import FunctionsHelp from '../../components/registry/FunctionsHelp'
 import { WorkbookEngine, formatComputed, numericValue, isError } from '../../utils/spreadsheet/engine'
-import { type CellFormat, mergeFormat, fmtKey, XLSX_NUMFMT } from '../../utils/spreadsheet/format'
+import { type CellFormat, mergeFormat, fmtKey } from '../../utils/spreadsheet/format'
 import FormatToolbar from '../../components/registry/FormatToolbar'
 import {
   cellName, shiftFormula, adjustForInsert, renameSheetInFormula, normalizeFormulaInput,
 } from '../../utils/spreadsheet/refs'
 import { readWorkbook, type ParsedWorkbook } from '../../utils/excelImport'
-import { downloadBlob } from '../../utils/geoExport'
 import { registryApi, type CellValue, type RegistrySheetDTO, type TableDef } from '../../api/registry'
 import { useAppStore } from '../../store/appStore'
 import { useAuthStore } from '../../store/authStore'
 import ProducerImportModal from '../../components/producers/ProducerImportModal'
 import PurgeBaseModal from '../../components/producers/PurgeBaseModal'
+import { exportCoopRegistry } from '../../utils/registryExport'
+import { apiErrorMessage } from '../../utils/retry'
 
 interface SheetState { key: string; id?: string; name: string; data: CellValue[][]; colWidths: number[]; formats: Record<string, CellFormat>; tables: TableDef[] }
 interface SavedState { name: string; data: CellValue[][]; colWidths: number[]; formats: Record<string, CellFormat>; tables: TableDef[]; position: number }
@@ -521,34 +521,14 @@ export default function RegistryPage() {
     if (isLive) saveImportReport(registryImportReport(wb.fileName, incoming, mode))
   }
 
-  const exportXlsx = () => {
-    const wb = XLSX.utils.book_new()
-    for (const s of sheets) {
-      const ws: XLSX.WorkSheet = {}
-      let maxC = 0
-      s.data.forEach((row, r) => row.forEach((v, c) => {
-        if (v === null || v === '') return
-        maxC = Math.max(maxC, c)
-        const addr = XLSX.utils.encode_cell({ r, c })
-        if (typeof v === 'string' && v.startsWith('=')) {
-          const cv = engine.getValue(s.name, r, c)
-          const val = isError(cv) ? cv.error : cv
-          ws[addr] = { t: typeof val === 'number' ? 'n' : typeof val === 'boolean' ? 'b' : 's', v: val ?? '', f: v.slice(1) }
-        } else {
-          ws[addr] = { t: typeof v === 'number' ? 'n' : typeof v === 'boolean' ? 'b' : 's', v }
-        }
-        // Format de nombre (monnaie, pourcentage, date…) : SheetJS l'écrit dans le .xlsx
-        const nf = s.formats[fmtKey(r, c)]?.nf
-        const z = nf && XLSX_NUMFMT[nf]
-        if (z && ws[addr].t === 'n') ws[addr].z = z
-      }))
-      ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(s.data.length - 1, 0), c: maxC } })
-      ws['!cols'] = s.colWidths.map((w) => ({ wpx: w }))
-      XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31))
+  // Export : le registre normalisé de la coopérative (une ligne par parcelle, en-têtes fixes)
+  const exportRegistry = async () => {
+    try {
+      const n = await exportCoopRegistry()
+      addNotification({ type: 'success', title: 'Registre exporté', message: `${n} ligne(s) : code producteur, code parcelle, polygones, statut EUDR.` })
+    } catch (err) {
+      addNotification({ type: 'error', title: 'Export impossible', message: apiErrorMessage(err) })
     }
-    const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-    downloadBlob(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-      `registre_${new Date().toISOString().slice(0, 10)}.xlsx`)
   }
 
   // ─── Statistiques de la sélection (barre d'état) ─────────────────────────
@@ -622,7 +602,7 @@ export default function RegistryPage() {
         {sep}
         <input ref={fileRef} type="file" accept=".xlsx,.xls,.xlsm,.csv,.ods" onChange={onImportFile} className="hidden" />
         <button onClick={() => fileRef.current?.click()} className={btn}><Upload className="w-4 h-4" /> Importer Excel</button>
-        <button onClick={exportXlsx} className={btn}><Download className="w-4 h-4" /> Exporter Excel</button>
+        <button onClick={exportRegistry} disabled={!isLive} className={btn} title="Registre de la coopérative : code producteur, code parcelle, surfaces, production estimée, polygones, statut EUDR"><Download className="w-4 h-4" /> Exporter le registre</button>
         <button onClick={() => setProducerSync({
           fileName: 'Registre de la coopérative',
           sheets: sheets.map((s) => ({ name: s.name, data: s.data, colWidths: s.colWidths,

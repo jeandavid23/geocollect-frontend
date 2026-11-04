@@ -9,6 +9,7 @@ import { producersApi } from '../../api/producers'
 import { mapProducer } from '../../api/mappers'
 import { useAppStore } from '../../store/appStore'
 import { apiErrorMessage } from '../../utils/retry'
+import ProducerParcels from './ProducerParcels'
 
 // Champs modifiables du producteur (tous peuvent être vidés, sauf le code)
 const FIELDS: { key: string; label: string; from: (p: Producer) => unknown; type?: 'number' }[] = [
@@ -76,6 +77,7 @@ export default function ProducerEditPanel({ producer, polygonCount, onClose }: {
         <label className="block text-xs text-gray-600">Code producteur (registre)
           <input value={code} onChange={(e) => setCode(e.target.value)} className={`${input} font-mono`} />
         </label>
+        <ProducerParcels producerId={producer.id} />
         <div className="grid grid-cols-2 gap-3">
           {FIELDS.map((f) => (
             <label key={f.key} className="relative block text-xs text-gray-600">{f.label}

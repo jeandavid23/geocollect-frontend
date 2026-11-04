@@ -5,7 +5,9 @@ import { queryParam } from '../../utils/query'
 import EmptyState from '../../components/ui/EmptyState'
 import { confirmDialog } from '../../components/ui/dialog'
 import { useSearchParams } from 'react-router-dom'
-import { Search, Plus, MapPin, X, Save, FileSpreadsheet, Trash2, Hash } from 'lucide-react'
+import { Search, Plus, MapPin, X, Save, FileSpreadsheet, Trash2, Hash, Layers, Download } from 'lucide-react'
+import LegacyImportModal from '../../components/map/LegacyImportModal'
+import { coopPolygons, downloadPolygons, POLYGON_FORMATS, type PolygonFormat } from '../../utils/polygonExport'
 import Header from '../../components/layout/Header'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
@@ -33,7 +35,7 @@ const EMPTY_FORM = {
 
 export default function ProducersPage() {
   const user = useAuthStore((s) => s.user)
-  const { producers, parcels, addProducer, addNotification, isLive, isLoading } = useAppStore()
+  const { producers, parcels, legacyParcels, cooperatives, addProducer, addNotification, isLive, isLoading } = useAppStore()
   const coopId = user?.cooperativeId ?? 'coop-001'
   const coopProducers = producers.filter((p) => p.cooperativeId === coopId)
 
@@ -49,6 +51,16 @@ export default function ProducersPage() {
   const [showImport, setShowImport] = useState(false)
   const [showRecode, setShowRecode] = useState(() => params.get('recode') === '1')
   const [showPurge, setShowPurge] = useState(false)
+  const [showPolygons, setShowPolygons] = useState(false)
+  const [exportMenu, setExportMenu] = useState(false)
+  const exportPolygons = async (format: PolygonFormat) => {
+    setExportMenu(false)
+    const features = coopPolygons(coopProducers, parcels.filter((pa) => pa.cooperativeId === coopId),
+      legacyParcels.filter((lp) => lp.cooperativeId === coopId))
+    if (!features.length) { addNotification({ type: 'warning', title: 'Aucun polygone', message: 'Importez d\'abord les polygones de la coopérative.' }); return }
+    try { await downloadPolygons(features, format, cooperatives.find((c) => c.id === coopId)?.name ?? 'cooperative') }
+    catch (err) { addNotification({ type: 'error', title: 'Export impossible', message: apiErrorMessage(err) }) }
+  }
 
   // Entêtes des fichiers Excel importés (dans l'ordre du fichier) : colonnes de la vue « Fichier Excel »
   const excelHeaders = useMemo(() => {
@@ -246,11 +258,28 @@ export default function ProducersPage() {
             <Hash className="w-4 h-4" /> Codes du registre
           </Button>
         )}
+        <Button variant="secondary" onClick={() => setShowPolygons(true)} label="Importer les polygones de la coopérative (code producteur, code parcelle)">
+          <Layers className="w-4 h-4" /> Importer les polygones
+        </Button>
+        <div className="relative">
+          <Button variant="secondary" onClick={() => setExportMenu(!exportMenu)} label="Télécharger les polygones avec leurs codes" aria-expanded={exportMenu}
+            disabledReason={isLoading ? 'Chargement des polygones en cours…' : undefined}>
+            <Download className="w-4 h-4" /> Exporter les polygones
+          </Button>
+          {exportMenu && (
+            <div role="menu" className="absolute right-0 z-20 mt-1 w-48 rounded-xl border border-gray-200 bg-white p-1 shadow-lg">
+              {POLYGON_FORMATS.map((f) => (
+                <button key={f.key} role="menuitem" onClick={() => exportPolygons(f.key)}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">{f.label}</button>
+              ))}
+            </div>
+          )}
+        </div>
         <Button
           onClick={() => setShowImport(true)}
          
         >
-          <FileSpreadsheet className="w-4 h-4" /> Importer Excel
+          <FileSpreadsheet className="w-4 h-4" /> Importer le registre (Excel)
         </Button>
         <Button
           onClick={() => setShowForm(true)}
@@ -278,6 +307,7 @@ export default function ProducersPage() {
                   <th className="px-3 py-3"><input type="checkbox" aria-label="Tout sélectionner (page)" checked={pageRows.length > 0 && pageRows.every((p) => checked.has(p.id))}
                     onChange={(e) => setChecked((c) => { const n = new Set(c); pageRows.forEach((p) => (e.target.checked ? n.add(p.id) : n.delete(p.id))); return n })} /></th>
                   <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Code producteur</th>
+                  <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Parcelles (registre)</th>
                   {excelHeaders.map((h) => <th key={h} className="text-left px-4 py-3 font-semibold whitespace-nowrap">{h}</th>)}
                   <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Polygones</th>
                 </tr>
@@ -287,6 +317,7 @@ export default function ProducersPage() {
                   <tr key={p.id} className={`hover:bg-gray-50 cursor-pointer ${checked.has(p.id) ? 'bg-primary-50/60' : ''}`} onClick={() => setSelected(p)}>
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={checked.has(p.id)} onChange={() => toggle(p.id)} /></td>
                     <td className="px-4 py-2 font-mono text-xs text-gray-700 whitespace-nowrap">{p.fieldIdBase}</td>
+                    <td className="px-4 py-2 text-right tabular-nums text-gray-700">{p.registryParcelCount ?? 0}</td>
                     {excelHeaders.map((h) => {
                       const v = p.extraData?.[h]
                       return <td key={h} className={`px-4 py-2 whitespace-nowrap ${typeof v === 'number' ? 'text-right' : ''} text-gray-700`}>{v === undefined || v === null ? '' : String(v)}</td>
@@ -318,6 +349,7 @@ export default function ProducersPage() {
                 <SortTh label="Code producteur" k="code" sort={sort} onSort={toggleSort} />
                 <SortTh label="Village" k="village" sort={sort} onSort={toggleSort} />
                 <SortTh label="Section" k="section" sort={sort} onSort={toggleSort} />
+                <th className="text-left px-5 py-3 font-medium">Parcelles (registre)</th>
                 <SortTh label="Polygones" k="polygons" sort={sort} onSort={toggleSort} />
                 <th className="text-left px-5 py-3 font-medium">Superficie</th>
                 <th className="text-left px-5 py-3 font-medium">Actions</th>
@@ -348,6 +380,7 @@ export default function ProducersPage() {
                     <td className="px-5 py-3">
                       <span className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-lg font-medium">{p.section}</span>
                     </td>
+                    <td className="px-5 py-3 text-sm tabular-nums text-gray-700">{p.registryParcelCount ?? 0}</td>
                     <td className="px-5 py-3 text-sm font-medium text-gray-800">{polys(p) > 0 ? polys(p) : <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">À mapper</span>}</td>
                     <td className="px-5 py-3 text-sm font-medium text-gray-800">{totalHa.toFixed(2)} ha</td>
                     <td className="px-5 py-3">
@@ -360,7 +393,7 @@ export default function ProducersPage() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-sm text-gray-400">
+                  <td colSpan={9} className="px-5 py-10 text-center text-sm text-gray-400">
                     Aucun producteur ne correspond à la recherche ou au filtre.
                   </td>
                 </tr>
@@ -377,6 +410,7 @@ export default function ProducersPage() {
       {showPurge && <PurgeBaseModal cooperativeId={coopId} from="producers" onClose={() => setShowPurge(false)} onDone={() => setChecked(new Set())} />}
       {showRecode && <ProducerRecodeModal cooperativeId={coopId} onClose={() => setShowRecode(false)} />}
       {showImport && <ProducerImportModal cooperativeId={coopId} onClose={() => setShowImport(false)} />}
+      {showPolygons && <LegacyImportModal onClose={() => setShowPolygons(false)} />}
 
       {/* ─── New producer form modal ─────────────────────────────────────── */}
       {showForm && (
